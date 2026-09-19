@@ -62,7 +62,7 @@ const productionCsp = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
-  "connect-src 'self'",
+  "connect-src 'self' https://timepilot-backend.onrender.com",
   "media-src 'self' blob:",
   "worker-src 'self' blob:",
   "child-src 'self' blob:",
@@ -100,3 +100,4 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+
