@@ -18,7 +18,7 @@ export default function Hero() {
         min-h-screen
         w-full
         overflow-hidden
-        bg-[#08090B]
+        bg-[#03060b]
         text-white
       "
     >
@@ -54,7 +54,7 @@ export default function Hero() {
           className="
             absolute
             inset-0
-            bg-[#08090B]/40
+            bg-[#03060b]/40
           "
         />
 
@@ -128,8 +128,8 @@ export default function Hero() {
             z-[6]
             h-[32%]
             bg-gradient-to-t
-            from-[#08090B]
-            via-[#08090B]/50
+            from-[#03060b]
+            via-[#03060b]/50
             to-transparent
           "
         />
@@ -496,6 +496,22 @@ export default function Hero() {
           </div>
         </div>
       </div>
+
+      {/* Bottom transition */}
+
+      <div
+        className="
+          pointer-events-none
+          absolute
+          inset-x-0
+          bottom-0
+          z-30
+          h-28
+          bg-gradient-to-t
+          from-[#08090B]
+          to-transparent
+        "
+      />
     </section>
   );
 }
