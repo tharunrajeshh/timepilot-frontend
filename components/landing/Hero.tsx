@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import {
   ArrowUpRight,
   BarChart3,
@@ -13,8 +13,10 @@ import {
   Sparkles,
 } from "lucide-react";
 
+import Starfield from "./Starfield";
+
 /* ================================================================
-   CONFIG
+   HERO CONFIG
 ================================================================ */
 
 const HERO = {
@@ -57,18 +59,16 @@ const BRAND = {
   logoLetter: "T",
 };
 
+/* ================================================================
+   EARTH VIDEO
+================================================================ */
+
 const BACKGROUND_VIDEO =
   "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260613_180732_a54afbf6-b30d-470e-861f-669871f09f67.mp4";
 
-const FLOATING_AI_CARD = {
-  title: "AI suggestion",
-  subtitle: "Schedule optimized",
-};
-
-const FLOATING_FOCUS_CARD = {
-  label: "Focus mode",
-  time: "52 min",
-};
+/* ================================================================
+   DASHBOARD DATA
+================================================================ */
 
 const APP_SIDEBAR = {
   nav: [
@@ -162,62 +162,19 @@ const APP_DASHBOARD = {
   },
 };
 
-const PREVIEW_CAPTION = {
-  left: "A calmer way to plan your day.",
-  right: "Built around how you actually work.",
-};
-
-/* ================================================================
-   FALLING STAR SYSTEM
-================================================================ */
-
-type StarDef = {
-  left: number;
-  top: number;
-  size: number;
-  duration: number;
-  delay: number;
-  drift: number;
-  length: number;
-  opacity: number;
-};
-
-/*
-  Deterministic stars.
-  This avoids hydration mismatch caused by Math.random().
-*/
-
-function createStars(count: number): StarDef[] {
-  return Array.from({ length: count }, (_, i) => {
-    const a = (i * 47) % 101;
-    const b = (i * 73) % 97;
-    const c = (i * 31) % 89;
-
-    return {
-      left: a,
-      top: -10 - (b % 35),
-      size: 1 + (c % 3) * 0.55,
-      duration: 3.2 + (c % 7) * 0.45,
-      delay: -((i * 1.37) % 10),
-      drift: -90 + ((i * 53) % 181),
-      length: 35 + ((i * 29) % 60),
-      opacity: 0.45 + ((i * 17) % 55) / 100,
-    };
-  });
-}
-
 /* ================================================================
    HERO
 ================================================================ */
 
 export default function Hero() {
-  const stars = useMemo(() => createStars(55), []);
-
   const heroRef = useRef<HTMLElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const starsLayerRef = useRef<HTMLDivElement>(null);
-  const glowLeftRef = useRef<HTMLDivElement>(null);
-  const glowRightRef = useRef<HTMLDivElement>(null);
+
+  const glowLeftRef =
+    useRef<HTMLDivElement>(null);
+
+  const glowRightRef =
+    useRef<HTMLDivElement>(null);
 
   /* ==============================================================
      VIDEO AUTOPLAY
@@ -230,18 +187,15 @@ export default function Hero() {
 
     video.muted = true;
 
-    const playVideo = async () => {
+    const startVideo = async () => {
       try {
         await video.play();
       } catch {
-        /*
-          Browser may block autoplay temporarily.
-          muted + playsInline normally allows autoplay.
-        */
+        // Browser autoplay restrictions can prevent play.
       }
     };
 
-    playVideo();
+    startVideo();
   }, []);
 
   /* ==============================================================
@@ -249,17 +203,17 @@ export default function Hero() {
   ============================================================== */
 
   useEffect(() => {
+    const hero = heroRef.current;
+
+    if (!hero) return;
+
     const reduceMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)"
     ).matches;
 
     if (reduceMotion) return;
 
-    const hero = heroRef.current;
-
-    if (!hero) return;
-
-    let raf = 0;
+    let animationFrame = 0;
 
     let targetX = 0;
     let targetY = 0;
@@ -267,8 +221,11 @@ export default function Hero() {
     let currentX = 0;
     let currentY = 0;
 
-    const handleMove = (event: MouseEvent) => {
-      const rect = hero.getBoundingClientRect();
+    const handleMouseMove = (
+      event: MouseEvent
+    ) => {
+      const rect =
+        hero.getBoundingClientRect();
 
       targetX =
         ((event.clientX - rect.left) /
@@ -283,31 +240,25 @@ export default function Hero() {
         2;
     };
 
-    const handleLeave = () => {
+    const handleMouseLeave = () => {
       targetX = 0;
       targetY = 0;
     };
 
-    const tick = () => {
+    const animate = () => {
       currentX +=
-        (targetX - currentX) * 0.045;
+        (targetX - currentX) *
+        0.045;
 
       currentY +=
-        (targetY - currentY) * 0.045;
+        (targetY - currentY) *
+        0.045;
 
       if (videoRef.current) {
         videoRef.current.style.transform =
           `scale(1.045) translate(
-            ${currentX * -7}px,
-            ${currentY * -5}px
-          )`;
-      }
-
-      if (starsLayerRef.current) {
-        starsLayerRef.current.style.transform =
-          `translate(
-            ${currentX * 12}px,
-            ${currentY * 8}px
+            ${currentX * -5}px,
+            ${currentY * -4}px
           )`;
       }
 
@@ -327,41 +278,49 @@ export default function Hero() {
           )`;
       }
 
-      raf = requestAnimationFrame(tick);
+      animationFrame =
+        requestAnimationFrame(
+          animate
+        );
     };
 
     hero.addEventListener(
       "mousemove",
-      handleMove
+      handleMouseMove
     );
 
     hero.addEventListener(
       "mouseleave",
-      handleLeave
+      handleMouseLeave
     );
 
-    raf = requestAnimationFrame(tick);
+    animationFrame =
+      requestAnimationFrame(
+        animate
+      );
 
     return () => {
       hero.removeEventListener(
         "mousemove",
-        handleMove
+        handleMouseMove
       );
 
       hero.removeEventListener(
         "mouseleave",
-        handleLeave
+        handleMouseLeave
       );
 
-      cancelAnimationFrame(raf);
+      cancelAnimationFrame(
+        animationFrame
+      );
     };
   }, []);
 
   return (
     <section
       id="top"
-      className="tp-hero"
       ref={heroRef}
+      className="tp-hero"
     >
       {/* ========================================================
           BACKGROUND
@@ -392,55 +351,33 @@ export default function Hero() {
 
         {/* FALLING STARS */}
 
-        <div
-          className="tp-falling-stars"
-          ref={starsLayerRef}
-          aria-hidden="true"
-        >
-          {stars.map((star, index) => (
-            <span
-              key={index}
-              className="tp-star"
-              style={
-                {
-                  left: `${star.left}%`,
-                  top: `${star.top}%`,
-                  width: `${star.size}px`,
-                  height: `${star.size}px`,
-                  opacity: star.opacity,
-                  animationDuration:
-                    `${star.duration}s`,
-                  animationDelay:
-                    `${star.delay}s`,
-                  "--tp-drift":
-                    `${star.drift}px`,
-                  "--tp-trail":
-                    `${star.length}px`,
-                } as React.CSSProperties
-              }
-            />
-          ))}
-        </div>
+        <Starfield />
 
-        {/* SUBTLE EARTH GLOW */}
+        {/* EARTH BLUE GLOW */}
 
         <div className="tp-earth-glow" />
       </div>
 
-      {/* SIDE LIGHTING */}
+      {/* SIDE LIGHTS */}
 
       <div
-        className="tp-hero-glow tp-hero-glow-left"
         ref={glowLeftRef}
+        className="
+          tp-hero-glow
+          tp-hero-glow-left
+        "
       />
 
       <div
-        className="tp-hero-glow tp-hero-glow-right"
         ref={glowRightRef}
+        className="
+          tp-hero-glow
+          tp-hero-glow-right
+        "
       />
 
       {/* ========================================================
-          HERO CONTENT
+          CONTENT
       ========================================================= */}
 
       <div className="tp-hero-container">
@@ -476,7 +413,7 @@ export default function Hero() {
           {HERO.description}
         </p>
 
-        {/* BUTTONS */}
+        {/* CTA BUTTONS */}
 
         <div className="tp-hero-buttons">
           <Link
@@ -496,7 +433,9 @@ export default function Hero() {
           </Link>
 
           <a
-            href={HERO.secondaryCta.href}
+            href={
+              HERO.secondaryCta.href
+            }
             className="tp-explore"
           >
             <span>
@@ -509,7 +448,7 @@ export default function Hero() {
           </a>
         </div>
 
-        {/* TRUST */}
+        {/* TRUST INDICATORS */}
 
         <div className="tp-trust">
           {HERO.trust.map(
@@ -523,7 +462,10 @@ export default function Hero() {
                 )}
 
                 <div
-                  className={`tp-trust-item tp-trust-${item.accent}`}
+                  className={`
+                    tp-trust-item
+                    tp-trust-${item.accent}
+                  `}
                 >
                   <span className="tp-trust-icon">
                     <Check
@@ -546,7 +488,7 @@ export default function Hero() {
         ======================================================= */}
 
         <div className="tp-preview-wrapper">
-          {/* FLOATING AI CARD */}
+          {/* AI FLOATING CARD */}
 
           <div className="tp-ai-card">
             <div className="tp-ai-card-icon">
@@ -555,18 +497,18 @@ export default function Hero() {
 
             <div className="tp-ai-card-content">
               <div className="tp-ai-card-title">
-                {FLOATING_AI_CARD.title}
+                AI suggestion
               </div>
 
               <div className="tp-ai-card-subtitle">
-                {FLOATING_AI_CARD.subtitle}
+                Schedule optimized
               </div>
             </div>
 
             <span className="tp-ai-live" />
           </div>
 
-          {/* FLOATING FOCUS CARD */}
+          {/* FOCUS FLOATING CARD */}
 
           <div className="tp-focus-card">
             <div className="tp-focus-card-icon">
@@ -575,19 +517,21 @@ export default function Hero() {
 
             <div>
               <div className="tp-focus-card-label">
-                {FLOATING_FOCUS_CARD.label}
+                Focus mode
               </div>
 
               <div className="tp-focus-card-time">
-                {FLOATING_FOCUS_CARD.time}
+                52 min
               </div>
             </div>
           </div>
 
-          {/* BROWSER */}
+          {/* ====================================================
+              BROWSER
+          ==================================================== */}
 
           <div className="tp-browser-window">
-            {/* Browser header */}
+            {/* BROWSER BAR */}
 
             <div className="tp-browser-header">
               <div className="tp-browser-controls">
@@ -607,10 +551,12 @@ export default function Hero() {
               />
             </div>
 
-            {/* Application */}
+            {/* APP */}
 
             <div className="tp-app">
-              {/* SIDEBAR */}
+              {/* =================================================
+                  SIDEBAR
+              ================================================= */}
 
               <aside className="tp-app-sidebar">
                 <div className="tp-app-logo">
@@ -632,13 +578,18 @@ export default function Hero() {
                       return (
                         <div
                           key={item.label}
-                          className={`tp-app-nav ${
-                            item.active
-                              ? "active"
-                              : ""
-                          }`}
+                          className={`
+                            tp-app-nav
+                            ${
+                              item.active
+                                ? "active"
+                                : ""
+                            }
+                          `}
                         >
-                          <Icon size={16} />
+                          <Icon
+                            size={16}
+                          />
 
                           <span>
                             {item.label}
@@ -678,21 +629,34 @@ export default function Hero() {
                 </div>
               </aside>
 
-              {/* MAIN */}
+              {/* =================================================
+                  MAIN APP
+              ================================================= */}
 
               <main className="tp-app-main">
+                {/* HEADER */}
+
                 <div className="tp-app-heading">
                   <div>
                     <div className="tp-app-date">
-                      {APP_DASHBOARD.date}
+                      {
+                        APP_DASHBOARD
+                          .date
+                      }
                     </div>
 
                     <h2>
-                      {APP_DASHBOARD.greeting}
+                      {
+                        APP_DASHBOARD
+                          .greeting
+                      }
                     </h2>
 
                     <p>
-                      {APP_DASHBOARD.subtitle}
+                      {
+                        APP_DASHBOARD
+                          .subtitle
+                      }
                     </p>
                   </div>
 
@@ -710,10 +674,18 @@ export default function Hero() {
                   {APP_DASHBOARD.stats.map(
                     (stat) => (
                       <MiniStat
-                        key={stat.title}
-                        title={stat.title}
-                        value={stat.value}
-                        change={stat.change}
+                        key={
+                          stat.title
+                        }
+                        title={
+                          stat.title
+                        }
+                        value={
+                          stat.value
+                        }
+                        change={
+                          stat.change
+                        }
                       />
                     )
                   )}
@@ -749,7 +721,9 @@ export default function Hero() {
                               row.time +
                               row.title
                             }
-                            time={row.time}
+                            time={
+                              row.time
+                            }
                             title={
                               row.title
                             }
@@ -772,7 +746,9 @@ export default function Hero() {
 
                   <div className="tp-ai-panel">
                     <div className="tp-ai-panel-icon">
-                      <Sparkles size={17} />
+                      <Sparkles
+                        size={17}
+                      />
                     </div>
 
                     <span className="tp-ai-panel-label">
@@ -836,20 +812,6 @@ export default function Hero() {
               </main>
             </div>
           </div>
-
-          {/* CAPTION */}
-
-          <div className="tp-preview-caption">
-            <span>
-              {PREVIEW_CAPTION.left}
-            </span>
-
-            <span className="tp-caption-divider" />
-
-            <span>
-              {PREVIEW_CAPTION.right}
-            </span>
-          </div>
         </div>
       </div>
 
@@ -866,16 +828,20 @@ export default function Hero() {
           position: relative;
 
           width: 100%;
+
           min-height: 100vh;
 
           padding-top: 150px;
+
           padding-bottom: 100px;
 
           overflow: hidden;
 
-          background: #020408;
+          background:
+            #020408;
 
-          color: #ffffff;
+          color:
+            #ffffff;
         }
 
         /* ======================================================
@@ -893,7 +859,8 @@ export default function Hero() {
 
           pointer-events: none;
 
-          background: #020408;
+          background:
+            #020408;
         }
 
         /* ======================================================
@@ -906,31 +873,36 @@ export default function Hero() {
           inset: -3%;
 
           width: 106%;
+
           height: 106%;
 
           object-fit: cover;
 
-          object-position: center center;
+          object-position:
+            center center;
 
           display: block;
 
-          background: #020408;
+          background:
+            #020408;
 
-          opacity: 0.88;
+          opacity:
+            0.90;
 
           filter:
-            brightness(0.68)
+            brightness(0.70)
             saturate(1.12)
-            contrast(1.08);
+            contrast(1.06);
 
           transform:
             scale(1.045);
 
-          will-change: transform;
+          will-change:
+            transform;
         }
 
         /* ======================================================
-           VIDEO OVERLAY
+           VIDEO DARK OVERLAY
         ====================================================== */
 
         .tp-earth-overlay {
@@ -943,158 +915,81 @@ export default function Hero() {
           background:
             linear-gradient(
               to bottom,
-              rgba(1, 3, 7, 0.38) 0%,
-              rgba(1, 3, 7, 0.20) 28%,
-              rgba(1, 3, 7, 0.28) 52%,
-              rgba(1, 3, 7, 0.68) 78%,
-              #020408 100%
+              rgba(
+                1,
+                3,
+                7,
+                0.38
+              )
+              0%,
+
+              rgba(
+                1,
+                3,
+                7,
+                0.15
+              )
+              28%,
+
+              rgba(
+                1,
+                3,
+                7,
+                0.24
+              )
+              50%,
+
+              rgba(
+                1,
+                3,
+                7,
+                0.64
+              )
+              76%,
+
+              #020408
+              100%
             );
         }
 
         .tp-earth-overlay::after {
-          content: "";
+          content:
+            "";
 
-          position: absolute;
+          position:
+            absolute;
 
-          inset: 0;
+          inset:
+            0;
 
           background:
             radial-gradient(
               ellipse at center,
-              rgba(0, 0, 0, 0.02) 0%,
-              rgba(0, 0, 0, 0.12) 48%,
-              rgba(0, 0, 0, 0.48) 100%
-            );
-        }
 
-        /* ======================================================
-           FALLING STARS
-        ====================================================== */
-
-        .tp-falling-stars {
-          position: absolute;
-
-          inset: -15%;
-
-          z-index: 4;
-
-          overflow: hidden;
-
-          pointer-events: none;
-
-          will-change: transform;
-        }
-
-        .tp-star {
-          position: absolute;
-
-          display: block;
-
-          border-radius: 999px;
-
-          background:
-            radial-gradient(
-              circle,
-              #ffffff 0%,
-              #d9f2ff 45%,
-              rgba(130, 205, 255, 0.8) 75%,
-              transparent 100%
-            );
-
-          box-shadow:
-            0 0 5px
-              rgba(255, 255, 255, 0.95),
-            0 0 14px
-              rgba(80, 180, 255, 0.8);
-
-          animation-name:
-            tp-star-fall;
-
-          animation-timing-function:
-            linear;
-
-          animation-iteration-count:
-            infinite;
-
-          animation-fill-mode:
-            both;
-
-          will-change:
-            transform,
-            opacity;
-        }
-
-        .tp-star::after {
-          content: "";
-
-          position: absolute;
-
-          right: 100%;
-
-          top: 50%;
-
-          width:
-            var(--tp-trail);
-
-          height: 1px;
-
-          transform:
-            translateY(-50%);
-
-          transform-origin:
-            right center;
-
-          background:
-            linear-gradient(
-              90deg,
-              transparent 0%,
-              rgba(150, 220, 255, 0.05) 10%,
-              rgba(150, 220, 255, 0.30) 45%,
-              rgba(220, 245, 255, 0.90) 100%
-            );
-
-          filter:
-            blur(0.25px);
-        }
-
-        @keyframes tp-star-fall {
-          0% {
-            transform:
-              translate3d(
+              rgba(
                 0,
-                -15vh,
-                0
+                0,
+                0,
+                0.02
               )
-              rotate(-8deg)
-              scale(0.7);
+              0%,
 
-            opacity: 0;
-          }
-
-          7% {
-            opacity: 1;
-          }
-
-          55% {
-            opacity: 0.95;
-          }
-
-          88% {
-            opacity: 0.72;
-          }
-
-          100% {
-            transform:
-              translate3d(
-                var(--tp-drift),
-                125vh,
-                0
+              rgba(
+                0,
+                0,
+                0,
+                0.12
               )
-              rotate(-8deg)
-              scale(1);
+              48%,
 
-            opacity: 0;
-          }
+              rgba(
+                0,
+                0,
+                0,
+                0.50
+              )
+              100%
+            );
         }
 
         /* ======================================================
@@ -1107,30 +1002,52 @@ export default function Hero() {
           z-index: 3;
 
           left: 50%;
-          bottom: -5%;
+
+          bottom: -8%;
 
           width:
-            min(1000px, 90vw);
+            min(
+              1000px,
+              90vw
+            );
 
-          height: 300px;
+          height:
+            300px;
 
           transform:
             translateX(-50%);
 
-          border-radius: 50%;
+          border-radius:
+            50%;
 
           background:
             radial-gradient(
               ellipse,
-              rgba(40, 145, 255, 0.20),
-              rgba(25, 100, 220, 0.07) 38%,
-              transparent 72%
+
+              rgba(
+                40,
+                145,
+                255,
+                0.20
+              ),
+
+              rgba(
+                25,
+                100,
+                220,
+                0.07
+              )
+              38%,
+
+              transparent
+              72%
             );
 
           filter:
             blur(55px);
 
-          pointer-events: none;
+          pointer-events:
+            none;
         }
 
         /* ======================================================
@@ -1138,40 +1055,64 @@ export default function Hero() {
         ====================================================== */
 
         .tp-hero-glow {
-          position: absolute;
+          position:
+            absolute;
 
-          z-index: 5;
+          z-index:
+            5;
 
-          width: 600px;
-          height: 600px;
+          width:
+            600px;
 
-          border-radius: 50%;
+          height:
+            600px;
+
+          border-radius:
+            50%;
 
           filter:
             blur(120px);
 
-          pointer-events: none;
+          pointer-events:
+            none;
 
-          opacity: 0.25;
+          opacity:
+            0.22;
 
           will-change:
             transform;
         }
 
         .tp-hero-glow-left {
-          top: 120px;
-          left: -420px;
+          top:
+            100px;
+
+          left:
+            -430px;
 
           background:
-            rgba(92, 62, 190, 0.18);
+            rgba(
+              92,
+              62,
+              190,
+              0.17
+            );
         }
 
         .tp-hero-glow-right {
-          top: 450px;
-          right: -420px;
+          top:
+            450px;
+
+          right:
+            -430px;
 
           background:
-            rgba(40, 100, 180, 0.16);
+            rgba(
+              40,
+              100,
+              180,
+              0.15
+            );
         }
 
         /* ======================================================
@@ -1179,19 +1120,25 @@ export default function Hero() {
         ====================================================== */
 
         .tp-hero-container {
-          position: relative;
+          position:
+            relative;
 
-          z-index: 10;
+          z-index:
+            10;
 
           width:
             min(
               1280px,
-              calc(100% - 40px)
+              calc(
+                100% - 40px
+              )
             );
 
-          margin: 0 auto;
+          margin:
+            0 auto;
 
-          text-align: center;
+          text-align:
+            center;
         }
 
         /* ======================================================
@@ -1199,35 +1146,63 @@ export default function Hero() {
         ====================================================== */
 
         .tp-hero-eyebrow {
-          display: inline-flex;
+          display:
+            inline-flex;
 
-          align-items: center;
+          align-items:
+            center;
 
-          gap: 9px;
+          gap:
+            9px;
 
-          height: 34px;
+          height:
+            34px;
 
-          padding: 0 14px;
+          padding:
+            0 14px;
 
           border:
             1px solid
-            rgba(255, 255, 255, 0.14);
+            rgba(
+              255,
+              255,
+              255,
+              0.14
+            );
 
-          border-radius: 999px;
+          border-radius:
+            999px;
 
           background:
-            rgba(10, 15, 22, 0.58);
+            rgba(
+              10,
+              15,
+              22,
+              0.58
+            );
 
           color:
-            rgba(255, 255, 255, 0.76);
+            rgba(
+              255,
+              255,
+              255,
+              0.76
+            );
 
-          font-size: 11px;
+          font-size:
+            11px;
 
-          font-weight: 600;
+          font-weight:
+            600;
 
           box-shadow:
             0 10px 35px
-            rgba(0, 0, 0, 0.28);
+            rgba(
+              0,
+              0,
+              0,
+              0.28
+            );
 
           backdrop-filter:
             blur(18px);
@@ -1237,17 +1212,26 @@ export default function Hero() {
         }
 
         .tp-eyebrow-dot {
-          width: 6px;
-          height: 6px;
+          width:
+            6px;
 
-          border-radius: 50%;
+          height:
+            6px;
+
+          border-radius:
+            50%;
 
           background:
             #62f7c2;
 
           box-shadow:
             0 0 12px
-            rgba(98, 247, 194, 0.9);
+            rgba(
+              98,
+              247,
+              194,
+              0.9
+            );
 
           animation:
             tp-pulse
@@ -1258,7 +1242,12 @@ export default function Hero() {
 
         .tp-eyebrow-arrow {
           color:
-            rgba(255, 255, 255, 0.42);
+            rgba(
+              255,
+              255,
+              255,
+              0.42
+            );
         }
 
         /* ======================================================
@@ -1266,7 +1255,8 @@ export default function Hero() {
         ====================================================== */
 
         .tp-hero-title {
-          max-width: 1000px;
+          max-width:
+            1000px;
 
           margin:
             25px auto 0;
@@ -1299,16 +1289,27 @@ export default function Hero() {
 
           text-shadow:
             0 8px 50px
-            rgba(0, 0, 0, 0.65);
+            rgba(
+              0,
+              0,
+              0,
+              0.65
+            );
         }
 
         .tp-hero-title > span {
-          display: block;
+          display:
+            block;
         }
 
         .tp-hero-title-light {
           color:
-            rgba(255, 255, 255, 0.52);
+            rgba(
+              255,
+              255,
+              255,
+              0.52
+            );
 
           font-weight:
             420;
@@ -1322,13 +1323,19 @@ export default function Hero() {
         ====================================================== */
 
         .tp-hero-description {
-          max-width: 620px;
+          max-width:
+            620px;
 
           margin:
             30px auto 0;
 
           color:
-            rgba(255, 255, 255, 0.68);
+            rgba(
+              255,
+              255,
+              255,
+              0.68
+            );
 
           font-size:
             clamp(
@@ -1345,7 +1352,12 @@ export default function Hero() {
 
           text-shadow:
             0 4px 25px
-            rgba(0, 0, 0, 0.65);
+            rgba(
+              0,
+              0,
+              0,
+              0.65
+            );
         }
 
         /* ======================================================
@@ -1353,36 +1365,52 @@ export default function Hero() {
         ====================================================== */
 
         .tp-hero-buttons {
-          display: flex;
+          display:
+            flex;
 
-          align-items: center;
+          align-items:
+            center;
 
-          justify-content: center;
+          justify-content:
+            center;
 
-          gap: 12px;
+          gap:
+            12px;
 
-          margin-top: 32px;
+          margin-top:
+            32px;
         }
 
         .tp-get-started {
-          height: 58px;
+          height:
+            58px;
 
           padding:
             0 9px 0 25px;
 
-          display: inline-flex;
+          display:
+            inline-flex;
 
-          align-items: center;
+          align-items:
+            center;
 
-          justify-content: center;
+          justify-content:
+            center;
 
-          gap: 18px;
+          gap:
+            18px;
 
           border:
             1px solid
-            rgba(255, 255, 255, 0.9);
+            rgba(
+              255,
+              255,
+              255,
+              0.9
+            );
 
-          border-radius: 999px;
+          border-radius:
+            999px;
 
           background:
             #ffffff;
@@ -1401,11 +1429,18 @@ export default function Hero() {
 
           box-shadow:
             0 12px 35px
-            rgba(0, 0, 0, 0.45);
+            rgba(
+              0,
+              0,
+              0,
+              0.45
+            );
 
           transition:
-            transform 0.3s ease,
-            box-shadow 0.3s ease;
+            transform
+              0.3s ease,
+            box-shadow
+              0.3s ease;
         }
 
         .tp-get-started:hover {
@@ -1414,66 +1449,86 @@ export default function Hero() {
 
           box-shadow:
             0 18px 45px
-            rgba(0, 0, 0, 0.58);
+            rgba(
+              0,
+              0,
+              0,
+              0.58
+            );
         }
 
         .tp-get-started-icon {
-          width: 40px;
-          height: 40px;
+          width:
+            40px;
 
-          display: flex;
+          height:
+            40px;
 
-          align-items: center;
+          display:
+            flex;
 
-          justify-content: center;
+          align-items:
+            center;
 
-          border-radius: 50%;
+          justify-content:
+            center;
+
+          border-radius:
+            50%;
 
           background:
             #050505;
 
           color:
             #ffffff;
-
-          transition:
-            transform 0.3s ease;
-        }
-
-        .tp-get-started:hover
-        .tp-get-started-icon {
-          transform:
-            translate(
-              2px,
-              -2px
-            )
-            rotate(4deg);
         }
 
         .tp-explore {
-          height: 58px;
+          height:
+            58px;
 
           padding:
             0 22px;
 
-          display: inline-flex;
+          display:
+            inline-flex;
 
-          align-items: center;
+          align-items:
+            center;
 
-          justify-content: center;
+          justify-content:
+            center;
 
-          gap: 20px;
+          gap:
+            20px;
 
           border:
             1px solid
-            rgba(255, 255, 255, 0.18);
+            rgba(
+              255,
+              255,
+              255,
+              0.18
+            );
 
-          border-radius: 999px;
+          border-radius:
+            999px;
 
           background:
-            rgba(8, 13, 20, 0.55);
+            rgba(
+              8,
+              13,
+              20,
+              0.55
+            );
 
           color:
-            rgba(255, 255, 255, 0.90);
+            rgba(
+              255,
+              255,
+              255,
+              0.90
+            );
 
           font-size:
             15px;
@@ -1484,10 +1539,6 @@ export default function Hero() {
           text-decoration:
             none;
 
-          box-shadow:
-            0 8px 30px
-            rgba(0, 0, 0, 0.28);
-
           backdrop-filter:
             blur(15px);
 
@@ -1495,8 +1546,10 @@ export default function Hero() {
             blur(15px);
 
           transition:
-            transform 0.3s ease,
-            background 0.3s ease;
+            transform
+              0.3s ease,
+            background
+              0.3s ease;
         }
 
         .tp-explore:hover {
@@ -1504,18 +1557,29 @@ export default function Hero() {
             translateY(-3px);
 
           background:
-            rgba(255, 255, 255, 0.10);
+            rgba(
+              255,
+              255,
+              255,
+              0.10
+            );
         }
 
         .tp-explore-arrow {
           color:
-            rgba(255, 255, 255, 0.55);
+            rgba(
+              255,
+              255,
+              255,
+              0.55
+            );
 
           font-size:
             19px;
 
           transition:
-            transform 0.3s ease;
+            transform
+              0.3s ease;
         }
 
         .tp-explore:hover
@@ -1529,56 +1593,84 @@ export default function Hero() {
         ====================================================== */
 
         .tp-trust {
-          display: flex;
+          display:
+            flex;
 
-          align-items: center;
+          align-items:
+            center;
 
-          justify-content: center;
+          justify-content:
+            center;
 
-          gap: 17px;
+          gap:
+            17px;
 
-          margin-top: 27px;
+          margin-top:
+            27px;
 
           color:
-            rgba(255, 255, 255, 0.52);
+            rgba(
+              255,
+              255,
+              255,
+              0.52
+            );
 
           font-size:
             12px;
         }
 
         .tp-trust-group {
-          display: flex;
+          display:
+            flex;
 
-          align-items: center;
+          align-items:
+            center;
 
-          gap: 17px;
+          gap:
+            17px;
         }
 
         .tp-trust-item {
-          display: flex;
+          display:
+            flex;
 
-          align-items: center;
+          align-items:
+            center;
 
-          gap: 8px;
+          gap:
+            8px;
         }
 
         .tp-trust-icon {
-          width: 19px;
-          height: 19px;
+          width:
+            19px;
 
-          display: flex;
+          height:
+            19px;
 
-          align-items: center;
+          display:
+            flex;
 
-          justify-content: center;
+          align-items:
+            center;
 
-          border-radius: 50%;
+          justify-content:
+            center;
+
+          border-radius:
+            50%;
         }
 
         .tp-trust-purple
         .tp-trust-icon {
           background:
-            rgba(139, 92, 246, 0.18);
+            rgba(
+              139,
+              92,
+              246,
+              0.18
+            );
 
           color:
             #a78bfa;
@@ -1587,7 +1679,12 @@ export default function Hero() {
         .tp-trust-blue
         .tp-trust-icon {
           background:
-            rgba(59, 130, 246, 0.18);
+            rgba(
+              59,
+              130,
+              246,
+              0.18
+            );
 
           color:
             #60a5fa;
@@ -1596,40 +1693,62 @@ export default function Hero() {
         .tp-trust-green
         .tp-trust-icon {
           background:
-            rgba(16, 185, 129, 0.18);
+            rgba(
+              16,
+              185,
+              129,
+              0.18
+            );
 
           color:
             #34d399;
         }
 
         .tp-trust-divider {
-          width: 1px;
+          width:
+            1px;
 
-          height: 18px;
+          height:
+            18px;
 
           background:
-            rgba(255, 255, 255, 0.16);
+            rgba(
+              255,
+              255,
+              255,
+              0.16
+            );
         }
 
         /* ======================================================
-           PREVIEW
+           PRODUCT PREVIEW
         ====================================================== */
 
         .tp-preview-wrapper {
-          position: relative;
+          position:
+            relative;
 
-          width: 100%;
+          width:
+            100%;
 
-          margin-top: 70px;
+          margin-top:
+            70px;
         }
 
+        /* ======================================================
+           BROWSER
+        ====================================================== */
+
         .tp-browser-window {
-          position: relative;
+          position:
+            relative;
 
           width:
             min(
               1080px,
-              calc(100% - 80px)
+              calc(
+                100% - 80px
+              )
             );
 
           margin:
@@ -1640,7 +1759,12 @@ export default function Hero() {
 
           border:
             1px solid
-            rgba(255, 255, 255, 0.14);
+            rgba(
+              255,
+              255,
+              255,
+              0.14
+            );
 
           border-radius:
             30px;
@@ -1650,16 +1774,27 @@ export default function Hero() {
 
           box-shadow:
             0 45px 120px
-              rgba(0, 0, 0, 0.60),
+              rgba(
+                0,
+                0,
+                0,
+                0.60
+              ),
             0 15px 45px
-              rgba(0, 0, 0, 0.35);
+              rgba(
+                0,
+                0,
+                0,
+                0.35
+              );
 
           transform:
             perspective(1600px)
             rotateX(1deg);
 
           transition:
-            transform 0.5s ease;
+            transform
+              0.5s ease;
         }
 
         .tp-browser-window:hover {
@@ -1674,39 +1809,61 @@ export default function Hero() {
         ====================================================== */
 
         .tp-browser-header {
-          height: 58px;
+          height:
+            58px;
 
           padding:
             0 22px;
 
-          display: grid;
+          display:
+            grid;
 
           grid-template-columns:
-            1fr auto 1fr;
+            1fr
+            auto
+            1fr;
 
-          align-items: center;
+          align-items:
+            center;
 
           border-bottom:
             1px solid
-            rgba(0, 0, 0, 0.07);
+            rgba(
+              0,
+              0,
+              0,
+              0.07
+            );
 
           background:
-            rgba(255, 255, 255, 0.96);
+            rgba(
+              255,
+              255,
+              255,
+              0.96
+            );
         }
 
         .tp-browser-controls {
-          display: flex;
+          display:
+            flex;
 
-          align-items: center;
+          align-items:
+            center;
 
-          gap: 8px;
+          gap:
+            8px;
         }
 
         .tp-browser-controls span {
-          width: 9px;
-          height: 9px;
+          width:
+            9px;
 
-          border-radius: 50%;
+          height:
+            9px;
+
+          border-radius:
+            50%;
 
           background:
             #d8d8d8;
@@ -1738,7 +1895,12 @@ export default function Hero() {
 
           border:
             1px solid
-            rgba(0, 0, 0, 0.07);
+            rgba(
+              0,
+              0,
+              0,
+              0.07
+            );
 
           border-radius:
             999px;
@@ -1758,7 +1920,7 @@ export default function Hero() {
             end;
 
           color:
-            #aaa;
+            #aaaaaa;
         }
 
         /* ======================================================
@@ -1771,7 +1933,10 @@ export default function Hero() {
 
           grid-template-columns:
             190px
-            minmax(0, 1fr);
+            minmax(
+              0,
+              1fr
+            );
 
           min-height:
             475px;
@@ -1807,7 +1972,12 @@ export default function Hero() {
 
           border-right:
             1px solid
-            rgba(0, 0, 0, 0.07);
+            rgba(
+              0,
+              0,
+              0,
+              0.07
+            );
         }
 
         .tp-app-logo {
@@ -1940,7 +2110,12 @@ export default function Hero() {
 
           border-top:
             1px solid
-            rgba(0, 0, 0, 0.06);
+            rgba(
+              0,
+              0,
+              0,
+              0.06
+            );
         }
 
         .tp-user-avatar {
@@ -1998,7 +2173,7 @@ export default function Hero() {
         }
 
         /* ======================================================
-           APP MAIN
+           MAIN APP
         ====================================================== */
 
         .tp-app-main {
@@ -2115,7 +2290,10 @@ export default function Hero() {
           grid-template-columns:
             repeat(
               3,
-              minmax(0, 1fr)
+              minmax(
+                0,
+                1fr
+              )
             );
 
           gap:
@@ -2131,13 +2309,23 @@ export default function Hero() {
 
           border:
             1px solid
-            rgba(0, 0, 0, 0.065);
+            rgba(
+              0,
+              0,
+              0,
+              0.065
+            );
 
           border-radius:
             14px;
 
           background:
-            rgba(255, 255, 255, 0.82);
+            rgba(
+              255,
+              255,
+              255,
+              0.82
+            );
         }
 
         .tp-mini-stat-label {
@@ -2227,8 +2415,14 @@ export default function Hero() {
             grid;
 
           grid-template-columns:
-            minmax(0, 1.55fr)
-            minmax(220px, 0.75fr);
+            minmax(
+              0,
+              1.55fr
+            )
+            minmax(
+              220px,
+              0.75fr
+            );
 
           gap:
             12px;
@@ -2247,7 +2441,12 @@ export default function Hero() {
 
           border:
             1px solid
-            rgba(0, 0, 0, 0.065);
+            rgba(
+              0,
+              0,
+              0,
+              0.065
+            );
 
           border-radius:
             16px;
@@ -2307,7 +2506,12 @@ export default function Hero() {
 
           border:
             1px solid
-            rgba(0, 0, 0, 0.07);
+            rgba(
+              0,
+              0,
+              0,
+              0.07
+            );
 
           border-radius:
             7px;
@@ -2327,7 +2531,11 @@ export default function Hero() {
             grid;
 
           grid-template-columns:
-            54px minmax(0, 1fr);
+            54px
+            minmax(
+              0,
+              1fr
+            );
 
           min-height:
             57px;
@@ -2439,7 +2647,12 @@ export default function Hero() {
 
           box-shadow:
             0 10px 30px
-            rgba(0, 0, 0, 0.13);
+            rgba(
+              0,
+              0,
+              0,
+              0.13
+            );
         }
 
         .tp-ai-panel-icon {
@@ -2460,13 +2673,23 @@ export default function Hero() {
 
           border:
             1px solid
-            rgba(255, 255, 255, 0.08);
+            rgba(
+              255,
+              255,
+              255,
+              0.08
+            );
 
           border-radius:
             10px;
 
           background:
-            rgba(255, 255, 255, 0.08);
+            rgba(
+              255,
+              255,
+              255,
+              0.08
+            );
         }
 
         .tp-ai-panel-label {
@@ -2542,7 +2765,12 @@ export default function Hero() {
             999px;
 
           background:
-            rgba(255, 255, 255, 0.08);
+            rgba(
+              255,
+              255,
+              255,
+              0.08
+            );
         }
 
         .tp-progress span {
@@ -2589,7 +2817,7 @@ export default function Hero() {
         }
 
         /* ======================================================
-           FLOATING CARDS
+           FLOATING AI CARD
         ====================================================== */
 
         .tp-ai-card {
@@ -2597,13 +2825,17 @@ export default function Hero() {
             absolute;
 
           z-index:
-            5;
+            12;
 
           left:
             max(
               0px,
               calc(
-                (100% - 1160px) / 2
+                (
+                  100% -
+                  1160px
+                ) /
+                2
               )
             );
 
@@ -2627,13 +2859,23 @@ export default function Hero() {
 
           border:
             1px solid
-            rgba(255, 255, 255, 0.14);
+            rgba(
+              255,
+              255,
+              255,
+              0.14
+            );
 
           border-radius:
             14px;
 
           background:
-            rgba(10, 13, 18, 0.72);
+            rgba(
+              10,
+              13,
+              18,
+              0.72
+            );
 
           backdrop-filter:
             blur(20px);
@@ -2643,7 +2885,12 @@ export default function Hero() {
 
           box-shadow:
             0 20px 45px
-            rgba(0, 0, 0, 0.40);
+            rgba(
+              0,
+              0,
+              0,
+              0.40
+            );
 
           animation:
             tp-float-one
@@ -2702,7 +2949,12 @@ export default function Hero() {
             3px;
 
           color:
-            rgba(255, 255, 255, 0.48);
+            rgba(
+              255,
+              255,
+              255,
+              0.48
+            );
 
           font-size:
             8px;
@@ -2726,7 +2978,12 @@ export default function Hero() {
 
           box-shadow:
             0 0 10px
-            rgba(98, 247, 194, 0.8);
+            rgba(
+              98,
+              247,
+              194,
+              0.8
+            );
 
           animation:
             tp-pulse
@@ -2735,18 +2992,26 @@ export default function Hero() {
             infinite;
         }
 
+        /* ======================================================
+           FLOATING FOCUS CARD
+        ====================================================== */
+
         .tp-focus-card {
           position:
             absolute;
 
           z-index:
-            5;
+            12;
 
           right:
             max(
               0px,
               calc(
-                (100% - 1160px) / 2
+                (
+                  100% -
+                  1160px
+                ) /
+                2
               )
             );
 
@@ -2770,13 +3035,23 @@ export default function Hero() {
 
           border:
             1px solid
-            rgba(255, 255, 255, 0.14);
+            rgba(
+              255,
+              255,
+              255,
+              0.14
+            );
 
           border-radius:
             14px;
 
           background:
-            rgba(10, 13, 18, 0.72);
+            rgba(
+              10,
+              13,
+              18,
+              0.72
+            );
 
           backdrop-filter:
             blur(18px);
@@ -2786,7 +3061,12 @@ export default function Hero() {
 
           box-shadow:
             0 20px 45px
-            rgba(0, 0, 0, 0.40);
+            rgba(
+              0,
+              0,
+              0,
+              0.40
+            );
 
           animation:
             tp-float-two
@@ -2815,12 +3095,25 @@ export default function Hero() {
             10px;
 
           background:
-            rgba(255, 255, 255, 0.10);
+            rgba(
+              255,
+              255,
+              255,
+              0.10
+            );
+
+          color:
+            #ffffff;
         }
 
         .tp-focus-card-label {
           color:
-            rgba(255, 255, 255, 0.45);
+            rgba(
+              255,
+              255,
+              255,
+              0.45
+            );
 
           font-size:
             8px;
@@ -2838,44 +3131,6 @@ export default function Hero() {
 
           font-weight:
             700;
-        }
-
-        /* ======================================================
-           CAPTION
-        ====================================================== */
-
-        .tp-preview-caption {
-          margin-top:
-            18px;
-
-          display:
-            flex;
-
-          align-items:
-            center;
-
-          justify-content:
-            center;
-
-          gap:
-            12px;
-
-          color:
-            rgba(255, 255, 255, 0.42);
-
-          font-size:
-            9px;
-        }
-
-        .tp-caption-divider {
-          width:
-            30px;
-
-          height:
-            1px;
-
-          background:
-            rgba(255, 255, 255, 0.20);
         }
 
         /* ======================================================
@@ -2934,7 +3189,9 @@ export default function Hero() {
         @media (max-width: 1100px) {
           .tp-browser-window {
             width:
-              calc(100% - 40px);
+              calc(
+                100% - 40px
+              );
           }
         }
 
@@ -2942,7 +3199,10 @@ export default function Hero() {
           .tp-app {
             grid-template-columns:
               165px
-              minmax(0, 1fr);
+              minmax(
+                0,
+                1fr
+              );
           }
 
           .tp-app-main {
@@ -2952,7 +3212,10 @@ export default function Hero() {
 
           .tp-dashboard-grid {
             grid-template-columns:
-              minmax(0, 1fr);
+              minmax(
+                0,
+                1fr
+              );
           }
 
           .tp-ai-panel {
@@ -2986,7 +3249,9 @@ export default function Hero() {
 
           .tp-hero-container {
             width:
-              calc(100% - 28px);
+              calc(
+                100% - 28px
+              );
           }
 
           .tp-hero-title {
@@ -3109,13 +3374,6 @@ export default function Hero() {
             object-position:
               center center;
           }
-
-          .tp-star::after {
-            width:
-              calc(
-                var(--tp-trail) * 0.72
-              );
-          }
         }
 
         /* ======================================================
@@ -3210,34 +3468,9 @@ export default function Hero() {
               14px;
           }
 
-          .tp-preview-caption {
-            flex-direction:
-              column;
-
-            gap:
-              5px;
-          }
-
-          .tp-caption-divider {
-            display:
-              none;
-          }
-
           .tp-earth-video {
             object-position:
               center center;
-          }
-
-          .tp-falling-stars {
-            inset:
-              -10%;
-          }
-
-          .tp-star::after {
-            width:
-              calc(
-                var(--tp-trail) * 0.55
-              );
           }
         }
 
@@ -3245,8 +3478,10 @@ export default function Hero() {
            REDUCED MOTION
         ====================================================== */
 
-        @media (prefers-reduced-motion: reduce) {
-          .tp-star,
+        @media (
+          prefers-reduced-motion:
+            reduce
+        ) {
           .tp-ai-card,
           .tp-focus-card,
           .tp-eyebrow-dot,
@@ -3301,7 +3536,7 @@ function MiniStat({
 }
 
 /* ================================================================
-   SCHEDULE
+   SCHEDULE ROW
 ================================================================ */
 
 function Schedule({
@@ -3315,13 +3550,17 @@ function Schedule({
   title: string;
   description: string;
   active?: boolean;
-  type?: "focus" | "meeting" | "break";
+  type?:
+    | "focus"
+    | "meeting"
+    | "break";
 }) {
   return (
     <div
-      className={`tp-schedule-row ${
-        active ? "active" : ""
-      }`}
+      className={`
+        tp-schedule-row
+        ${active ? "active" : ""}
+      `}
       data-type={type}
     >
       <div className="tp-schedule-time">
