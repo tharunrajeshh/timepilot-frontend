@@ -319,19 +319,14 @@ export default function LoginPage() {
       ======================================================== */}
 
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        {/* Deep space base gradient */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_#0d0c22_0%,_#05060f_55%,_#020208_100%)]" />
 
-        {/* Nebula glow — violet */}
         <div className="absolute -left-40 top-10 h-[520px] w-[520px] rounded-full bg-violet-600/25 blur-[140px]" />
 
-        {/* Nebula glow — blue */}
         <div className="absolute -right-32 top-[15%] h-[460px] w-[460px] rounded-full bg-blue-600/20 blur-[130px]" />
 
-        {/* Nebula glow — emerald */}
         <div className="absolute bottom-[-180px] left-1/2 h-[420px] w-[700px] -translate-x-1/2 rounded-full bg-emerald-500/10 blur-[150px]" />
 
-        {/* Tech grid */}
         <div
           className="absolute inset-0 opacity-[0.035]"
           style={{
@@ -384,11 +379,18 @@ export default function LoginPage() {
           ================================================== */}
 
           <div className="clock-area relative hidden min-h-[600px] items-center justify-center lg:flex xl:min-h-[650px]">
-            <div className="pointer-events-none absolute left-1/2 top-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/[0.06] xl:h-[500px] xl:w-[500px]" />
-
-            <div className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/[0.04] xl:h-[600px] xl:w-[600px]" />
-
             <div className="absolute inset-0 flex items-center justify-center">
+              {/* Halo behind clock */}
+              <div className="pointer-events-none absolute left-1/2 top-1/2 h-[560px] w-[560px] -translate-x-1/2 -translate-y-1/2">
+                <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle,_rgba(124,58,237,0.35)_0%,_rgba(124,58,237,0.08)_45%,_transparent_70%)] blur-2xl" />
+                <div className="absolute inset-[15%] rounded-full border border-violet-400/15" />
+                <div className="absolute inset-[28%] rounded-full border border-white/[0.06]" />
+              </div>
+
+              {/* Orbit rings */}
+              <div className="pointer-events-none absolute left-1/2 top-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/[0.05] xl:h-[500px] xl:w-[500px]" />
+              <div className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/[0.03] xl:h-[600px] xl:w-[600px]" />
+
               {isDesktop && <Clock3D />}
             </div>
 
@@ -496,7 +498,6 @@ export default function LoginPage() {
                 ref={cardRef}
                 className="relative overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.05] p-5 shadow-[0_25px_80px_rgba(0,0,0,0.55)] backdrop-blur-3xl sm:rounded-[28px] sm:p-7"
               >
-                {/* Top highlight */}
                 <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
 
                 {/* Google */}

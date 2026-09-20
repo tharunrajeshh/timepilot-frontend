@@ -28,7 +28,7 @@ export default function Starfield() {
     type Star = {
       x: number;
       y: number;
-      z: number; // depth 0..1 (parallax)
+      z: number;
       r: number;
       baseAlpha: number;
       twinkleSpeed: number;
@@ -83,27 +83,22 @@ export default function Starfield() {
       last = now;
       elapsed += delta;
 
-      // Smooth pointer
       pointer.x += (targetPointer.x - pointer.x) * 0.06;
       pointer.y += (targetPointer.y - pointer.y) * 0.06;
 
-      // Trail fade — gives a subtle "glow smear"
       ctx.clearRect(0, 0, width, height);
 
       for (let i = 0; i < stars.length; i++) {
         const s = stars[i];
 
-        // Drift downward slowly (space drift)
         if (!reduceMotion) {
           s.y += (0.02 + s.z * 0.06) * (delta * 60);
           if (s.y > height + 2) s.y = -2;
         }
 
-        // Parallax with pointer (deeper stars move less)
         const px = s.x + pointer.x * (10 + s.z * 25);
         const py = s.y + pointer.y * (10 + s.z * 25);
 
-        // Twinkle
         const twinkle = reduceMotion
           ? 1
           : 0.6 +
@@ -112,13 +107,11 @@ export default function Starfield() {
 
         const alpha = s.baseAlpha * twinkle;
 
-        // Star body
         ctx.beginPath();
         ctx.arc(px, py, s.r, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(255,255,255,${alpha})`;
         ctx.fill();
 
-        // Soft glow for larger stars
         if (s.r > 1.1) {
           ctx.beginPath();
           ctx.arc(px, py, s.r * 3.5, 0, Math.PI * 2);
