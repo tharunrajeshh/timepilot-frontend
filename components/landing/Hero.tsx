@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import {
   ArrowUpRight,
   BarChart3,
@@ -15,21 +15,33 @@ import {
 
 /* ═══════════════════════════════════════════════════════════════
    ✏️  CUSTOMIZE YOUR CONTENT HERE
+   Change these values — everything else in the file picks them up.
 ═══════════════════════════════════════════════════════════════ */
 
 const BRAND = {
-  name: "TimePilot",
-  logoLetter: "T",
+  name: "TimePilot",          // shows in browser window address bar
+  logoLetter: "T",             // shown in the app sidebar logo
 };
 
 const HERO = {
   eyebrow: "Intelligent time management",
+
   titleLine1: "Take control",
   titleLine2: "of your time.",
+
   description:
     "TimePilot turns your tasks, priorities and schedule into a focused day you can actually finish.",
-  primaryCta: { label: "Get started", href: "/signup" },
-  secondaryCta: { label: "Explore TimePilot", href: "#features" },
+
+  primaryCta: {
+    label: "Get started",
+    href: "/signup",
+  },
+
+  secondaryCta: {
+    label: "Explore TimePilot",
+    href: "#features",
+  },
+
   trust: [
     { label: "AI-assisted planning", accent: "purple" as const },
     { label: "Smart scheduling",     accent: "blue"   as const },
@@ -53,7 +65,11 @@ const APP_SIDEBAR = {
     { label: "AI Planner", icon: "brain"    as const, active: false },
     { label: "Analytics",  icon: "chart"    as const, active: false },
   ],
-  workspace: { name: "My workspace", type: "Personal", avatar: "M" },
+  workspace: {
+    name: "My workspace",
+    type: "Personal",
+    avatar: "M",
+  },
 };
 
 const APP_DASHBOARD = {
@@ -61,17 +77,20 @@ const APP_DASHBOARD = {
   greeting: "Good morning.",
   subtitle: "Here's your plan for today.",
   profileAvatar: "M",
+
   stats: [
     { title: "Focus time",      value: "4h 32m", change: "+18%" },
     { title: "Tasks completed", value: "8 / 11", change: "+3"   },
     { title: "Deep work",       value: "72%",    change: "+12%" },
   ],
+
   schedule: [
-    { time: "09:00", title: "Deep work",    description: "Product strategy",   active: true,  type: "focus"   as const },
-    { time: "11:00", title: "Team sync",    description: "Weekly planning",    active: false, type: "meeting" as const },
-    { time: "13:30", title: "Lunch break",  description: "Take a real break",  active: false, type: "break"   as const },
-    { time: "14:30", title: "Project work", description: "Dashboard redesign", active: false, type: "focus"   as const },
+    { time: "09:00", title: "Deep work",     description: "Product strategy",    active: true,  type: "focus"   as const },
+    { time: "11:00", title: "Team sync",     description: "Weekly planning",     active: false, type: "meeting" as const },
+    { time: "13:30", title: "Lunch break",   description: "Take a real break",   active: false, type: "break"   as const },
+    { time: "14:30", title: "Project work",  description: "Dashboard redesign",  active: false, type: "focus"   as const },
   ],
+
   aiPanel: {
     label: "AI PLANNER",
     headline: "Your strongest focus window is",
@@ -88,58 +107,153 @@ const PREVIEW_CAPTION = {
   right: "Built around how you actually work.",
 };
 
-/* Background video — cinematic space footage */
-const BACKGROUND_VIDEO =
-  "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260702_051048_5ef213b5-26db-4da8-b604-7ef823760b6b.mp4";
+/* Background image paths — drop your own files into /public/images */
+const BACKGROUNDS = {
+  spaceImage: "/images/earth-bg.jpg",       // main hero space image
+  marsImage:  "/images/mars-surface.jpg",   // planet at the bottom
+};
+
+/* ═══════════════════════════════════════════════════════════════
+   STAR FIELD — nothing to edit here, just falls randomly
+═══════════════════════════════════════════════════════════════ */
+
+type StarDef = {
+  left: number;
+  size: number;
+  duration: number;
+  delay: number;
+  drift: number;
+};
+
+function useStarField(count: number): StarDef[] {
+  return useMemo(() => {
+    return Array.from({ length: count }).map(() => ({
+      left: Math.random() * 100,
+      size: 1 + Math.random() * 2,
+      duration: 3 + Math.random() * 5,
+      delay: Math.random() * 8,
+      drift: -60 + Math.random() * 120,
+    }));
+  }, [count]);
+}
 
 /* ═══════════════════════════════════════════════════════════════
    HERO
 ═══════════════════════════════════════════════════════════════ */
 
 export default function Hero() {
-  const heroRef = useRef<HTMLElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const stars = useStarField(35);
 
-  /* Ensure autoplay works even if browser throttles it */
+  const heroRef = useRef<HTMLElement>(null);
+  const spaceImageRef = useRef<HTMLDivElement>(null);
+  const marsImageRef = useRef<HTMLDivElement>(null);
+  const marsGlowRef = useRef<HTMLDivElement>(null);
+  const starsLayerRef = useRef<HTMLDivElement>(null);
+  const glowLeftRef = useRef<HTMLDivElement>(null);
+  const glowRightRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    const v = videoRef.current;
-    if (!v) return;
-    v.play().catch(() => {
-      /* Autoplay blocked — video just stays paused on first frame */
-    });
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+    if (reduceMotion) return;
+
+    const hero = heroRef.current;
+    if (!hero) return;
+
+    let raf = 0;
+    let targetX = 0;
+    let targetY = 0;
+    let currentX = 0;
+    let currentY = 0;
+
+    const handleMove = (e: MouseEvent) => {
+      const rect = hero.getBoundingClientRect();
+      targetX = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
+      targetY = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
+    };
+
+    const tick = () => {
+      currentX += (targetX - currentX) * 0.06;
+      currentY += (targetY - currentY) * 0.06;
+
+      if (spaceImageRef.current) {
+        spaceImageRef.current.style.transform = `scale(1.06) translate(${currentX * -10}px, ${currentY * -8}px)`;
+      }
+      if (marsImageRef.current) {
+        marsImageRef.current.style.transform = `translateX(calc(-50% + ${currentX * 22}px)) translateY(${currentY * 14}px)`;
+      }
+      if (marsGlowRef.current) {
+        marsGlowRef.current.style.transform = `translateX(calc(-50% + ${currentX * 16}px))`;
+      }
+      if (starsLayerRef.current) {
+        starsLayerRef.current.style.transform = `translate(${currentX * 18}px, ${currentY * 12}px)`;
+      }
+      if (glowLeftRef.current) {
+        glowLeftRef.current.style.transform = `translate(${currentX * 26}px, ${currentY * 18}px)`;
+      }
+      if (glowRightRef.current) {
+        glowRightRef.current.style.transform = `translate(${currentX * -26}px, ${currentY * -18}px)`;
+      }
+
+      raf = requestAnimationFrame(tick);
+    };
+
+    window.addEventListener("mousemove", handleMove);
+    raf = requestAnimationFrame(tick);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMove);
+      cancelAnimationFrame(raf);
+    };
   }, []);
 
   return (
     <section id="top" className="tp-hero" ref={heroRef}>
-      {/* ═══════════════════════════════════════════════════════
-          BACKGROUND VIDEO
-      ═══════════════════════════════════════════════════════ */}
-      <video
-        ref={videoRef}
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload="auto"
-        className="tp-hero-video"
-      >
-        <source src={BACKGROUND_VIDEO} type="video/mp4" />
-      </video>
+      {/* BACKGROUND */}
+      <div className="tp-hero-background">
+        <div
+          className="tp-space-image"
+          ref={spaceImageRef}
+          style={{ backgroundImage: `url("${BACKGROUNDS.spaceImage}")` }}
+        />
 
-      {/* Cinematic gradient overlays for text legibility */}
-      <div className="tp-hero-overlay" />
-      <div className="tp-hero-vignette" />
+        <div className="tp-falling-stars" ref={starsLayerRef}>
+          {stars.map((star, i) => (
+            <span
+              key={i}
+              className="tp-star"
+              style={
+                {
+                  left: `${star.left}vw`,
+                  width: `${star.size}px`,
+                  height: `${star.size}px`,
+                  animationDuration: `${star.duration}s`,
+                  animationDelay: `${star.delay}s`,
+                  "--tp-drift": `${star.drift}px`,
+                } as React.CSSProperties
+              }
+            />
+          ))}
+        </div>
 
-      {/* Subtle floating glows */}
-      <div className="tp-hero-glow tp-hero-glow-left" />
-      <div className="tp-hero-glow tp-hero-glow-right" />
+        <div className="tp-space-overlay" />
 
-      {/* ═══════════════════════════════════════════════════════
-          CONTENT
-      ═══════════════════════════════════════════════════════ */}
+        <div
+          className="tp-mars-image"
+          ref={marsImageRef}
+          style={{ backgroundImage: `linear-gradient(135deg, rgba(255,255,255,0.06), rgba(0,0,0,0.08)), url("${BACKGROUNDS.marsImage}")` }}
+        />
+        <div className="tp-mars-glow" ref={marsGlowRef} />
+      </div>
+
+      <div className="tp-hero-glow tp-hero-glow-left" ref={glowLeftRef} />
+      <div className="tp-hero-glow tp-hero-glow-right" ref={glowRightRef} />
+
+      {/* CONTENT */}
       <div className="tp-hero-container">
-        {/* Liquid glass eyebrow pill */}
-        <div className="tp-hero-eyebrow liquid-glass">
+        {/* Eyebrow */}
+        <div className="tp-hero-eyebrow">
           <span className="tp-eyebrow-dot" />
           <span>{HERO.eyebrow}</span>
           <span className="tp-eyebrow-arrow">↗</span>
@@ -163,7 +277,7 @@ export default function Hero() {
             </span>
           </Link>
 
-          <a href={HERO.secondaryCta.href} className="tp-explore liquid-glass">
+          <a href={HERO.secondaryCta.href} className="tp-explore">
             <span>{HERO.secondaryCta.label}</span>
             <span className="tp-explore-arrow">↓</span>
           </a>
@@ -172,24 +286,25 @@ export default function Hero() {
         {/* Trust row */}
         <div className="tp-trust">
           {HERO.trust.map((item, i) => (
-            <div key={item.label} className="tp-trust-group">
-              {i > 0 && <span className="tp-trust-divider" />}
-              <div className={`tp-trust-item tp-trust-${item.accent}`}>
+            <>
+              {i > 0 && <span key={`d-${i}`} className="tp-trust-divider" />}
+              <div
+                key={item.label}
+                className={`tp-trust-item tp-trust-${item.accent}`}
+              >
                 <span className="tp-trust-icon">
                   <Check size={12} strokeWidth={2.7} />
                 </span>
                 <span>{item.label}</span>
               </div>
-            </div>
+            </>
           ))}
         </div>
 
-        {/* ═══════════════════════════════════════════════════════
-            PRODUCT SHOWCASE
-        ═══════════════════════════════════════════════════════ */}
+        {/* Product preview */}
         <div className="tp-preview-wrapper">
           {/* Floating AI card */}
-          <div className="tp-ai-card liquid-glass">
+          <div className="tp-ai-card">
             <div className="tp-ai-card-icon">
               <Sparkles size={17} />
             </div>
@@ -201,7 +316,7 @@ export default function Hero() {
           </div>
 
           {/* Floating focus card */}
-          <div className="tp-focus-card liquid-glass">
+          <div className="tp-focus-card">
             <div className="tp-focus-card-icon">
               <Clock3 size={17} />
             </div>
@@ -215,24 +330,32 @@ export default function Hero() {
           <div className="tp-browser-window">
             <div className="tp-browser-header">
               <div className="tp-browser-controls">
-                <span /><span /><span />
+                <span />
+                <span />
+                <span />
               </div>
               <div className="tp-browser-address">app.{BRAND.name.toLowerCase()}</div>
               <MoreHorizontal size={18} className="tp-browser-more" />
             </div>
 
             <div className="tp-app">
+              {/* Sidebar */}
               <aside className="tp-app-sidebar">
                 <div className="tp-app-logo">{BRAND.logoLetter}</div>
 
                 <div className="tp-app-navigation">
                   {APP_SIDEBAR.nav.map((item) => {
                     const Icon =
-                      item.icon === "calendar" ? CalendarDays
-                      : item.icon === "brain"   ? Brain
-                      :                           BarChart3;
+                      item.icon === "calendar"
+                        ? CalendarDays
+                        : item.icon === "brain"
+                        ? Brain
+                        : BarChart3;
                     return (
-                      <div key={item.label} className={`tp-app-nav ${item.active ? "active" : ""}`}>
+                      <div
+                        key={item.label}
+                        className={`tp-app-nav ${item.active ? "active" : ""}`}
+                      >
                         <Icon size={16} />
                         <span>{item.label}</span>
                       </div>
@@ -249,6 +372,7 @@ export default function Hero() {
                 </div>
               </aside>
 
+              {/* Main */}
               <main className="tp-app-main">
                 <div className="tp-app-heading">
                   <div>
@@ -261,7 +385,12 @@ export default function Hero() {
 
                 <div className="tp-stats">
                   {APP_DASHBOARD.stats.map((s) => (
-                    <MiniStat key={s.title} title={s.title} value={s.value} change={s.change} />
+                    <MiniStat
+                      key={s.title}
+                      title={s.title}
+                      value={s.value}
+                      change={s.change}
+                    />
                   ))}
                 </div>
 
@@ -293,15 +422,22 @@ export default function Hero() {
                     <div className="tp-ai-panel-icon">
                       <Sparkles size={17} />
                     </div>
-                    <span className="tp-ai-panel-label">{APP_DASHBOARD.aiPanel.label}</span>
+
+                    <span className="tp-ai-panel-label">
+                      {APP_DASHBOARD.aiPanel.label}
+                    </span>
+
                     <h3>
                       {APP_DASHBOARD.aiPanel.headline}{" "}
                       <strong>{APP_DASHBOARD.aiPanel.headlineStrong}</strong>
                     </h3>
+
                     <p>{APP_DASHBOARD.aiPanel.body}</p>
+
                     <div className="tp-progress">
                       <span style={{ width: `${APP_DASHBOARD.aiPanel.progress}%` }} />
                     </div>
+
                     <div className="tp-ai-panel-bottom">
                       <span>{APP_DASHBOARD.aiPanel.footLeft}</span>
                       <strong>{APP_DASHBOARD.aiPanel.footRight}</strong>
@@ -322,97 +458,149 @@ export default function Hero() {
       </div>
 
       {/* ═══════════════════════════════════════════════════════════
-          STYLES
+          STYLES — leave as-is unless changing the design
       ═══════════════════════════════════════════════════════════ */}
       <style jsx>{`
-        /* ─── HERO SHELL ─────────────────────────────────── */
         .tp-hero {
           position: relative;
           width: 100%;
           min-height: 100vh;
-          min-height: 100dvh;
           padding-top: 150px;
           padding-bottom: 100px;
           overflow: hidden;
           background: #050505;
           color: #ffffff;
-          isolation: isolate;
         }
 
-        /* ─── VIDEO BACKGROUND ────────────────────────────── */
-        .tp-hero-video {
+        .tp-hero-background {
           position: absolute;
           inset: 0;
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          z-index: 0;
           pointer-events: none;
-          transform: scale(1.02);
+          overflow: hidden;
+          background: #050505;
         }
 
-        /* Gradient overlays for text legibility */
-        .tp-hero-overlay {
+        .tp-space-image {
+          position: absolute;
+          inset: -30px;
+          background-size: cover;
+          background-position: center;
+          background-repeat: no-repeat;
+          opacity: 0.78;
+          transform: scale(1.06);
+          filter: saturate(0.85);
+          will-change: transform;
+          transition: transform 0.1s linear;
+        }
+
+        .tp-falling-stars {
+          position: absolute;
+          inset: -40px;
+          z-index: 2;
+          overflow: hidden;
+          pointer-events: none;
+          will-change: transform;
+        }
+
+        .tp-star {
+          position: absolute;
+          top: -5%;
+          background: #ffffff;
+          border-radius: 50%;
+          box-shadow: 0 0 6px 2px rgba(255, 255, 255, 0.75);
+          animation-name: tp-fall;
+          animation-timing-function: linear;
+          animation-iteration-count: infinite;
+          opacity: 0;
+        }
+
+        .tp-star::after {
+          content: "";
+          position: absolute;
+          top: 50%;
+          right: 100%;
+          width: 46px;
+          height: 1px;
+          background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.7));
+          transform: translateY(-50%);
+        }
+
+        @keyframes tp-fall {
+          0%   { transform: translate(0, -10vh); opacity: 0; }
+          8%   { opacity: 1; }
+          85%  { opacity: 1; }
+          100% { transform: translate(var(--tp-drift, 0px), 115vh); opacity: 0; }
+        }
+
+        .tp-space-overlay {
           position: absolute;
           inset: 0;
-          z-index: 1;
-          pointer-events: none;
+          z-index: 3;
           background:
-            radial-gradient(circle at 50% 30%, rgba(0, 0, 0, 0.05), transparent 45%),
-            linear-gradient(
-              to bottom,
-              rgba(3, 5, 9, 0.55) 0%,
-              rgba(3, 5, 9, 0.35) 35%,
-              rgba(3, 5, 9, 0.55) 70%,
-              rgba(3, 5, 9, 0.92) 100%
-            );
+            radial-gradient(circle at 50% 12%, rgba(0,0,0,0.05), transparent 28%),
+            radial-gradient(circle at 50% 42%, rgba(0,0,0,0.12), transparent 42%),
+            linear-gradient(to bottom,
+              rgba(3,5,9,0.10) 0%,
+              rgba(3,5,9,0.18) 42%,
+              rgba(3,5,9,0.76) 78%,
+              #050505 100%);
         }
 
-        .tp-hero-vignette {
+        .tp-mars-image {
           position: absolute;
-          inset: 0;
-          z-index: 1;
-          pointer-events: none;
-          background: radial-gradient(
-            ellipse at center,
-            transparent 0%,
-            transparent 45%,
-            rgba(0, 0, 0, 0.55) 100%
-          );
+          left: 50%;
+          bottom: -420px;
+          width: min(920px, 82vw);
+          aspect-ratio: 1 / 1;
+          transform: translateX(-50%);
+          border-radius: 50%;
+          background-size: cover;
+          background-position: center;
+          opacity: 0.88;
+          box-shadow:
+            inset -90px -100px 160px rgba(0,0,0,0.62),
+            inset 60px 40px 120px rgba(255,255,255,0.07),
+            0 -20px 100px rgba(255,110,50,0.08);
+          mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.15) 14%, black 30%, black 100%);
+          -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.15) 14%, black 30%, black 100%);
+          animation: tp-mars-float 10s ease-in-out infinite;
+          will-change: transform;
+          z-index: 4;
         }
 
-        /* ─── DECORATIVE GLOWS ────────────────────────────── */
+        .tp-mars-glow {
+          position: absolute;
+          left: 50%;
+          bottom: -360px;
+          width: min(850px, 75vw);
+          height: min(260px, 25vw);
+          transform: translateX(-50%);
+          border-radius: 50%;
+          background: radial-gradient(ellipse,
+            rgba(220,78,35,0.24),
+            rgba(150,45,25,0.10) 35%,
+            transparent 72%);
+          filter: blur(45px);
+          opacity: 0.65;
+          will-change: transform;
+          z-index: 4;
+        }
+
         .tp-hero-glow {
           position: absolute;
-          width: 620px;
-          height: 620px;
+          width: 600px;
+          height: 600px;
           border-radius: 50%;
-          filter: blur(140px);
+          filter: blur(120px);
           pointer-events: none;
-          opacity: 0.35;
-          z-index: 2;
-          animation: tp-glow-drift 18s ease-in-out infinite;
+          opacity: 0.28;
+          z-index: 5;
+          will-change: transform;
         }
 
-        .tp-hero-glow-left {
-          top: 8%;
-          left: -380px;
-          background: rgba(92, 62, 190, 0.28);
-        }
+        .tp-hero-glow-left  { top: 120px; left: -420px;  background: rgba(92,62,190,0.18); }
+        .tp-hero-glow-right { top: 450px; right: -420px; background: rgba(40,100,180,0.16); }
 
-        .tp-hero-glow-right {
-          top: 45%;
-          right: -380px;
-          background: rgba(40, 100, 180, 0.24);
-          animation-delay: -9s;
-        }
-
-        @keyframes tp-glow-drift {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          50%      { transform: translate(30px, -20px) scale(1.08); }
-        }
-
-        /* ─── CONTAINER ───────────────────────────────────── */
         .tp-hero-container {
           position: relative;
           z-index: 10;
@@ -421,56 +609,21 @@ export default function Hero() {
           text-align: center;
         }
 
-        /* ─── LIQUID GLASS UTILITY ────────────────────────── */
-        .liquid-glass {
-          background: rgba(255, 255, 255, 0.01);
-          background-blend-mode: luminosity;
-          backdrop-filter: blur(10px) saturate(140%);
-          -webkit-backdrop-filter: blur(10px) saturate(140%);
-          border: none;
-          box-shadow:
-            inset 0 1px 1px rgba(255, 255, 255, 0.1),
-            0 12px 40px rgba(0, 0, 0, 0.28);
-          position: relative;
-          overflow: hidden;
-        }
-
-        .liquid-glass::before {
-          content: "";
-          position: absolute;
-          inset: 0;
-          border-radius: inherit;
-          padding: 1.4px;
-          background: linear-gradient(
-            180deg,
-            rgba(255, 255, 255, 0.45) 0%,
-            rgba(255, 255, 255, 0.15) 20%,
-            rgba(255, 255, 255, 0) 40%,
-            rgba(255, 255, 255, 0) 60%,
-            rgba(255, 255, 255, 0.15) 80%,
-            rgba(255, 255, 255, 0.45) 100%
-          );
-          -webkit-mask:
-            linear-gradient(#fff 0 0) content-box,
-            linear-gradient(#fff 0 0);
-          -webkit-mask-composite: xor;
-          mask-composite: exclude;
-          pointer-events: none;
-        }
-
-        /* ─── EYEBROW ─────────────────────────────────────── */
         .tp-hero-eyebrow {
           display: inline-flex;
           align-items: center;
           gap: 9px;
-          height: 38px;
-          padding: 0 16px;
+          height: 34px;
+          padding: 0 14px;
+          border: 1px solid rgba(255,255,255,0.14);
           border-radius: 999px;
-          color: rgba(255, 255, 255, 0.85);
-          font-size: 11.5px;
+          background: rgba(255,255,255,0.07);
+          color: rgba(255,255,255,0.72);
+          font-size: 11px;
           font-weight: 600;
-          letter-spacing: 0.01em;
-          animation: tp-fade-up 700ms cubic-bezier(.16, 1, .3, 1) both;
+          box-shadow: 0 10px 35px rgba(0,0,0,0.22);
+          backdrop-filter: blur(18px);
+          -webkit-backdrop-filter: blur(18px);
         }
 
         .tp-eyebrow-dot {
@@ -478,57 +631,47 @@ export default function Hero() {
           height: 6px;
           border-radius: 50%;
           background: #62f7c2;
-          box-shadow: 0 0 12px rgba(98, 247, 194, 0.85);
+          box-shadow: 0 0 12px rgba(98,247,194,0.8);
           animation: tp-pulse 2.5s ease-in-out infinite;
         }
 
-        .tp-eyebrow-arrow {
-          color: rgba(255, 255, 255, 0.5);
-          font-size: 12px;
-        }
+        .tp-eyebrow-arrow { color: rgba(255,255,255,0.42); }
 
-        /* ─── TITLE ───────────────────────────────────────── */
         .tp-hero-title {
           max-width: 1000px;
-          margin: 28px auto 0;
+          margin: 25px auto 0;
           font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-          font-size: clamp(56px, 8.5vw, 118px);
+          font-size: clamp(58px, 8.5vw, 118px);
           line-height: 0.90;
           letter-spacing: -0.075em;
           font-weight: 720;
           color: #ffffff;
-          text-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
-          animation: tp-fade-up 800ms 100ms cubic-bezier(.16, 1, .3, 1) both;
+          text-shadow: 0 10px 50px rgba(0,0,0,0.34);
         }
 
         .tp-hero-title > span { display: block; }
 
         .tp-hero-title-light {
-          color: rgba(255, 255, 255, 0.55);
+          color: rgba(255,255,255,0.50);
           font-weight: 420;
           letter-spacing: -0.082em;
         }
 
-        /* ─── DESCRIPTION ─────────────────────────────────── */
         .tp-hero-description {
           max-width: 620px;
-          margin: 32px auto 0;
-          color: rgba(255, 255, 255, 0.65);
+          margin: 30px auto 0;
+          color: rgba(255,255,255,0.60);
           font-size: clamp(15px, 1.5vw, 18px);
           line-height: 1.6;
           letter-spacing: -0.018em;
-          text-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
-          animation: tp-fade-up 800ms 200ms cubic-bezier(.16, 1, .3, 1) both;
         }
 
-        /* ─── BUTTONS ─────────────────────────────────────── */
         .tp-hero-buttons {
           display: flex;
           align-items: center;
           justify-content: center;
           gap: 12px;
-          margin-top: 34px;
-          animation: tp-fade-up 800ms 300ms cubic-bezier(.16, 1, .3, 1) both;
+          margin-top: 32px;
         }
 
         .tp-get-started {
@@ -538,7 +681,7 @@ export default function Hero() {
           align-items: center;
           justify-content: center;
           gap: 18px;
-          border: 1px solid rgba(255, 255, 255, 0.9);
+          border: 1px solid rgba(255,255,255,0.9);
           border-radius: 999px;
           background: #ffffff;
           color: #050505;
@@ -546,16 +689,14 @@ export default function Hero() {
           font-weight: 650;
           letter-spacing: -0.025em;
           text-decoration: none;
-          box-shadow: 0 15px 45px rgba(0, 0, 0, 0.5);
-          transition: transform 0.35s cubic-bezier(.16, 1, .3, 1),
-                      box-shadow 0.35s ease,
-                      background 0.3s ease;
+          box-shadow: 0 12px 35px rgba(0,0,0,0.35);
+          transition: transform 0.3s cubic-bezier(.16,1,.3,1), box-shadow 0.3s ease, background 0.3s ease;
         }
 
         .tp-get-started:hover {
           transform: translateY(-3px);
           background: #f3f3f3;
-          box-shadow: 0 22px 55px rgba(0, 0, 0, 0.6);
+          box-shadow: 0 18px 45px rgba(0,0,0,0.45);
         }
 
         .tp-get-started-icon {
@@ -567,7 +708,7 @@ export default function Hero() {
           border-radius: 50%;
           background: #050505;
           color: #ffffff;
-          transition: transform 0.35s cubic-bezier(.16, 1, .3, 1);
+          transition: transform 0.3s cubic-bezier(.16,1,.3,1);
         }
 
         .tp-get-started:hover .tp-get-started-icon {
@@ -581,24 +722,29 @@ export default function Hero() {
           align-items: center;
           justify-content: center;
           gap: 20px;
+          border: 1px solid rgba(255,255,255,0.16);
           border-radius: 999px;
-          color: rgba(255, 255, 255, 0.92);
+          background: rgba(255,255,255,0.07);
+          color: rgba(255,255,255,0.88);
           font-size: 15px;
           font-weight: 600;
           letter-spacing: -0.025em;
           text-decoration: none;
-          transition: transform 0.3s ease, box-shadow 0.3s ease;
+          box-shadow: 0 8px 30px rgba(0,0,0,0.16);
+          backdrop-filter: blur(15px);
+          -webkit-backdrop-filter: blur(15px);
+          transition: transform 0.3s ease, border-color 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
         }
 
         .tp-explore:hover {
           transform: translateY(-3px);
-          box-shadow:
-            inset 0 1px 1px rgba(255, 255, 255, 0.15),
-            0 18px 45px rgba(0, 0, 0, 0.45);
+          border-color: rgba(255,255,255,0.30);
+          background: rgba(255,255,255,0.11);
+          box-shadow: 0 14px 35px rgba(0,0,0,0.25);
         }
 
         .tp-explore-arrow {
-          color: rgba(255, 255, 255, 0.55);
+          color: rgba(255,255,255,0.48);
           font-size: 19px;
           transition: transform 0.3s ease, color 0.3s ease;
         }
@@ -608,20 +754,16 @@ export default function Hero() {
           transform: translateY(3px);
         }
 
-        /* ─── TRUST ROW ───────────────────────────────────── */
         .tp-trust {
           display: flex;
           align-items: center;
           justify-content: center;
           gap: 17px;
-          margin-top: 30px;
-          color: rgba(255, 255, 255, 0.55);
+          margin-top: 27px;
+          color: rgba(255,255,255,0.46);
           font-size: 12px;
           font-weight: 500;
-          animation: tp-fade-up 800ms 400ms cubic-bezier(.16, 1, .3, 1) both;
         }
-
-        .tp-trust-group { display: flex; align-items: center; gap: 17px; }
 
         .tp-trust-item {
           display: flex;
@@ -641,55 +783,46 @@ export default function Hero() {
           transition: transform 0.25s ease, box-shadow 0.25s ease;
         }
 
-        .tp-trust-purple .tp-trust-icon { background: rgba(139, 92, 246, 0.22); color: #a78bfa; box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.06); }
+        .tp-trust-purple .tp-trust-icon { background: rgba(139,92,246,0.16); color: #a78bfa; box-shadow: 0 0 0 4px rgba(139,92,246,0.035); }
         .tp-trust-purple:hover           { color: #c4b5fd; }
-        .tp-trust-purple:hover .tp-trust-icon { transform: scale(1.12); }
+        .tp-trust-purple:hover .tp-trust-icon { transform: scale(1.1); }
 
-        .tp-trust-blue .tp-trust-icon { background: rgba(59, 130, 246, 0.22); color: #60a5fa; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.06); }
+        .tp-trust-blue .tp-trust-icon { background: rgba(59,130,246,0.16); color: #60a5fa; box-shadow: 0 0 0 4px rgba(59,130,246,0.035); }
         .tp-trust-blue:hover          { color: #93c5fd; }
-        .tp-trust-blue:hover .tp-trust-icon { transform: scale(1.12); }
+        .tp-trust-blue:hover .tp-trust-icon { transform: scale(1.1); }
 
-        .tp-trust-green .tp-trust-icon { background: rgba(16, 185, 129, 0.22); color: #34d399; box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.06); }
+        .tp-trust-green .tp-trust-icon { background: rgba(16,185,129,0.16); color: #34d399; box-shadow: 0 0 0 4px rgba(16,185,129,0.035); }
         .tp-trust-green:hover           { color: #6ee7b7; }
-        .tp-trust-green:hover .tp-trust-icon { transform: scale(1.12); }
+        .tp-trust-green:hover .tp-trust-icon { transform: scale(1.1); }
 
         .tp-trust-divider {
           width: 1px;
           height: 18px;
-          background: rgba(255, 255, 255, 0.15);
+          background: rgba(255,255,255,0.12);
         }
 
-        /* ─── PRODUCT PREVIEW ─────────────────────────────── */
         .tp-preview-wrapper {
           position: relative;
           width: 100%;
-          margin-top: 80px;
-          animation: tp-fade-up 1000ms 500ms cubic-bezier(.16, 1, .3, 1) both;
+          margin-top: 70px;
         }
 
-        /* ─── BROWSER ─────────────────────────────────────── */
         .tp-browser-window {
           position: relative;
           width: min(1080px, calc(100% - 80px));
           margin: 0 auto;
           overflow: hidden;
-          border: 1px solid rgba(255, 255, 255, 0.16);
+          border: 1px solid rgba(255,255,255,0.14);
           border-radius: 30px;
           background: #ffffff;
-          box-shadow:
-            0 55px 140px rgba(0, 0, 0, 0.7),
-            0 20px 55px rgba(0, 0, 0, 0.4),
-            0 0 0 1px rgba(255, 255, 255, 0.05);
+          box-shadow: 0 45px 120px rgba(0,0,0,0.55), 0 15px 45px rgba(0,0,0,0.30);
           transform: perspective(1600px) rotateX(1deg);
           transition: transform 0.5s ease, box-shadow 0.5s ease;
         }
 
         .tp-browser-window:hover {
-          transform: perspective(1600px) rotateX(0deg) translateY(-5px);
-          box-shadow:
-            0 65px 145px rgba(0, 0, 0, 0.75),
-            0 18px 50px rgba(0, 0, 0, 0.4),
-            0 0 0 1px rgba(255, 255, 255, 0.08);
+          transform: perspective(1600px) rotateX(0deg) translateY(-4px);
+          box-shadow: 0 55px 125px rgba(0,0,0,0.62), 0 12px 40px rgba(0,0,0,0.30);
         }
 
         .tp-browser-header {
@@ -698,8 +831,8 @@ export default function Hero() {
           display: grid;
           grid-template-columns: 1fr auto 1fr;
           align-items: center;
-          border-bottom: 1px solid rgba(0, 0, 0, 0.07);
-          background: rgba(255, 255, 255, 0.96);
+          border-bottom: 1px solid rgba(0,0,0,0.07);
+          background: rgba(255,255,255,0.96);
         }
 
         .tp-browser-controls { display: flex; align-items: center; gap: 8px; }
@@ -713,7 +846,7 @@ export default function Hero() {
           display: flex;
           align-items: center;
           justify-content: center;
-          border: 1px solid rgba(0, 0, 0, 0.07);
+          border: 1px solid rgba(0,0,0,0.07);
           border-radius: 999px;
           background: #f8f8f8;
           color: #9a9a9a;
@@ -723,7 +856,6 @@ export default function Hero() {
 
         .tp-browser-more { justify-self: end; color: #aaa; }
 
-        /* ─── APP LAYOUT ──────────────────────────────────── */
         .tp-app {
           display: grid;
           grid-template-columns: 190px minmax(0, 1fr);
@@ -739,7 +871,7 @@ export default function Hero() {
           display: flex;
           flex-direction: column;
           background: #fff;
-          border-right: 1px solid rgba(0, 0, 0, 0.07);
+          border-right: 1px solid rgba(0,0,0,0.07);
         }
 
         .tp-app-logo {
@@ -754,7 +886,7 @@ export default function Hero() {
           color: #fff;
           font-size: 14px;
           font-weight: 700;
-          box-shadow: 0 6px 15px rgba(0, 0, 0, 0.14);
+          box-shadow: 0 6px 15px rgba(0,0,0,0.14);
         }
 
         .tp-app-navigation { display: flex; flex-direction: column; gap: 5px; }
@@ -793,7 +925,7 @@ export default function Hero() {
           display: flex;
           align-items: center;
           gap: 9px;
-          border-top: 1px solid rgba(0, 0, 0, 0.06);
+          border-top: 1px solid rgba(0,0,0,0.06);
         }
 
         .tp-user-avatar {
@@ -807,7 +939,7 @@ export default function Hero() {
           color: #fff;
           font-size: 9px;
           font-weight: 700;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.12);
         }
 
         .tp-user-name { color: #333; font-size: 9px; font-weight: 650; }
@@ -851,10 +983,9 @@ export default function Hero() {
           color: #fff;
           font-size: 10px;
           font-weight: 700;
-          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.14);
+          box-shadow: 0 5px 15px rgba(0,0,0,0.14);
         }
 
-        /* ─── STATS ───────────────────────────────────────── */
         .tp-stats {
           display: grid;
           grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -865,17 +996,17 @@ export default function Hero() {
         .tp-mini-stat {
           min-width: 0;
           padding: 15px 16px;
-          border: 1px solid rgba(0, 0, 0, 0.065);
+          border: 1px solid rgba(0,0,0,0.065);
           border-radius: 14px;
-          background: rgba(255, 255, 255, 0.82);
-          box-shadow: 0 4px 14px rgba(0, 0, 0, 0.025);
+          background: rgba(255,255,255,0.82);
+          box-shadow: 0 4px 14px rgba(0,0,0,0.025);
           transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
         }
 
         .tp-mini-stat:hover {
           transform: translateY(-2px);
-          border-color: rgba(0, 0, 0, 0.11);
-          box-shadow: 0 9px 24px rgba(0, 0, 0, 0.055);
+          border-color: rgba(0,0,0,0.11);
+          box-shadow: 0 9px 24px rgba(0,0,0,0.055);
         }
 
         .tp-mini-stat-label { color: #9b9b9b; font-size: 8px; font-weight: 650; text-transform: uppercase; letter-spacing: 0.06em; }
@@ -887,7 +1018,6 @@ export default function Hero() {
         .tp-mini-stat:nth-child(2)::after { background: #3B82F6; }
         .tp-mini-stat:nth-child(3)::after { background: #10B981; }
 
-        /* ─── DASHBOARD GRID ──────────────────────────────── */
         .tp-dashboard-grid {
           display: grid;
           grid-template-columns: minmax(0, 1.55fr) minmax(220px, 0.75fr);
@@ -899,10 +1029,10 @@ export default function Hero() {
         .tp-schedule {
           min-width: 0;
           padding: 18px;
-          border: 1px solid rgba(0, 0, 0, 0.065);
+          border: 1px solid rgba(0,0,0,0.065);
           border-radius: 16px;
           background: #fff;
-          box-shadow: 0 5px 18px rgba(0, 0, 0, 0.025);
+          box-shadow: 0 5px 18px rgba(0,0,0,0.025);
         }
 
         .tp-section-heading {
@@ -917,7 +1047,7 @@ export default function Hero() {
 
         .tp-section-heading button {
           padding: 6px 9px;
-          border: 1px solid rgba(0, 0, 0, 0.07);
+          border: 1px solid rgba(0,0,0,0.07);
           border-radius: 7px;
           background: #fafafa;
           color: #888;
@@ -966,7 +1096,6 @@ export default function Hero() {
           background: transparent;
         }
 
-        /* ─── AI PANEL ────────────────────────────────────── */
         .tp-ai-panel {
           min-width: 0;
           min-height: 100%;
@@ -976,7 +1105,7 @@ export default function Hero() {
           border-radius: 16px;
           background: linear-gradient(145deg, #151515, #0c0c0c);
           color: #fff;
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.13);
+          box-shadow: 0 10px 30px rgba(0,0,0,0.13);
           overflow: hidden;
         }
 
@@ -986,9 +1115,9 @@ export default function Hero() {
           display: flex;
           align-items: center;
           justify-content: center;
-          border: 1px solid rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255,255,255,0.08);
           border-radius: 10px;
-          background: rgba(255, 255, 255, 0.08);
+          background: rgba(255,255,255,0.08);
           color: #fff;
         }
 
@@ -1012,7 +1141,7 @@ export default function Hero() {
           margin-top: auto;
           overflow: hidden;
           border-radius: 999px;
-          background: rgba(255, 255, 255, 0.08);
+          background: rgba(255,255,255,0.08);
         }
 
         .tp-progress span {
@@ -1033,25 +1162,29 @@ export default function Hero() {
 
         .tp-ai-panel-bottom strong { color: #aaa; }
 
-        /* ─── FLOATING CARDS (liquid glass) ───────────────── */
         .tp-ai-card {
           position: absolute;
           z-index: 5;
           left: max(0px, calc((100% - 1160px) / 2));
           top: 75px;
-          width: 210px;
-          padding: 12px;
+          width: 190px;
+          padding: 11px;
           display: flex;
           align-items: center;
-          gap: 11px;
-          border-radius: 16px;
+          gap: 10px;
+          border: 1px solid rgba(255,255,255,0.14);
+          border-radius: 14px;
+          background: rgba(15,15,15,0.72);
           color: #fff;
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          box-shadow: 0 20px 45px rgba(0,0,0,0.32);
           animation: tp-float-one 5s ease-in-out infinite;
         }
 
         .tp-ai-card-icon {
-          width: 36px;
-          height: 36px;
+          width: 35px;
+          height: 35px;
           flex-shrink: 0;
           display: flex;
           align-items: center;
@@ -1062,8 +1195,8 @@ export default function Hero() {
         }
 
         .tp-ai-card-content { min-width: 0; }
-        .tp-ai-card-title { color: #fff; font-size: 10.5px; font-weight: 700; }
-        .tp-ai-card-subtitle { margin-top: 3px; color: rgba(255, 255, 255, 0.55); font-size: 8.5px; }
+        .tp-ai-card-title { color: #fff; font-size: 10px; font-weight: 700; }
+        .tp-ai-card-subtitle { margin-top: 3px; color: rgba(255,255,255,0.48); font-size: 8px; }
 
         .tp-ai-live {
           width: 6px;
@@ -1072,7 +1205,7 @@ export default function Hero() {
           flex-shrink: 0;
           border-radius: 50%;
           background: #62f7c2;
-          box-shadow: 0 0 10px rgba(98, 247, 194, 0.8);
+          box-shadow: 0 0 10px rgba(98,247,194,0.8);
           animation: tp-pulse 2s ease-in-out infinite;
         }
 
@@ -1081,13 +1214,18 @@ export default function Hero() {
           z-index: 5;
           right: max(0px, calc((100% - 1160px) / 2));
           bottom: 75px;
-          width: 170px;
-          padding: 12px;
+          width: 150px;
+          padding: 11px;
           display: flex;
           align-items: center;
-          gap: 10px;
-          border-radius: 16px;
+          gap: 9px;
+          border: 1px solid rgba(255,255,255,0.14);
+          border-radius: 14px;
+          background: rgba(15,15,15,0.72);
           color: #fff;
+          backdrop-filter: blur(18px);
+          -webkit-backdrop-filter: blur(18px);
+          box-shadow: 0 20px 45px rgba(0,0,0,0.32);
           animation: tp-float-two 6s ease-in-out infinite;
         }
 
@@ -1098,36 +1236,28 @@ export default function Hero() {
           align-items: center;
           justify-content: center;
           border-radius: 10px;
-          background: rgba(255, 255, 255, 0.12);
+          background: rgba(255,255,255,0.10);
           color: #ffffff;
         }
 
-        .tp-focus-card-label { color: rgba(255, 255, 255, 0.55); font-size: 8.5px; }
-        .tp-focus-card-time  { margin-top: 2px; color: #ffffff; font-size: 15px; font-weight: 700; letter-spacing: -0.04em; }
+        .tp-focus-card-label { color: rgba(255,255,255,0.45); font-size: 8px; }
+        .tp-focus-card-time  { margin-top: 2px; color: #ffffff; font-size: 14px; font-weight: 700; letter-spacing: -0.04em; }
 
-        /* ─── CAPTION ─────────────────────────────────────── */
         .tp-preview-caption {
-          margin-top: 20px;
+          margin-top: 18px;
           display: flex;
           align-items: center;
           justify-content: center;
           gap: 12px;
-          color: rgba(255, 255, 255, 0.5);
-          font-size: 9.5px;
+          color: rgba(255,255,255,0.42);
+          font-size: 9px;
           font-weight: 500;
-          letter-spacing: 0.02em;
         }
 
         .tp-caption-divider {
           width: 30px;
           height: 1px;
-          background: rgba(255, 255, 255, 0.22);
-        }
-
-        /* ─── ANIMATIONS ──────────────────────────────────── */
-        @keyframes tp-fade-up {
-          from { opacity: 0; transform: translateY(18px); }
-          to   { opacity: 1; transform: translateY(0); }
+          background: rgba(255,255,255,0.20);
         }
 
         @keyframes tp-pulse {
@@ -1145,9 +1275,14 @@ export default function Hero() {
           50%      { transform: translateY(8px); }
         }
 
-        /* ─── RESPONSIVE ──────────────────────────────────── */
+        @keyframes tp-mars-float {
+          0%, 100% { transform: translateX(-50%) translateY(0); }
+          50%      { transform: translateX(-50%) translateY(-10px); }
+        }
+
         @media (max-width: 1100px) {
           .tp-browser-window { width: calc(100% - 40px); }
+          .tp-mars-image { width: 850px; }
         }
 
         @media (max-width: 900px) {
@@ -1157,16 +1292,17 @@ export default function Hero() {
           .tp-ai-panel { min-height: 190px; }
           .tp-ai-card { left: 4px; }
           .tp-focus-card { right: 4px; }
+          .tp-mars-image { width: 760px; bottom: -340px; }
         }
 
         @media (max-width: 720px) {
           .tp-hero { padding-top: 115px; padding-bottom: 60px; }
           .tp-hero-container { width: calc(100% - 28px); }
-          .tp-hero-title { font-size: clamp(46px, 14vw, 76px); }
+          .tp-hero-title { font-size: clamp(48px, 14vw, 76px); }
           .tp-hero-description { max-width: 480px; font-size: 15px; }
           .tp-trust { flex-wrap: wrap; max-width: 440px; margin-left: auto; margin-right: auto; }
           .tp-trust-divider { display: none; }
-          .tp-preview-wrapper { margin-top: 55px; }
+          .tp-preview-wrapper { margin-top: 50px; }
           .tp-browser-window { width: 100%; border-radius: 22px; }
           .tp-app { grid-template-columns: 1fr; }
           .tp-app-sidebar { display: none; }
@@ -1176,6 +1312,8 @@ export default function Hero() {
           .tp-ai-panel { min-height: 180px; }
           .tp-ai-card { left: 0; top: 45px; transform: scale(0.78); transform-origin: left top; }
           .tp-focus-card { right: 0; bottom: 55px; transform: scale(0.78); transform-origin: right bottom; }
+          .tp-mars-image { width: 680px; max-width: none; bottom: -275px; }
+          .tp-mars-glow { width: 600px; height: 200px; bottom: -240px; }
         }
 
         @media (max-width: 600px) {
@@ -1195,18 +1333,15 @@ export default function Hero() {
           .tp-schedule { padding: 14px; }
           .tp-preview-caption { flex-direction: column; gap: 5px; }
           .tp-caption-divider { display: none; }
+          .tp-mars-image { width: 560px; bottom: -215px; }
+          .tp-mars-glow { width: 500px; bottom: -185px; }
         }
 
         @media (prefers-reduced-motion: reduce) {
-          .tp-hero-glow,
-          .tp-eyebrow-dot,
-          .tp-ai-live,
-          .tp-ai-card,
-          .tp-focus-card {
+          .tp-eyebrow-dot, .tp-ai-live, .tp-ai-card, .tp-focus-card, .tp-mars-image, .tp-star {
             animation: none !important;
           }
-          .tp-hero-video { display: none; }
-          .tp-hero { background: radial-gradient(circle at 50% 40%, #0a0e1a, #02030a); }
+          .tp-star { display: none; }
           .tp-browser-window { transform: none; }
         }
       `}</style>
@@ -1218,7 +1353,15 @@ export default function Hero() {
    MINI STAT
 ═══════════════════════════════════════════════════════════════ */
 
-function MiniStat({ title, value, change }: { title: string; value: string; change: string }) {
+function MiniStat({
+  title,
+  value,
+  change,
+}: {
+  title: string;
+  value: string;
+  change: string;
+}) {
   return (
     <div className="tp-mini-stat">
       <div className="tp-mini-stat-label">{title}</div>
