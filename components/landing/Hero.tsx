@@ -15,46 +15,53 @@ export default function Hero() {
       id="hero"
       className="
         relative
+        isolate
+        left-1/2
         min-h-screen
-        w-full
+        w-screen
+        -translate-x-1/2
         overflow-hidden
-        bg-[#03060b]
+        bg-[#02050a]
         text-white
       "
     >
       {/* =====================================================
-          FULL SCREEN BACKGROUND
+          FULL VIEWPORT BACKGROUND
       ====================================================== */}
 
-      <div className="pointer-events-none absolute inset-0 z-0">
+      <div
+        className="
+          pointer-events-none
+          absolute
+          inset-0
+          z-0
+          overflow-hidden
+          bg-[#02050a]
+        "
+      >
+        {/* Deep space */}
 
-        {/* 🎬 VIDEO BACKGROUND (Replaces space-bg.jpg) */}
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="
-            absolute
-            inset-0
-            h-full
-            w-full
-            object-cover
-            opacity-70
-          "
-        >
-          <source
-            src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260613_180732_a54afbf6-b30d-470e-861f-669871f09f67.mp4"
-            type="video/mp4"
-          />
-        </video>
-
-        {/* Space darkness overlay */}
         <div
           className="
             absolute
             inset-0
-            bg-[#03060b]/40
+            bg-[radial-gradient(circle_at_50%_18%,#172238_0%,#0b1220_28%,#050a12_55%,#020409_100%)]
+          "
+        />
+
+        {/* Subtle blue space glow */}
+
+        <div
+          className="
+            absolute
+            left-1/2
+            top-[30%]
+            h-[600px]
+            w-[1100px]
+            -translate-x-1/2
+            rounded-full
+            bg-blue-500/[0.055]
+            blur-[160px]
           "
         />
 
@@ -71,12 +78,12 @@ export default function Hero() {
             bottom-[-14%]
             left-1/2
             z-[4]
-            w-full
-            max-w-[1250px]
+            w-[1250px]
+            max-w-none
             -translate-x-1/2
             select-none
             object-contain
-            drop-shadow-[0_-20px_90px_rgba(40,130,255,0.2)]
+            drop-shadow-[0_-20px_90px_rgba(40,130,255,0.22)]
           "
         />
 
@@ -88,21 +95,16 @@ export default function Hero() {
             bottom-[-5%]
             left-1/2
             z-[3]
-            h-[280px]
-            w-full
-            max-w-[1050px]
+            h-[300px]
+            w-[1100px]
             -translate-x-1/2
             rounded-full
-            bg-blue-400/[0.12]
-            blur-[110px]
+            bg-blue-400/[0.13]
+            blur-[120px]
           "
         />
 
-        {/* =================================================
-            CINEMATIC LIGHTING
-        ================================================== */}
-
-        {/* Top darkness */}
+        {/* Top cinematic darkness */}
 
         <div
           className="
@@ -112,13 +114,13 @@ export default function Hero() {
             z-[6]
             h-[40%]
             bg-gradient-to-b
-            from-black/75
+            from-black/70
             via-black/30
             to-transparent
           "
         />
 
-        {/* Bottom fade */}
+        {/* Bottom cinematic fade */}
 
         <div
           className="
@@ -126,22 +128,22 @@ export default function Hero() {
             inset-x-0
             bottom-0
             z-[6]
-            h-[32%]
+            h-[35%]
             bg-gradient-to-t
-            from-[#03060b]
-            via-[#03060b]/50
+            from-[#02050a]
+            via-[#02050a]/50
             to-transparent
           "
         />
 
-        {/* Soft vignette */}
+        {/* Vignette */}
 
         <div
           className="
             absolute
             inset-0
             z-[7]
-            bg-[radial-gradient(circle_at_center,transparent_25%,rgba(0,0,0,0.12)_55%,rgba(0,0,0,0.55)_100%)]
+            bg-[radial-gradient(circle_at_center,transparent_25%,rgba(0,0,0,0.10)_55%,rgba(0,0,0,0.58)_100%)]
           "
         />
       </div>
@@ -162,6 +164,7 @@ export default function Hero() {
           z-20
           flex
           min-h-screen
+          w-full
           items-center
           justify-center
           px-5
@@ -170,8 +173,13 @@ export default function Hero() {
           sm:px-8
         "
       >
-        <div className="w-full max-w-[1180px] text-center">
-
+        <div
+          className="
+            w-full
+            max-w-[1180px]
+            text-center
+          "
+        >
           {/* Badge */}
 
           <div
@@ -408,7 +416,9 @@ export default function Hero() {
                 <Check size={12} />
               </span>
 
-              <span>AI-assisted planning</span>
+              <span>
+                AI-assisted planning
+              </span>
             </div>
 
             <span
@@ -437,7 +447,9 @@ export default function Hero() {
                 <Check size={12} />
               </span>
 
-              <span>Smart scheduling</span>
+              <span>
+                Smart scheduling
+              </span>
             </div>
 
             <span
@@ -466,7 +478,9 @@ export default function Hero() {
                 <Check size={12} />
               </span>
 
-              <span>Focus analytics</span>
+              <span>
+                Focus analytics
+              </span>
             </div>
           </div>
 
