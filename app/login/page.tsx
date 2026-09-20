@@ -51,6 +51,7 @@ export default function LoginPage() {
   const cardRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const errorRef = useRef<HTMLDivElement>(null);
+  const cardGlowRef = useRef<HTMLDivElement>(null);
 
   const showError = (message: string) => {
     setError(message);
@@ -132,8 +133,53 @@ export default function LoginPage() {
       "-=300"
     );
 
+    timeline.add(
+      ".trust-chip",
+      {
+        opacity: [0, 1],
+        y: [10, 0],
+        duration: 400,
+        delay: stagger(60),
+      },
+      "-=200"
+    );
+
     return () => {
       timeline.pause();
+    };
+  }, []);
+
+  /* ============================================================
+     CARD SPOTLIGHT (follows cursor for a premium glass feel)
+  ============================================================ */
+
+  useEffect(() => {
+    const card = cardRef.current;
+    const glow = cardGlowRef.current;
+    if (!card || !glow) return;
+
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+    if (reduceMotion) return;
+
+    const handleMove = (e: MouseEvent) => {
+      const rect = card.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 100;
+      const y = ((e.clientY - rect.top) / rect.height) * 100;
+      glow.style.background = `radial-gradient(500px circle at ${x}% ${y}%, rgba(168,85,247,0.14), transparent 70%)`;
+    };
+
+    const handleLeave = () => {
+      glow.style.background = "transparent";
+    };
+
+    card.addEventListener("mousemove", handleMove);
+    card.addEventListener("mouseleave", handleLeave);
+
+    return () => {
+      card.removeEventListener("mousemove", handleMove);
+      card.removeEventListener("mouseleave", handleLeave);
     };
   }, []);
 
@@ -319,14 +365,18 @@ export default function LoginPage() {
       ======================================================== */}
 
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_#0d0c22_0%,_#05060f_55%,_#020208_100%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_#100e28_0%,_#05060f_55%,_#020208_100%)]" />
 
-        <div className="absolute -left-40 top-10 h-[520px] w-[520px] rounded-full bg-violet-600/25 blur-[140px]" />
+        {/* Slowly breathing aurora blobs */}
+        <div className="absolute -left-40 top-10 h-[520px] w-[520px] animate-[pulse_9s_ease-in-out_infinite] rounded-full bg-violet-600/25 blur-[140px]" />
 
-        <div className="absolute -right-32 top-[15%] h-[460px] w-[460px] rounded-full bg-blue-600/20 blur-[130px]" />
+        <div className="absolute -right-32 top-[15%] h-[460px] w-[460px] animate-[pulse_11s_ease-in-out_infinite] rounded-full bg-blue-600/20 blur-[130px]" />
 
-        <div className="absolute bottom-[-180px] left-1/2 h-[420px] w-[700px] -translate-x-1/2 rounded-full bg-emerald-500/10 blur-[150px]" />
+        <div className="absolute bottom-[-180px] left-1/2 h-[420px] w-[700px] -translate-x-1/2 animate-[pulse_13s_ease-in-out_infinite] rounded-full bg-emerald-500/10 blur-[150px]" />
 
+        <div className="absolute right-[8%] top-[55%] h-[300px] w-[300px] animate-[pulse_10s_ease-in-out_infinite] rounded-full bg-fuchsia-500/10 blur-[120px]" />
+
+        {/* Fine grid */}
         <div
           className="absolute inset-0 opacity-[0.035]"
           style={{
@@ -335,6 +385,22 @@ export default function LoginPage() {
             backgroundSize: "80px 80px",
           }}
         />
+
+        {/* Subtle film-grain noise for a less "flat" digital feel */}
+        <svg className="absolute inset-0 h-full w-full opacity-[0.025]">
+          <filter id="noiseFilter">
+            <feTurbulence
+              type="fractalNoise"
+              baseFrequency="0.9"
+              numOctaves="2"
+              stitchTiles="stitch"
+            />
+          </filter>
+          <rect width="100%" height="100%" filter="url(#noiseFilter)" />
+        </svg>
+
+        {/* Vignette to keep focus on the card/clock */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_40%,_rgba(2,2,8,0.55)_100%)]" />
       </div>
 
       {/* Animated canvas stars */}
@@ -346,7 +412,7 @@ export default function LoginPage() {
 
       <nav className="login-brand relative z-30 mx-auto flex w-full max-w-[1440px] items-center justify-between px-5 py-5 sm:px-8 sm:py-6 lg:px-12">
         <Link href="/" className="group flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-[11px] bg-white text-sm font-bold text-black shadow-[0_0_25px_rgba(124,58,237,0.5)] transition-transform duration-300 group-hover:scale-105">
+          <span className="flex h-9 w-9 items-center justify-center rounded-[11px] bg-white text-sm font-bold text-black shadow-[0_0_25px_rgba(124,58,237,0.5)] transition-transform duration-300 group-hover:scale-105 group-hover:shadow-[0_0_35px_rgba(168,85,247,0.7)]">
             T
           </span>
           <span className="text-[17px] font-semibold tracking-[-0.04em] text-white sm:text-lg">
@@ -361,9 +427,10 @@ export default function LoginPage() {
 
           <Link
             href="/signup"
-            className="rounded-full border border-white/10 bg-white/[0.06] px-4 py-2.5 text-sm font-medium text-white shadow-sm backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.1]"
+            className="group relative overflow-hidden rounded-full border border-white/10 bg-white/[0.06] px-4 py-2.5 text-sm font-medium text-white shadow-sm backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.1]"
           >
-            Sign up
+            <span className="relative z-10">Sign up</span>
+            <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/15 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
           </Link>
         </div>
       </nav>
@@ -387,18 +454,18 @@ export default function LoginPage() {
                 <div className="absolute inset-[28%] rounded-full border border-white/[0.06]" />
               </div>
 
-              {/* Orbit rings */}
-              <div className="pointer-events-none absolute left-1/2 top-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/[0.05] xl:h-[500px] xl:w-[500px]" />
-              <div className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/[0.03] xl:h-[600px] xl:w-[600px]" />
+              {/* Orbit rings, now with a slow spin for extra life */}
+              <div className="pointer-events-none absolute left-1/2 top-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 animate-[spin_60s_linear_infinite] rounded-full border border-white/[0.05] xl:h-[500px] xl:w-[500px]" />
+              <div className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 animate-[spin_90s_linear_infinite_reverse] rounded-full border border-white/[0.03] xl:h-[600px] xl:w-[600px]" />
 
               {isDesktop && <Clock3D />}
             </div>
 
             {/* Focus Card */}
-            <div className="absolute left-[3%] top-[18%] rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3 shadow-[0_15px_50px_rgba(0,0,0,0.5)] backdrop-blur-2xl xl:left-[6%]">
+            <div className="trust-chip absolute left-[3%] top-[18%] rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3 shadow-[0_15px_50px_rgba(0,0,0,0.5)] backdrop-blur-2xl transition-transform duration-500 hover:-translate-y-1 xl:left-[6%]">
               <div className="flex items-center gap-3">
                 <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-500/20">
-                  <span className="h-2.5 w-2.5 rounded-full bg-violet-400 shadow-[0_0_12px_rgba(168,85,247,0.9)]" />
+                  <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-violet-400 shadow-[0_0_12px_rgba(168,85,247,0.9)]" />
                 </span>
 
                 <div>
@@ -413,7 +480,7 @@ export default function LoginPage() {
             </div>
 
             {/* Progress Card */}
-            <div className="absolute bottom-[20%] right-[3%] rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3 shadow-[0_15px_50px_rgba(0,0,0,0.5)] backdrop-blur-2xl xl:right-[6%]">
+            <div className="trust-chip absolute bottom-[20%] right-[3%] rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3 shadow-[0_15px_50px_rgba(0,0,0,0.5)] backdrop-blur-2xl transition-transform duration-500 hover:-translate-y-1 xl:right-[6%]">
               <div className="flex items-center gap-3">
                 <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/20">
                   <svg
@@ -449,7 +516,7 @@ export default function LoginPage() {
                 Your time is your most valuable asset
               </p>
 
-              <h2 className="mt-2.5 text-3xl font-semibold tracking-[-0.055em] text-white xl:text-4xl">
+              <h2 className="mt-2.5 bg-gradient-to-b from-white to-white/70 bg-clip-text text-3xl font-semibold tracking-[-0.055em] text-transparent xl:text-4xl">
                 Make every hour count.
               </h2>
             </div>
@@ -460,7 +527,7 @@ export default function LoginPage() {
           ================================================== */}
 
           <div className="clock-area relative -mx-2 flex h-[245px] items-center justify-center sm:h-[300px] lg:hidden">
-            <div className="absolute left-1/2 top-1/2 h-[230px] w-[230px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-500/[0.15] blur-[70px] sm:h-[280px] sm:w-[280px]" />
+            <div className="absolute left-1/2 top-1/2 h-[230px] w-[230px] -translate-x-1/2 -translate-y-1/2 animate-pulse rounded-full bg-violet-500/[0.15] blur-[70px] sm:h-[280px] sm:w-[280px]" />
 
             <div className="relative h-full w-full">
               {!isDesktop && <Clock3D />}
@@ -475,14 +542,15 @@ export default function LoginPage() {
             <div className="w-full max-w-[460px]">
               {/* Heading */}
               <div className="mb-6 text-center lg:text-left">
-                <p className="login-title mb-2.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-violet-300/70 sm:text-xs">
+                <p className="login-title mb-2.5 inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-violet-300/70 sm:text-xs">
+                  <span className="h-1 w-1 rounded-full bg-violet-400" />
                   Welcome back
                 </p>
 
                 <h1 className="login-title text-[34px] font-semibold leading-[1.05] tracking-[-0.055em] text-white sm:text-5xl">
                   Sign in to
                   <br />
-                  <span className="text-white/40">
+                  <span className="bg-gradient-to-r from-white/70 via-white/50 to-white/30 bg-clip-text text-transparent">
                     your TimePilot.
                   </span>
                 </h1>
@@ -496,178 +564,193 @@ export default function LoginPage() {
               {/* Login Card */}
               <div
                 ref={cardRef}
-                className="relative overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.05] p-5 shadow-[0_25px_80px_rgba(0,0,0,0.55)] backdrop-blur-3xl sm:rounded-[28px] sm:p-7"
+                className="group relative overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.05] p-5 shadow-[0_25px_80px_rgba(0,0,0,0.55)] backdrop-blur-3xl transition-colors duration-500 hover:border-violet-400/20 sm:rounded-[28px] sm:p-7"
               >
+                {/* cursor-follow spotlight */}
+                <div
+                  ref={cardGlowRef}
+                  className="pointer-events-none absolute inset-0 transition-opacity duration-300"
+                />
+
+                {/* animated gradient border sheen along the top edge */}
                 <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-
-                {/* Google */}
-                <button
-                  type="button"
-                  onClick={handleGoogleLogin}
-                  disabled={loading}
-                  className="login-field flex min-h-[52px] w-full items-center justify-center gap-3 rounded-[15px] border border-white/10 bg-white/[0.06] px-4 text-sm font-medium text-white transition-all duration-200 hover:border-white/25 hover:bg-white/[0.1] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  <GoogleIcon />
-                  <span>Continue with Google</span>
-                </button>
-
-                {/* Divider */}
-                <div className="login-field my-5 flex items-center gap-3">
-                  <div className="h-px flex-1 bg-white/10" />
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-white/35">
-                    or
-                  </span>
-                  <div className="h-px flex-1 bg-white/10" />
+                <div className="pointer-events-none absolute -inset-px rounded-[26px] opacity-0 transition-opacity duration-500 group-hover:opacity-100 sm:rounded-[28px]">
+                  <div className="absolute inset-0 rounded-[26px] bg-gradient-to-br from-violet-400/10 via-transparent to-blue-400/10 sm:rounded-[28px]" />
                 </div>
 
-                {/* Error */}
-                {error && (
-                  <div
-                    ref={errorRef}
-                    tabIndex={-1}
-                    role="alert"
-                    className="mb-5 rounded-2xl border border-rose-400/25 bg-rose-500/[0.08] px-4 py-3 text-sm leading-5 text-rose-200 outline-none"
+                <div className="relative">
+                  {/* Google */}
+                  <button
+                    type="button"
+                    onClick={handleGoogleLogin}
+                    disabled={loading}
+                    className="login-field group/btn relative flex min-h-[52px] w-full items-center justify-center gap-3 overflow-hidden rounded-[15px] border border-white/10 bg-white/[0.06] px-4 text-sm font-medium text-white transition-all duration-200 hover:border-white/25 hover:bg-white/[0.1] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {error}
-                  </div>
-                )}
+                    <GoogleIcon />
+                    <span>Continue with Google</span>
+                    <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-700 group-hover/btn:translate-x-full" />
+                  </button>
 
-                {/* Form */}
-                <form onSubmit={handleLogin} className="space-y-5">
-                  {/* Email */}
-                  <div className="login-field">
-                    <label
-                      htmlFor="email"
-                      className="mb-2 block text-xs font-semibold text-white/75 sm:text-sm"
+                  {/* Divider */}
+                  <div className="login-field my-5 flex items-center gap-3">
+                    <div className="h-px flex-1 bg-white/10" />
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-white/35">
+                      or
+                    </span>
+                    <div className="h-px flex-1 bg-white/10" />
+                  </div>
+
+                  {/* Error */}
+                  {error && (
+                    <div
+                      ref={errorRef}
+                      tabIndex={-1}
+                      role="alert"
+                      className="mb-5 rounded-2xl border border-rose-400/25 bg-rose-500/[0.08] px-4 py-3 text-sm leading-5 text-rose-200 outline-none"
                     >
-                      Email address
-                    </label>
+                      {error}
+                    </div>
+                  )}
 
-                    <input
-                      id="email"
-                      name="email"
-                      type="email"
-                      value={email}
-                      onChange={(event) =>
-                        setEmail(event.target.value)
-                      }
-                      placeholder="you@example.com"
-                      required
-                      autoComplete="email"
-                      className="h-[52px] w-full rounded-[15px] border border-white/10 bg-white/[0.03] px-4 text-sm text-white outline-none transition-all duration-200 placeholder:text-white/25 focus:border-violet-400/50 focus:bg-white/[0.06] focus:ring-4 focus:ring-violet-500/[0.12]"
-                    />
-                  </div>
-
-                  {/* Password */}
-                  <div className="login-field">
-                    <div className="mb-2 flex items-center justify-between">
+                  {/* Form */}
+                  <form onSubmit={handleLogin} className="space-y-5">
+                    {/* Email */}
+                    <div className="login-field">
                       <label
-                        htmlFor="password"
-                        className="text-xs font-semibold text-white/75 sm:text-sm"
+                        htmlFor="email"
+                        className="mb-2 block text-xs font-semibold text-white/75 sm:text-sm"
                       >
-                        Password
+                        Email address
                       </label>
 
-                      <Link
-                        href="/forgot-password"
-                        className="text-[11px] font-medium text-white/40 transition-colors hover:text-violet-300 sm:text-xs"
-                      >
-                        Forgot password?
-                      </Link>
-                    </div>
-
-                    <div className="relative">
                       <input
-                        id="password"
-                        name="password"
-                        type={showPassword ? "text" : "password"}
-                        value={password}
+                        id="email"
+                        name="email"
+                        type="email"
+                        value={email}
                         onChange={(event) =>
-                          setPassword(event.target.value)
+                          setEmail(event.target.value)
                         }
-                        placeholder="Enter your password"
+                        placeholder="you@example.com"
                         required
-                        autoComplete="current-password"
-                        className="h-[52px] w-full rounded-[15px] border border-white/10 bg-white/[0.03] px-4 pr-[70px] text-sm text-white outline-none transition-all duration-200 placeholder:text-white/25 focus:border-violet-400/50 focus:bg-white/[0.06] focus:ring-4 focus:ring-violet-500/[0.12]"
+                        autoComplete="email"
+                        className="h-[52px] w-full rounded-[15px] border border-white/10 bg-white/[0.03] px-4 text-sm text-white outline-none transition-all duration-200 placeholder:text-white/25 focus:border-violet-400/50 focus:bg-white/[0.06] focus:ring-4 focus:ring-violet-500/[0.12]"
                       />
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setShowPassword(!showPassword)
-                        }
-                        aria-label={
-                          showPassword
-                            ? "Hide password"
-                            : "Show password"
-                        }
-                        className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg px-2 py-1.5 text-xs font-medium text-white/50 transition hover:bg-white/[0.08] hover:text-white"
-                      >
-                        {showPassword ? "Hide" : "Show"}
-                      </button>
                     </div>
-                  </div>
 
-                  {/* Remember Me */}
-                  <label className="login-field flex min-h-[24px] cursor-pointer items-center gap-2.5 text-xs text-white/55 sm:text-sm">
-                    <input
-                      type="checkbox"
-                      checked={rememberMe}
-                      onChange={(event) =>
-                        setRememberMe(event.target.checked)
-                      }
-                      className="h-4 w-4 rounded border-white/20 bg-white/5 accent-violet-500"
-                    />
-                    <span>Remember me</span>
-                  </label>
-
-                  {/* Login Button */}
-                  <button
-                    ref={buttonRef}
-                    type="submit"
-                    disabled={loading}
-                    onMouseEnter={handleButtonEnter}
-                    onMouseLeave={handleButtonLeave}
-                    className="login-field mt-1 flex min-h-[54px] w-full items-center justify-center rounded-[15px] bg-gradient-to-b from-violet-500 to-violet-600 px-5 text-sm font-semibold text-white shadow-[0_12px_40px_rgba(124,58,237,0.45)] transition-all duration-200 hover:from-violet-400 hover:to-violet-500 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {loading ? (
-                      <span className="flex items-center gap-2">
-                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                        Signing in…
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-2">
-                        Log in
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          aria-hidden="true"
+                    {/* Password */}
+                    <div className="login-field">
+                      <div className="mb-2 flex items-center justify-between">
+                        <label
+                          htmlFor="password"
+                          className="text-xs font-semibold text-white/75 sm:text-sm"
                         >
-                          <path
-                            d="M5 12H19M13 6L19 12L13 18"
-                            stroke="currentColor"
-                            strokeWidth="1.8"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      </span>
-                    )}
-                  </button>
-                </form>
+                          Password
+                        </label>
 
-                {/* Signup */}
-                <p className="login-field mt-6 text-center text-xs text-white/50 sm:text-sm">
-                  Don&apos;t have an account?{" "}
-                  <Link
-                    href="/signup"
-                    className="font-semibold text-white transition-colors hover:text-violet-300"
-                  >
-                    Create one
-                  </Link>
-                </p>
+                        <Link
+                          href="/forgot-password"
+                          className="text-[11px] font-medium text-white/40 transition-colors hover:text-violet-300 sm:text-xs"
+                        >
+                          Forgot password?
+                        </Link>
+                      </div>
+
+                      <div className="relative">
+                        <input
+                          id="password"
+                          name="password"
+                          type={showPassword ? "text" : "password"}
+                          value={password}
+                          onChange={(event) =>
+                            setPassword(event.target.value)
+                          }
+                          placeholder="Enter your password"
+                          required
+                          autoComplete="current-password"
+                          className="h-[52px] w-full rounded-[15px] border border-white/10 bg-white/[0.03] px-4 pr-[70px] text-sm text-white outline-none transition-all duration-200 placeholder:text-white/25 focus:border-violet-400/50 focus:bg-white/[0.06] focus:ring-4 focus:ring-violet-500/[0.12]"
+                        />
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowPassword(!showPassword)
+                          }
+                          aria-label={
+                            showPassword
+                              ? "Hide password"
+                              : "Show password"
+                          }
+                          className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg px-2 py-1.5 text-xs font-medium text-white/50 transition hover:bg-white/[0.08] hover:text-white"
+                        >
+                          {showPassword ? "Hide" : "Show"}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Remember Me */}
+                    <label className="login-field flex min-h-[24px] cursor-pointer items-center gap-2.5 text-xs text-white/55 sm:text-sm">
+                      <input
+                        type="checkbox"
+                        checked={rememberMe}
+                        onChange={(event) =>
+                          setRememberMe(event.target.checked)
+                        }
+                        className="h-4 w-4 rounded border-white/20 bg-white/5 accent-violet-500"
+                      />
+                      <span>Remember me</span>
+                    </label>
+
+                    {/* Login Button */}
+                    <button
+                      ref={buttonRef}
+                      type="submit"
+                      disabled={loading}
+                      onMouseEnter={handleButtonEnter}
+                      onMouseLeave={handleButtonLeave}
+                      className="login-field group/submit relative mt-1 flex min-h-[54px] w-full items-center justify-center overflow-hidden rounded-[15px] bg-gradient-to-b from-violet-500 to-violet-600 px-5 text-sm font-semibold text-white shadow-[0_12px_40px_rgba(124,58,237,0.45)] transition-all duration-200 hover:from-violet-400 hover:to-violet-500 hover:shadow-[0_14px_46px_rgba(168,85,247,0.55)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {loading ? (
+                        <span className="flex items-center gap-2">
+                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                          Signing in…
+                        </span>
+                      ) : (
+                        <span className="relative z-10 flex items-center gap-2">
+                          Log in
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            aria-hidden="true"
+                            className="transition-transform duration-200 group-hover/submit:translate-x-0.5"
+                          >
+                            <path
+                              d="M5 12H19M13 6L19 12L13 18"
+                              stroke="currentColor"
+                              strokeWidth="1.8"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </span>
+                      )}
+                      <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover/submit:translate-x-full" />
+                    </button>
+                  </form>
+
+                  {/* Signup */}
+                  <p className="login-field mt-6 text-center text-xs text-white/50 sm:text-sm">
+                    Don&apos;t have an account?{" "}
+                    <Link
+                      href="/signup"
+                      className="font-semibold text-white transition-colors hover:text-violet-300"
+                    >
+                      Create one
+                    </Link>
+                  </p>
+                </div>
               </div>
 
               {/* Security */}
