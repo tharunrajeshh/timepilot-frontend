@@ -6,27 +6,39 @@ import type { FormEvent } from "react";
 import { animate, createTimeline, stagger } from "animejs";
 import Clock3D from "@/components/landing/Clock3D";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 /* ============================================================
-   Responsive hook — used so we only mount ONE Clock3D instance
-   instead of two (one in the desktop column, one in mobile).
-   ============================================================ */
+   RESPONSIVE HOOK
+============================================================ */
+
 function useIsDesktop(breakpoint = 1024) {
   const [isDesktop, setIsDesktop] = useState(false);
 
   useEffect(() => {
-    const mq = window.matchMedia(`(min-width: ${breakpoint}px)`);
-    const update = () => setIsDesktop(mq.matches);
+    const mediaQuery = window.matchMedia(
+      `(min-width: ${breakpoint}px)`
+    );
+
+    const update = () => {
+      setIsDesktop(mediaQuery.matches);
+    };
 
     update();
-    mq.addEventListener("change", update);
+    mediaQuery.addEventListener("change", update);
 
-    return () => mq.removeEventListener("change", update);
+    return () => {
+      mediaQuery.removeEventListener("change", update);
+    };
   }, [breakpoint]);
 
   return isDesktop;
 }
+
+/* ============================================================
+   LOGIN PAGE
+============================================================ */
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -45,15 +57,14 @@ export default function LoginPage() {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const errorRef = useRef<HTMLDivElement>(null);
 
-  /* Helper — bumps the key so repeated identical errors re-shake. */
   const showError = (message: string) => {
     setError(message);
-    setErrorKey((k) => k + 1);
+    setErrorKey((key) => key + 1);
   };
 
-  // ============================================================
-  // PAGE ENTRANCE
-  // ============================================================
+  /* ============================================================
+     PAGE ENTRANCE
+  ============================================================ */
 
   useEffect(() => {
     const reduceMotion = window.matchMedia(
@@ -70,39 +81,39 @@ export default function LoginPage() {
 
     timeline.add(".login-brand", {
       opacity: [0, 1],
-      y: [-12, 0],
-      duration: 500,
+      y: [-10, 0],
+      duration: 450,
     });
 
     timeline.add(
       ".clock-area",
       {
         opacity: [0, 1],
-        x: [-35, 0],
-        scale: [0.96, 1],
-        duration: 900,
+        x: [-30, 0],
+        scale: [0.97, 1],
+        duration: 750,
       },
-      "-=250"
+      "-=220"
     );
 
     timeline.add(
       ".login-title",
       {
         opacity: [0, 1],
-        y: [22, 0],
-        duration: 600,
+        y: [18, 0],
+        duration: 500,
       },
-      "-=600"
+      "-=500"
     );
 
     timeline.add(
       ".login-subtitle",
       {
         opacity: [0, 1],
-        y: [16, 0],
-        duration: 500,
+        y: [12, 0],
+        duration: 450,
       },
-      "-=400"
+      "-=350"
     );
 
     if (cardRef.current) {
@@ -110,10 +121,10 @@ export default function LoginPage() {
         cardRef.current,
         {
           opacity: [0, 1],
-          y: [35, 0],
-          duration: 650,
+          y: [25, 0],
+          duration: 550,
         },
-        "-=300"
+        "-=250"
       );
     }
 
@@ -121,11 +132,11 @@ export default function LoginPage() {
       ".login-field",
       {
         opacity: [0, 1],
-        y: [12, 0],
-        duration: 420,
-        delay: stagger(45),
+        y: [8, 0],
+        duration: 350,
+        delay: stagger(35),
       },
-      "-=400"
+      "-=300"
     );
 
     return () => {
@@ -133,9 +144,9 @@ export default function LoginPage() {
     };
   }, []);
 
-  // ============================================================
-  // ERROR ANIMATION + FOCUS
-  // ============================================================
+  /* ============================================================
+     ERROR ANIMATION
+  ============================================================ */
 
   useEffect(() => {
     if (!error || !errorRef.current) return;
@@ -143,9 +154,9 @@ export default function LoginPage() {
     errorRef.current.focus();
 
     const animation = animate(errorRef.current, {
-      x: [0, -8, 8, -6, 6, -3, 3, 0],
+      x: [0, -6, 6, -4, 4, 0],
       opacity: [0, 1],
-      duration: 500,
+      duration: 400,
       ease: "outQuad",
     });
 
@@ -154,16 +165,16 @@ export default function LoginPage() {
     };
   }, [error, errorKey]);
 
-  // ============================================================
-  // BUTTON HOVER
-  // ============================================================
+  /* ============================================================
+     BUTTON ANIMATION
+  ============================================================ */
 
   const handleButtonEnter = () => {
     if (!buttonRef.current || loading) return;
 
     animate(buttonRef.current, {
-      scale: 1.02,
-      duration: 200,
+      scale: 1.015,
+      duration: 180,
       ease: "outQuad",
     });
   };
@@ -173,25 +184,28 @@ export default function LoginPage() {
 
     animate(buttonRef.current, {
       scale: 1,
-      duration: 200,
+      duration: 180,
       ease: "outQuad",
     });
   };
 
-  // ============================================================
-  // OAUTH
-  // ============================================================
+  /* ============================================================
+     GOOGLE LOGIN
+  ============================================================ */
 
   function handleGoogleLogin() {
     if (loading) return;
+
     window.location.href = `${API_URL}/auth/google`;
   }
 
-  // ============================================================
-  // LOGIN
-  // ============================================================
+  /* ============================================================
+     LOGIN
+  ============================================================ */
 
-  const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
+  const handleLogin = async (
+    event: FormEvent<HTMLFormElement>
+  ) => {
     event.preventDefault();
 
     setError("");
@@ -210,8 +224,8 @@ export default function LoginPage() {
 
     if (buttonRef.current) {
       animate(buttonRef.current, {
-        scale: [1, 0.96, 1],
-        duration: 280,
+        scale: [1, 0.97, 1],
+        duration: 260,
         ease: "outQuad",
       });
     }
@@ -228,22 +242,27 @@ export default function LoginPage() {
         }),
       });
 
-      // Safely parse the response (FastAPI may return text or JSON).
       const text = await response.text();
+
       let data: any = {};
 
       if (text) {
         try {
           data = JSON.parse(text);
         } catch {
-          data = { detail: text };
+          data = {
+            detail: text,
+          };
         }
       }
 
       if (!response.ok) {
         const detail = Array.isArray(data?.detail)
           ? data.detail
-              .map((item: any) => item?.msg ?? String(item))
+              .map(
+                (item: any) =>
+                  item?.msg ?? String(item)
+              )
               .join(", ")
           : data?.detail;
 
@@ -252,18 +271,30 @@ export default function LoginPage() {
             ? detail
             : "Invalid email or password."
         );
+
         return;
       }
 
-      // Clear the OTHER storage bucket so a stale token can't linger.
-      const storage = rememberMe ? localStorage : sessionStorage;
-      const otherStorage = rememberMe ? sessionStorage : localStorage;
+      /* ========================================================
+         TOKEN STORAGE
+      ======================================================== */
+
+      const storage = rememberMe
+        ? localStorage
+        : sessionStorage;
+
+      const otherStorage = rememberMe
+        ? sessionStorage
+        : localStorage;
 
       otherStorage.removeItem("timepilot_token");
       otherStorage.removeItem("timepilot_user");
 
       if (data.access_token) {
-        storage.setItem("timepilot_token", data.access_token);
+        storage.setItem(
+          "timepilot_token",
+          data.access_token
+        );
       }
 
       storage.setItem(
@@ -275,6 +306,10 @@ export default function LoginPage() {
         })
       );
 
+      /* ========================================================
+         PAGE EXIT
+      ======================================================== */
+
       const reduceMotion = window.matchMedia(
         "(prefers-reduced-motion: reduce)"
       ).matches;
@@ -283,8 +318,8 @@ export default function LoginPage() {
         await new Promise<void>((resolve) => {
           animate(pageRef.current!, {
             opacity: [1, 0],
-            scale: [1, 0.98],
-            duration: 400,
+            scale: [1, 0.985],
+            duration: 350,
             ease: "inQuad",
             onComplete: () => resolve(),
           });
@@ -296,109 +331,127 @@ export default function LoginPage() {
       console.error(err);
 
       showError(
-        "Unable to connect to the TimePilot server. Make sure the backend is running."
+        "Unable to connect to the TimePilot server. Please try again."
       );
     } finally {
       setLoading(false);
     }
   };
 
-  // ============================================================
-  // UI
-  // ============================================================
+  /* ============================================================
+     UI
+  ============================================================ */
 
   return (
     <main
       ref={pageRef}
-      className="relative min-h-screen overflow-hidden bg-white text-black"
+      className="relative min-h-screen overflow-x-hidden bg-[#fafafa] text-black"
     >
-      {/* ======================================================
+      {/* ========================================================
           BACKGROUND
-      ====================================================== */}
+      ======================================================== */}
 
-      <div className="pointer-events-none fixed inset-0">
-        <div className="absolute inset-0 bg-white" />
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute inset-0 bg-[#fafafa]" />
 
+        {/* Grid */}
         <div
-          className="absolute inset-0 opacity-[0.025]"
+          className="absolute inset-0 opacity-[0.018]"
           style={{
             backgroundImage:
               "linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)",
-            backgroundSize: "72px 72px",
+            backgroundSize: "64px 64px",
           }}
         />
 
-        <div className="absolute left-[8%] top-[25%] h-[500px] w-[500px] rounded-full bg-purple-500/[0.07] blur-[140px]" />
-        <div className="absolute right-[5%] top-[15%] h-[450px] w-[450px] rounded-full bg-blue-500/[0.055] blur-[140px]" />
-        <div className="absolute bottom-[-15%] left-1/2 h-[500px] w-[700px] -translate-x-1/2 rounded-full bg-emerald-400/[0.035] blur-[150px]" />
+        {/* Violet glow */}
+        <div className="absolute -left-32 top-20 h-[380px] w-[380px] rounded-full bg-violet-500/[0.07] blur-[120px] sm:h-[500px] sm:w-[500px]" />
+
+        {/* Blue glow */}
+        <div className="absolute -right-32 top-[10%] h-[360px] w-[360px] rounded-full bg-blue-500/[0.055] blur-[120px] sm:h-[460px] sm:w-[460px]" />
+
+        {/* Green glow */}
+        <div className="absolute bottom-[-150px] left-1/2 h-[400px] w-[600px] -translate-x-1/2 rounded-full bg-emerald-400/[0.035] blur-[130px]" />
       </div>
 
-      {/* ======================================================
+      {/* ========================================================
           NAVIGATION
-      ====================================================== */}
+      ======================================================== */}
 
-      <nav className="login-brand relative z-30 mx-auto flex max-w-[1440px] items-center justify-between px-6 py-6 sm:px-10 lg:px-14">
-        <Link href="/" className="group flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-black text-sm font-bold text-white shadow-lg transition-transform duration-300 group-hover:scale-105">
+      <nav className="login-brand relative z-30 mx-auto flex w-full max-w-[1440px] items-center justify-between px-5 py-5 sm:px-8 sm:py-6 lg:px-12">
+        <Link
+          href="/"
+          className="group flex items-center gap-2.5"
+        >
+          <span className="flex h-9 w-9 items-center justify-center rounded-[11px] bg-black text-sm font-bold text-white shadow-lg transition-transform duration-300 group-hover:scale-105">
             T
           </span>
 
-          <span className="text-lg font-semibold tracking-[-0.04em]">
+          <span className="text-[17px] font-semibold tracking-[-0.04em] sm:text-lg">
             TimePilot
           </span>
         </Link>
 
-        <div className="flex items-center gap-3 text-sm">
-          <span className="hidden text-black/50 sm:inline">
+        <div className="flex items-center gap-2.5 sm:gap-3">
+          <span className="hidden text-sm text-black/45 sm:inline">
             Don&apos;t have an account?
           </span>
 
           <Link
             href="/signup"
-            className="rounded-full border border-black/10 bg-white/75 px-4 py-2.5 font-medium text-black shadow-sm backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-black/20 hover:shadow-md"
+            className="rounded-full border border-black/[0.08] bg-white/80 px-4 py-2.5 text-sm font-medium text-black shadow-sm backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-black/15 hover:shadow-md"
           >
             Sign up
           </Link>
         </div>
       </nav>
 
-      {/* ======================================================
+      {/* ========================================================
           MAIN
-      ====================================================== */}
+      ======================================================== */}
 
-      <section className="relative z-10 mx-auto flex min-h-[calc(100vh-90px)] max-w-[1440px] items-center px-6 pb-12 pt-4 sm:px-10 lg:px-14">
-        <div className="grid w-full items-center gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:gap-12 xl:grid-cols-[1.2fr_0.8fr]">
+      <section className="relative z-10 mx-auto flex min-h-[calc(100vh-82px)] w-full max-w-[1440px] items-center px-5 pb-10 pt-2 sm:px-8 sm:pb-12 lg:px-12 lg:pt-0">
+        <div className="grid w-full items-center gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:gap-10 xl:grid-cols-[1.15fr_0.85fr] xl:gap-16">
           {/* ==================================================
-              LEFT — 3D CLOCK (desktop)
+              DESKTOP CLOCK
           ================================================== */}
 
-          <div className="clock-area relative hidden min-h-[650px] items-center justify-center lg:flex">
-            <div className="pointer-events-none absolute left-1/2 top-1/2 h-[460px] w-[460px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-black/[0.035]" />
-            <div className="pointer-events-none absolute left-1/2 top-1/2 h-[560px] w-[560px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-black/[0.025]" />
+          <div className="clock-area relative hidden min-h-[600px] items-center justify-center lg:flex xl:min-h-[650px]">
+            <div className="pointer-events-none absolute left-1/2 top-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-black/[0.035] xl:h-[500px] xl:w-[500px]" />
+
+            <div className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-black/[0.025] xl:h-[600px] xl:w-[600px]" />
 
             {isDesktop && <Clock3D />}
 
-            {/* Focus card */}
-            <div className="absolute left-[4%] top-[19%] rounded-2xl border border-black/[0.07] bg-white/75 px-4 py-3 shadow-xl backdrop-blur-2xl">
+            {/* Focus Card */}
+            <div className="absolute left-[3%] top-[18%] rounded-2xl border border-black/[0.07] bg-white/80 px-4 py-3 shadow-[0_15px_50px_rgba(0,0,0,0.07)] backdrop-blur-2xl xl:left-[6%]">
               <div className="flex items-center gap-3">
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-500/10">
-                  <span className="h-2.5 w-2.5 rounded-full bg-purple-500" />
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-500/10">
+                  <span className="h-2.5 w-2.5 rounded-full bg-violet-500" />
                 </span>
 
                 <div>
-                  <p className="text-xs font-semibold">Focus mode</p>
-                  <p className="mt-0.5 text-xs text-black/45">
+                  <p className="text-xs font-semibold">
+                    Focus mode
+                  </p>
+
+                  <p className="mt-0.5 text-xs text-black/40">
                     Time well spent
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Progress card */}
-            <div className="absolute bottom-[19%] right-[4%] rounded-2xl border border-black/[0.07] bg-white/75 px-4 py-3 shadow-xl backdrop-blur-2xl">
+            {/* Progress Card */}
+            <div className="absolute bottom-[20%] right-[3%] rounded-2xl border border-black/[0.07] bg-white/80 px-4 py-3 shadow-[0_15px_50px_rgba(0,0,0,0.07)] backdrop-blur-2xl xl:right-[6%]">
               <div className="flex items-center gap-3">
                 <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
                     <path
                       d="M5 12.5L9.5 17L19 7"
                       stroke="#10B981"
@@ -410,19 +463,24 @@ export default function LoginPage() {
                 </span>
 
                 <div>
-                  <p className="text-xs font-semibold">Day on track</p>
-                  <p className="mt-0.5 text-xs text-black/45">Keep moving</p>
+                  <p className="text-xs font-semibold">
+                    Day on track
+                  </p>
+
+                  <p className="mt-0.5 text-xs text-black/40">
+                    Keep moving
+                  </p>
                 </div>
               </div>
             </div>
 
-            {/* Main message */}
+            {/* Message */}
             <div className="absolute bottom-[4%] left-1/2 w-full -translate-x-1/2 text-center">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-black/35">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-black/30 xl:text-xs">
                 Your time is your most valuable asset
               </p>
 
-              <h2 className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-black xl:text-4xl">
+              <h2 className="mt-2.5 text-3xl font-semibold tracking-[-0.055em] xl:text-4xl">
                 Make every hour count.
               </h2>
             </div>
@@ -432,87 +490,94 @@ export default function LoginPage() {
               MOBILE CLOCK
           ================================================== */}
 
-          <div className="clock-area relative -mx-2 flex min-h-[320px] items-center justify-center lg:hidden">
-            <div className="absolute left-1/2 top-1/2 h-[270px] w-[270px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-500/[0.07] blur-[80px]" />
+          <div className="clock-area relative -mx-2 flex h-[245px] items-center justify-center sm:h-[300px] lg:hidden">
+            <div className="absolute left-1/2 top-1/2 h-[230px] w-[230px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-500/[0.07] blur-[70px] sm:h-[280px] sm:w-[280px]" />
 
-            {!isDesktop && <Clock3D />}
+            <div className="relative h-full w-full">
+              {!isDesktop && <Clock3D />}
+            </div>
           </div>
 
           {/* ==================================================
-              RIGHT — LOGIN
+              LOGIN
           ================================================== */}
 
           <div className="flex w-full justify-center lg:justify-end">
-            <div className="w-full max-w-[470px]">
-              <div className="mb-7">
-                <p className="login-title mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-black/40">
+            <div className="w-full max-w-[460px]">
+
+              {/* Heading */}
+              <div className="mb-6 text-center lg:text-left">
+                <p className="login-title mb-2.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-black/40 sm:text-xs">
                   Welcome back
                 </p>
 
-                <h1 className="login-title text-4xl font-semibold tracking-[-0.055em] text-black sm:text-5xl">
+                <h1 className="login-title text-[34px] font-semibold leading-[1.05] tracking-[-0.055em] sm:text-5xl">
                   Sign in to
                   <br />
-                  <span className="text-black/45">your TimePilot.</span>
+                  <span className="text-black/40">
+                    your TimePilot.
+                  </span>
                 </h1>
 
-                <p className="login-subtitle mt-4 max-w-md text-sm leading-6 text-black/45">
-                  Continue planning your day, managing your tasks, and
-                  making your time work for you.
+                <p className="login-subtitle mx-auto mt-3 max-w-[390px] text-[13px] leading-5 text-black/45 sm:text-sm sm:leading-6 lg:mx-0">
+                  Continue planning your day, managing your
+                  tasks, and making your time work for you.
                 </p>
               </div>
 
-              {/* LOGIN CARD */}
-
+              {/* Login Card */}
               <div
                 ref={cardRef}
-                className="relative overflow-hidden rounded-[28px] border border-black/[0.08] bg-white/75 p-6 shadow-[0_25px_80px_rgba(0,0,0,0.08)] backdrop-blur-3xl sm:p-8"
+                className="relative overflow-hidden rounded-[26px] border border-black/[0.08] bg-white/85 p-5 shadow-[0_25px_80px_rgba(0,0,0,0.07)] backdrop-blur-3xl sm:rounded-[28px] sm:p-7"
               >
+                {/* Top highlight */}
                 <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-black/10 to-transparent" />
 
-                {/* GOOGLE */}
-
+                {/* Google */}
                 <button
                   type="button"
                   onClick={handleGoogleLogin}
                   disabled={loading}
-                  className="login-field flex min-h-[54px] w-full items-center justify-center gap-3 rounded-2xl border border-black/[0.08] bg-white px-4 text-sm font-medium text-black transition-colors duration-300 hover:border-black/15 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="login-field flex min-h-[52px] w-full items-center justify-center gap-3 rounded-[15px] border border-black/[0.08] bg-white px-4 text-sm font-medium text-black shadow-sm transition-all duration-200 hover:border-black/15 hover:bg-black/[0.015] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <GoogleIcon />
-                  Continue with Google
+
+                  <span>Continue with Google</span>
                 </button>
 
-                {/* DIVIDER */}
-
-                <div className="login-field my-6 flex items-center gap-4">
+                {/* Divider */}
+                <div className="login-field my-5 flex items-center gap-3">
                   <div className="h-px flex-1 bg-black/[0.08]" />
-                  <span className="text-xs font-medium uppercase tracking-[0.14em] text-black/35">
+
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-black/30">
                     or
                   </span>
+
                   <div className="h-px flex-1 bg-black/[0.08]" />
                 </div>
 
-                {/* ERROR */}
-
+                {/* Error */}
                 {error && (
                   <div
                     ref={errorRef}
                     tabIndex={-1}
                     role="alert"
-                    className="mb-5 rounded-2xl border border-rose-500/15 bg-rose-500/[0.06] px-4 py-3 text-sm text-rose-600 outline-none"
+                    className="mb-5 rounded-2xl border border-rose-500/15 bg-rose-500/[0.06] px-4 py-3 text-sm leading-5 text-rose-600 outline-none"
                   >
                     {error}
                   </div>
                 )}
 
-                {/* FORM */}
-
-                <form onSubmit={handleLogin} className="space-y-5">
-                  {/* EMAIL */}
-
+                {/* Form */}
+                <form
+                  onSubmit={handleLogin}
+                  className="space-y-5"
+                >
+                  {/* Email */}
                   <div className="login-field">
                     <label
                       htmlFor="email"
-                      className="mb-2 block text-sm font-medium text-black/75"
+                      className="mb-2 block text-xs font-semibold text-black/70 sm:text-sm"
                     >
                       Email address
                     </label>
@@ -522,28 +587,29 @@ export default function LoginPage() {
                       name="email"
                       type="email"
                       value={email}
-                      onChange={(event) => setEmail(event.target.value)}
+                      onChange={(event) =>
+                        setEmail(event.target.value)
+                      }
                       placeholder="you@example.com"
                       required
                       autoComplete="email"
-                      className="h-[54px] w-full rounded-2xl border border-black/[0.09] bg-black/[0.025] px-4 text-sm text-black outline-none transition-all duration-300 placeholder:text-black/25 focus:border-black/25 focus:bg-white focus:shadow-[0_0_0_4px_rgba(0,0,0,0.025)]"
+                      className="h-[52px] w-full rounded-[15px] border border-black/[0.09] bg-black/[0.025] px-4 text-sm text-black outline-none transition-all duration-200 placeholder:text-black/25 focus:border-black/25 focus:bg-white focus:ring-4 focus:ring-black/[0.025]"
                     />
                   </div>
 
-                  {/* PASSWORD */}
-
+                  {/* Password */}
                   <div className="login-field">
                     <div className="mb-2 flex items-center justify-between">
                       <label
                         htmlFor="password"
-                        className="text-sm font-medium text-black/75"
+                        className="text-xs font-semibold text-black/70 sm:text-sm"
                       >
                         Password
                       </label>
 
                       <Link
                         href="/forgot-password"
-                        className="text-xs font-medium text-black/40 transition hover:text-black"
+                        className="text-[11px] font-medium text-black/40 transition-colors hover:text-black sm:text-xs"
                       >
                         Forgot password?
                       </Link>
@@ -553,31 +619,40 @@ export default function LoginPage() {
                       <input
                         id="password"
                         name="password"
-                        type={showPassword ? "text" : "password"}
+                        type={
+                          showPassword
+                            ? "text"
+                            : "password"
+                        }
                         value={password}
-                        onChange={(event) => setPassword(event.target.value)}
+                        onChange={(event) =>
+                          setPassword(event.target.value)
+                        }
                         placeholder="Enter your password"
                         required
                         autoComplete="current-password"
-                        className="h-[54px] w-full rounded-2xl border border-black/[0.09] bg-black/[0.025] px-4 pr-16 text-sm text-black outline-none transition-all duration-300 placeholder:text-black/25 focus:border-black/25 focus:bg-white focus:shadow-[0_0_0_4px_rgba(0,0,0,0.025)]"
+                        className="h-[52px] w-full rounded-[15px] border border-black/[0.09] bg-black/[0.025] px-4 pr-[70px] text-sm text-black outline-none transition-all duration-200 placeholder:text-black/25 focus:border-black/25 focus:bg-white focus:ring-4 focus:ring-black/[0.025]"
                       />
 
                       <button
                         type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        aria-label={
-                          showPassword ? "Hide password" : "Show password"
+                        onClick={() =>
+                          setShowPassword(!showPassword)
                         }
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-medium text-black/40 transition hover:text-black"
+                        aria-label={
+                          showPassword
+                            ? "Hide password"
+                            : "Show password"
+                        }
+                        className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg px-2 py-1.5 text-xs font-medium text-black/40 transition hover:bg-black/[0.04] hover:text-black"
                       >
                         {showPassword ? "Hide" : "Show"}
                       </button>
                     </div>
                   </div>
 
-                  {/* REMEMBER ME */}
-
-                  <label className="login-field flex cursor-pointer items-center gap-2.5 text-sm text-black/50">
+                  {/* Remember Me */}
+                  <label className="login-field flex min-h-[24px] cursor-pointer items-center gap-2.5 text-xs text-black/50 sm:text-sm">
                     <input
                       type="checkbox"
                       checked={rememberMe}
@@ -586,27 +661,29 @@ export default function LoginPage() {
                       }
                       className="h-4 w-4 rounded border-black/20 accent-black"
                     />
-                    Remember me
+
+                    <span>Remember me</span>
                   </label>
 
-                  {/* LOGIN BUTTON */}
-
+                  {/* Login Button */}
                   <button
                     ref={buttonRef}
                     type="submit"
                     disabled={loading}
                     onMouseEnter={handleButtonEnter}
                     onMouseLeave={handleButtonLeave}
-                    className="login-field flex min-h-[56px] w-full items-center justify-center rounded-2xl bg-black px-5 text-sm font-semibold text-white shadow-xl shadow-black/10 transition-colors duration-300 hover:bg-black/90 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="login-field mt-1 flex min-h-[54px] w-full items-center justify-center rounded-[15px] bg-black px-5 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(0,0,0,0.12)] transition-all duration-200 hover:bg-black/90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {loading ? (
                       <span className="flex items-center gap-2">
                         <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+
                         Signing in…
                       </span>
                     ) : (
                       <span className="flex items-center gap-2">
                         Log in
+
                         <svg
                           width="16"
                           height="16"
@@ -627,58 +704,93 @@ export default function LoginPage() {
                   </button>
                 </form>
 
-                {/* SIGNUP */}
-
-                <p className="login-field mt-7 text-center text-sm text-black/45">
+                {/* Signup */}
+                <p className="login-field mt-6 text-center text-xs text-black/45 sm:text-sm">
                   Don&apos;t have an account?{" "}
                   <Link
                     href="/signup"
-                    className="font-semibold text-black transition hover:text-purple-600"
+                    className="font-semibold text-black transition-colors hover:text-violet-600"
                   >
                     Create one
                   </Link>
                 </p>
               </div>
 
-              {/* SECURITY NOTE */}
+              {/* Security */}
+              <div className="login-field mt-4 flex items-center justify-center gap-2 text-[10px] text-black/30 sm:text-xs">
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M12 3L19 6V11C19 15.5 16.2 19.5 12 21C7.8 19.5 5 15.5 5 11V6L12 3Z"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
 
-              <p className="login-field mt-5 text-center text-xs text-black/35">
-                Securely manage your time with TimePilot.
-              </p>
+                  <path
+                    d="M9 12L11 14L15 10"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+
+                <span>
+                  Securely manage your time with TimePilot.
+                </span>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* BOTTOM STATUS */}
+      {/* ========================================================
+          BOTTOM STATUS
+      ======================================================== */}
 
-      <div className="pointer-events-none fixed bottom-5 left-1/2 z-20 hidden -translate-x-1/2 items-center gap-2 rounded-full border border-black/[0.07] bg-white/70 px-4 py-2 text-[10px] font-medium uppercase tracking-[0.2em] text-black/35 shadow-sm backdrop-blur-xl sm:flex">
+      <div className="pointer-events-none fixed bottom-5 left-1/2 z-20 hidden -translate-x-1/2 items-center gap-2 rounded-full border border-black/[0.07] bg-white/70 px-4 py-2 text-[10px] font-medium uppercase tracking-[0.2em] text-black/30 shadow-sm backdrop-blur-xl sm:flex">
         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+
         TimePilot is ready
       </div>
     </main>
   );
 }
 
-/* ═══════════════════════════════════════════════
-   Icons
-═══════════════════════════════════════════════ */
+/* ============================================================
+   GOOGLE ICON
+============================================================ */
 
 function GoogleIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
       <path
         fill="#4285F4"
         d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.46a5.52 5.52 0 0 1-2.4 3.62v3h3.87c2.27-2.09 3.59-5.17 3.59-8.81Z"
       />
+
       <path
         fill="#34A853"
         d="M12 24c3.24 0 5.96-1.07 7.94-2.92l-3.87-3c-1.08.72-2.46 1.15-4.07 1.15-3.13 0-5.78-2.11-6.73-4.96H1.27v3.11A12 12 0 0 0 12 24Z"
       />
+
       <path
         fill="#FBBC05"
         d="M5.27 14.27a7.2 7.2 0 0 1 0-4.54v-3.1H1.27a12 12 0 0 0 0 10.75l4-3.11Z"
       />
+
       <path
         fill="#EA4335"
         d="M12 4.75c1.76 0 3.34.6 4.59 1.79l3.44-3.44C17.95 1.19 15.23 0 12 0 7.31 0 3.26 2.69 1.27 6.63l4 3.1C6.22 6.87 8.87 4.75 12 4.75Z"
