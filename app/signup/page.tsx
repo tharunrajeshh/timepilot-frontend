@@ -47,7 +47,6 @@ type Stage = "form" | "verify";
 type EmailStatus = "idle" | "invalid" | "checking" | "available" | "taken" | "error";
 
 export default function SignupForm() {
-  /* fields */
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -58,27 +57,22 @@ export default function SignupForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
-  /* ui state */
   const [stage, setStage] = useState<Stage>("form");
   const [loading, setLoading] = useState(false);
   const [formError, setFormError] = useState("");
   const [emailStatus, setEmailStatus] = useState<EmailStatus>("idle");
   const [resendIn, setResendIn] = useState(0);
 
-  /* anti-bot */
   const honeypotRef = useRef<HTMLInputElement>(null);
   const mountedAtRef = useRef(Date.now());
 
-  /* rate limiting */
   const [attempts, setAttempts] = useState(0);
   const [cooldownUntil, setCooldownUntil] = useState(0);
   const [now, setNow] = useState(Date.now());
   const cooldownLeft = Math.max(0, Math.ceil((cooldownUntil - now) / 1000));
 
-  /* live clock */
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  /* refs */
   const cardRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const errorRef = useRef<HTMLDivElement>(null);
@@ -86,7 +80,6 @@ export default function SignupForm() {
   const verifyHeadingRef = useRef<HTMLHeadingElement>(null);
   const emailAbortRef = useRef<AbortController | null>(null);
 
-  /* restore draft */
   useEffect(() => {
     const draft = sessionStorage.getItem("timepilot.signup.draft");
     if (draft) {
@@ -94,9 +87,7 @@ export default function SignupForm() {
         const parsed = JSON.parse(draft);
         if (typeof parsed.name === "string") setName(parsed.name);
         if (typeof parsed.email === "string") setEmail(parsed.email);
-      } catch {
-        /* ignore */
-      }
+      } catch {}
     }
   }, []);
 
@@ -122,7 +113,6 @@ export default function SignupForm() {
     return () => clearInterval(t);
   }, [resendIn]);
 
-  /* entrance animation */
   useEffect(() => {
     const reduceMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
@@ -149,7 +139,6 @@ export default function SignupForm() {
     };
   }, []);
 
-  /* debounced email check */
   const debouncedEmail = useDebounced(email.trim(), 500);
 
   useEffect(() => {
@@ -195,7 +184,6 @@ export default function SignupForm() {
     if (stage === "verify") verifyHeadingRef.current?.focus();
   }, [stage]);
 
-  /* validation */
   const passwordChecks = useMemo(
     () => PASSWORD_RULES.map((r) => ({ ...r, passed: r.test(password) })),
     [password],
@@ -230,7 +218,6 @@ export default function SignupForm() {
     password, passwordStrong, confirmPassword, passwordsMatch, agreed,
   ]);
 
-  /* google oauth */
   const handleGoogleSignup = useCallback(() => {
     const state = crypto.randomUUID();
     sessionStorage.setItem("timepilot.oauth.state", state);
@@ -240,7 +227,6 @@ export default function SignupForm() {
     window.location.href = url.toString();
   }, []);
 
-  /* submit */
   const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setFormError("");
@@ -322,7 +308,6 @@ export default function SignupForm() {
     }
   };
 
-  /* resend */
   const handleResend = async () => {
     if (resendIn > 0) return;
     setResendIn(60);
@@ -332,12 +317,9 @@ export default function SignupForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim() }),
       });
-    } catch {
-      /* silent */
-    }
+    } catch {}
   };
 
-  /* button hover */
   const handleButtonEnter = () => {
     if (!buttonRef.current || loading) return;
     animate(buttonRef.current, { scale: 1.015, duration: 220, ease: "outQuad" });
@@ -602,17 +584,17 @@ export default function SignupForm() {
                         />
                       </div>
 
-                      {/* Password requirements — FIXED: no overlapping labels */}
+                      {/* ── PASSWORD REQUIREMENTS — COMPACT VERSION ── */}
                       <div
                         id="password-requirements"
-                        className="mt-3 rounded-xl border border-white/[0.08] bg-white/[0.04] p-3 backdrop-blur-xl"
+                        className="mt-2.5 rounded-lg border border-white/[0.06] bg-white/[0.03] px-2.5 py-2"
                       >
-                        <div className="mb-2 flex items-center justify-between gap-3">
-                          <span className="text-xs font-semibold text-white/70">
+                        <div className="mb-1.5 flex items-center justify-between gap-3">
+                          <span className="text-[10.5px] font-semibold tracking-wide text-white/60">
                             Password requirements
                           </span>
                           <span
-                            className={`text-xs font-semibold ${
+                            className={`text-[10.5px] font-semibold ${
                               password ? STRENGTH_TEXT[passwordScore] : "text-white/30"
                             }`}
                           >
@@ -620,11 +602,11 @@ export default function SignupForm() {
                           </span>
                         </div>
 
-                        <div className="mb-3 flex h-1 gap-1" aria-hidden="true">
+                        <div className="mb-2 flex gap-1" aria-hidden="true">
                           {[1, 2, 3, 4, 5].map((step) => (
                             <span
                               key={step}
-                              className={`h-full flex-1 rounded-full transition-colors ${
+                              className={`h-[3px] flex-1 rounded-full transition-colors ${
                                 step <= passwordScore
                                   ? STRENGTH_BAR[passwordScore]
                                   : "bg-white/10"
@@ -633,23 +615,23 @@ export default function SignupForm() {
                           ))}
                         </div>
 
-                        <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        <ul className="grid grid-cols-1 gap-x-4 gap-y-1 text-[11px] sm:grid-cols-2">
                           {passwordChecks.map((rule) => (
                             <li
                               key={rule.id}
-                              className={`flex min-h-[18px] items-center gap-2 text-xs leading-none ${
-                                rule.passed ? "text-emerald-300" : "text-white/50"
+                              className={`flex items-center gap-1.5 ${
+                                rule.passed ? "text-emerald-300" : "text-white/45"
                               }`}
                             >
                               <span
-                                className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full ${
-                                  rule.passed ? "bg-emerald-400/20" : "bg-white/[0.08]"
+                                className={`flex h-3 w-3 shrink-0 items-center justify-center rounded-full ${
+                                  rule.passed ? "bg-emerald-400/25" : "bg-white/[0.08]"
                                 }`}
                                 aria-hidden="true"
                               >
                                 {rule.passed ? <CheckIcon /> : null}
                               </span>
-                              <span className="leading-tight">{rule.label}</span>
+                              <span>{rule.label}</span>
                             </li>
                           ))}
                         </ul>
@@ -692,15 +674,15 @@ export default function SignupForm() {
                         />
                       </div>
 
-                      <div id="confirm-status" className="min-h-[18px]">
+                      <div id="confirm-status" className="min-h-[16px]">
                         {passwordsMatch && (
-                          <div className="mt-2 flex items-center gap-1.5 text-xs font-medium text-emerald-300">
+                          <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-medium text-emerald-300">
                             <CheckIcon />
                             Passwords match
                           </div>
                         )}
                         {passwordsMismatch && (
-                          <div className="mt-2 flex items-center gap-1.5 text-xs font-medium text-rose-300">
+                          <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-medium text-rose-300">
                             <AlertIcon />
                             Passwords don&apos;t match yet
                           </div>
@@ -1290,7 +1272,7 @@ function LockIcon() {
 
 function CheckIcon() {
   return (
-    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5">
       <path d="m5 12 4 4L19 6" />
     </svg>
   );
