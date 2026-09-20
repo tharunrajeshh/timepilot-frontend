@@ -1,502 +1,1400 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { ArrowRight, ArrowUpRight, Check, Menu, X } from "lucide-react";
+import { useEffect, useMemo, useRef } from "react";
+import {
+  ArrowUpRight,
+  BarChart3,
+  Brain,
+  CalendarDays,
+  Check,
+  Clock3,
+  MoreHorizontal,
+  Sparkles,
+} from "lucide-react";
 
-/* ============================================================
-   SOCIAL ICONS
-   Lucide removed all brand/logo icons (Facebook, Dribbble,
-   Instagram, LinkedIn, etc.) starting in v1, so these are small
-   inline SVGs instead of a lucide-react import — this keeps the
-   build working regardless of which lucide-react version you're
-   on. Swap the paths for your own brand SVGs any time.
-============================================================ */
+/* ═══════════════════════════════════════════════════════════════
+   ✏️  CUSTOMIZE YOUR CONTENT HERE
+   Change these values — everything else in the file picks them up.
+═══════════════════════════════════════════════════════════════ */
 
-function FacebookIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
-    </svg>
-  );
-}
+const BRAND = {
+  name: "TimePilot",          // shows in browser window address bar
+  logoLetter: "T",             // shown in the app sidebar logo
+};
 
-function TwitterIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z" />
-    </svg>
-  );
-}
+const HERO = {
+  eyebrow: "Intelligent time management",
 
-function DribbbleIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <circle cx="12" cy="12" r="10" />
-      <path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72M19.13 5.09C15.22 9.14 10 10.44 2.25 10.94M21.75 12.84c-6.62-1.41-12.14-1-16.38 3.02" />
-    </svg>
-  );
-}
+  titleLine1: "Take control",
+  titleLine2: "of your time.",
 
-function YoutubeIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17Z" />
-      <path d="m10 15 5-3-5-3z" />
-    </svg>
-  );
-}
+  description:
+    "TimePilot turns your tasks, priorities and schedule into a focused day you can actually finish.",
 
-function LinkedinIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
-      <rect x="2" y="9" width="4" height="12" />
-      <circle cx="4" cy="4" r="2" />
-    </svg>
-  );
-}
-
-function InstagramIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
-    </svg>
-  );
-}
-
-/* ============================================================
-   NAV DATA
-============================================================ */
-
-const NAV_LINKS = ["Features", "Integrations", "Pricing", "Blog"];
-
-/* ============================================================
-   FOOTER DATA
-============================================================ */
-
-const FOOTER_COLUMNS: { title: string; links: string[] }[] = [
-  {
-    title: "PRODUCT",
-    links: ["Features", "Integrations", "Pricing", "Changelog"],
+  primaryCta: {
+    label: "Get started",
+    href: "/signup",
   },
-  {
-    title: "COMPANY",
-    links: ["About", "Careers", "Blog", "Press"],
-  },
-  {
-    title: "RESOURCES",
-    links: ["Help Center", "Docs", "Community", "Status"],
-  },
-  {
-    title: "LEGAL",
-    links: ["Privacy", "Terms", "Security"],
-  },
-];
 
-/* ============================================================
+  secondaryCta: {
+    label: "Explore TimePilot",
+    href: "#features",
+  },
+
+  trust: [
+    { label: "AI-assisted planning", accent: "purple" as const },
+    { label: "Smart scheduling",     accent: "blue"   as const },
+    { label: "Focus analytics",      accent: "green"  as const },
+  ],
+};
+
+const FLOATING_AI_CARD = {
+  title: "AI suggestion",
+  subtitle: "Schedule optimized",
+};
+
+const FLOATING_FOCUS_CARD = {
+  label: "Focus mode",
+  time: "52 min",
+};
+
+const APP_SIDEBAR = {
+  nav: [
+    { label: "Today",      icon: "calendar" as const, active: true },
+    { label: "AI Planner", icon: "brain"    as const, active: false },
+    { label: "Analytics",  icon: "chart"    as const, active: false },
+  ],
+  workspace: {
+    name: "My workspace",
+    type: "Personal",
+    avatar: "M",
+  },
+};
+
+const APP_DASHBOARD = {
+  date: "THURSDAY, SEPTEMBER 24",
+  greeting: "Good morning.",
+  subtitle: "Here's your plan for today.",
+  profileAvatar: "M",
+
+  stats: [
+    { title: "Focus time",      value: "4h 32m", change: "+18%" },
+    { title: "Tasks completed", value: "8 / 11", change: "+3"   },
+    { title: "Deep work",       value: "72%",    change: "+12%" },
+  ],
+
+  schedule: [
+    { time: "09:00", title: "Deep work",     description: "Product strategy",    active: true,  type: "focus"   as const },
+    { time: "11:00", title: "Team sync",     description: "Weekly planning",     active: false, type: "meeting" as const },
+    { time: "13:30", title: "Lunch break",   description: "Take a real break",   active: false, type: "break"   as const },
+    { time: "14:30", title: "Project work",  description: "Dashboard redesign",  active: false, type: "focus"   as const },
+  ],
+
+  aiPanel: {
+    label: "AI PLANNER",
+    headline: "Your strongest focus window is",
+    headlineStrong: "9:00 – 11:00.",
+    body: "TimePilot protected it for your highest-priority task.",
+    footLeft: "Optimized just now",
+    footRight: "94%",
+    progress: 94,
+  },
+};
+
+const PREVIEW_CAPTION = {
+  left: "A calmer way to plan your day.",
+  right: "Built around how you actually work.",
+};
+
+/* Background image paths — drop your own files into /public/images */
+const BACKGROUNDS = {
+  spaceImage: "/images/earth-bg.jpg",       // main hero space image
+  marsImage:  "/images/mars-surface.jpg",   // planet at the bottom
+};
+
+/* ═══════════════════════════════════════════════════════════════
+   STAR FIELD — nothing to edit here, just falls randomly
+═══════════════════════════════════════════════════════════════ */
+
+type StarDef = {
+  left: number;
+  size: number;
+  duration: number;
+  delay: number;
+  drift: number;
+};
+
+function useStarField(count: number): StarDef[] {
+  return useMemo(() => {
+    return Array.from({ length: count }).map(() => ({
+      left: Math.random() * 100,
+      size: 1 + Math.random() * 2,
+      duration: 3 + Math.random() * 5,
+      delay: Math.random() * 8,
+      drift: -60 + Math.random() * 120,
+    }));
+  }, [count]);
+}
+
+/* ═══════════════════════════════════════════════════════════════
    HERO
-   Single-viewport layout: nav, looping background video, centered
-   hero content, and a multi-column footer pinned to the bottom.
-============================================================ */
+═══════════════════════════════════════════════════════════════ */
 
 export default function Hero() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [menuVisible, setMenuVisible] = useState(false);
+  const stars = useStarField(35);
 
-  /* Mount/animate the mobile menu in two steps so the entrance
-     transition actually runs, and unmount only after the exit
-     transition has had time to finish. */
+  const heroRef = useRef<HTMLElement>(null);
+  const spaceImageRef = useRef<HTMLDivElement>(null);
+  const marsImageRef = useRef<HTMLDivElement>(null);
+  const marsGlowRef = useRef<HTMLDivElement>(null);
+  const starsLayerRef = useRef<HTMLDivElement>(null);
+  const glowLeftRef = useRef<HTMLDivElement>(null);
+  const glowRightRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    if (mobileMenuOpen) {
-      const raf = requestAnimationFrame(() => setMenuVisible(true));
-      return () => cancelAnimationFrame(raf);
-    }
-  }, [mobileMenuOpen]);
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+    if (reduceMotion) return;
 
-  const openMenu = () => setMobileMenuOpen(true);
+    const hero = heroRef.current;
+    if (!hero) return;
 
-  const closeMenu = () => {
-    setMenuVisible(false);
-    window.setTimeout(() => setMobileMenuOpen(false), 500);
-  };
+    let raf = 0;
+    let targetX = 0;
+    let targetY = 0;
+    let currentX = 0;
+    let currentY = 0;
+
+    const handleMove = (e: MouseEvent) => {
+      const rect = hero.getBoundingClientRect();
+      targetX = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
+      targetY = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
+    };
+
+    const tick = () => {
+      currentX += (targetX - currentX) * 0.06;
+      currentY += (targetY - currentY) * 0.06;
+
+      if (spaceImageRef.current) {
+        spaceImageRef.current.style.transform = `scale(1.06) translate(${currentX * -10}px, ${currentY * -8}px)`;
+      }
+      if (marsImageRef.current) {
+        marsImageRef.current.style.transform = `translateX(calc(-50% + ${currentX * 22}px)) translateY(${currentY * 14}px)`;
+      }
+      if (marsGlowRef.current) {
+        marsGlowRef.current.style.transform = `translateX(calc(-50% + ${currentX * 16}px))`;
+      }
+      if (starsLayerRef.current) {
+        starsLayerRef.current.style.transform = `translate(${currentX * 18}px, ${currentY * 12}px)`;
+      }
+      if (glowLeftRef.current) {
+        glowLeftRef.current.style.transform = `translate(${currentX * 26}px, ${currentY * 18}px)`;
+      }
+      if (glowRightRef.current) {
+        glowRightRef.current.style.transform = `translate(${currentX * -26}px, ${currentY * -18}px)`;
+      }
+
+      raf = requestAnimationFrame(tick);
+    };
+
+    window.addEventListener("mousemove", handleMove);
+    raf = requestAnimationFrame(tick);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMove);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
 
   return (
-    <section
-      id="top"
-      className="relative min-h-screen flex flex-col bg-[#050505] text-white"
-      style={{
-        fontFamily: '"Helvetica Now Var", Helvetica, Arial, sans-serif',
-      }}
-    >
-      {/* =========================================================
-          BACKGROUND VIDEO
-          Replace the empty <source> below with your own hosted,
-          cinematic loop. earth-bg.jpg is used as the poster/fallback
-          so the section still looks right before the video loads.
-      ========================================================== */}
+    <section id="top" className="tp-hero" ref={heroRef}>
+      {/* BACKGROUND */}
+      <div className="tp-hero-background">
+        <div
+          className="tp-space-image"
+          ref={spaceImageRef}
+          style={{ backgroundImage: `url("${BACKGROUNDS.spaceImage}")` }}
+        />
 
-      <video
-        autoPlay
-        muted
-        loop
-        playsInline
-        poster="/images/earth-bg.jpg"
-        className="absolute inset-0 h-full w-full object-cover opacity-80"
-      >
-        {/* TODO: point this at your own hosted background video */}
-        <source src="" type="video/mp4" />
-      </video>
-
-      {/* Gradient wash so nav/footer text stays readable over the video */}
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            "linear-gradient(to bottom, rgba(3,5,9,0.35) 0%, rgba(3,5,9,0.15) 30%, rgba(3,5,9,0.55) 75%, #050505 100%)",
-        }}
-      />
-
-      {/* Decorative violet/blue glows, matching TimePilot's palette */}
-      <div className="pointer-events-none absolute -left-40 top-10 h-[520px] w-[520px] rounded-full bg-violet-600/20 blur-[140px]" />
-      <div className="pointer-events-none absolute -right-32 top-[25%] h-[460px] w-[460px] rounded-full bg-blue-600/15 blur-[130px]" />
-
-      {/* =========================================================
-          CONTENT
-      ========================================================== */}
-
-      <div className="relative z-10 flex min-h-screen flex-col">
-        {/* =====================================================
-            NAVIGATION
-        ====================================================== */}
-
-        <nav className="flex items-center justify-between px-6 py-5 md:px-12 lg:px-16">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-[9px] bg-white text-sm font-bold text-black">
-              T
-            </span>
-            <span className="text-xl font-bold tracking-wider text-white">
-              TimePilot
-            </span>
-          </Link>
-
-          {/* Desktop links */}
-          <div className="hidden items-center gap-8 lg:flex">
-            {NAV_LINKS.map((link) => (
-              <a
-                key={link}
-                href={`#${link.toLowerCase()}`}
-                className="text-sm tracking-wide text-white/80 transition-colors duration-200 hover:text-white"
-              >
-                {link}
-              </a>
-            ))}
-          </div>
-
-          {/* Login button */}
-          <Link
-            href="/login"
-            className="hidden items-center gap-2 rounded-full bg-gradient-to-r from-violet-500 to-violet-600 px-6 py-2.5 text-sm font-semibold text-white lg:inline-flex"
-          >
-            LOG IN
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-
-          {/* Mobile hamburger */}
-          <button
-            type="button"
-            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-            onClick={mobileMenuOpen ? closeMenu : openMenu}
-            className="relative z-[60] flex h-9 w-9 items-center justify-center lg:hidden"
-          >
-            <Menu
-              className={`absolute h-6 w-6 transition-all duration-300 ${
-                mobileMenuOpen
-                  ? "-rotate-90 scale-75 opacity-0"
-                  : "rotate-0 scale-100 opacity-100"
-              }`}
-            />
-            <X
-              className={`absolute h-6 w-6 transition-all duration-300 ${
-                mobileMenuOpen
-                  ? "rotate-0 scale-100 opacity-100"
-                  : "rotate-90 scale-75 opacity-0"
-              }`}
-            />
-          </button>
-        </nav>
-
-        {/* =====================================================
-            MOBILE MENU
-        ====================================================== */}
-
-        {mobileMenuOpen && (
-          <>
-            <div
-              onClick={closeMenu}
-              className={`fixed inset-0 z-40 bg-black/40 backdrop-blur-md transition-opacity duration-400 ${
-                menuVisible ? "opacity-100" : "opacity-0"
-              }`}
-            />
-
-            <div className="absolute left-0 right-0 top-[68px] z-50">
-              <div className="absolute inset-0 rounded-b-2xl backdrop-blur-xl" />
-
-              <div className="relative z-10 flex flex-col items-center gap-6 px-6 py-10">
-                {NAV_LINKS.map((link, index) => (
-                  <a
-                    key={link}
-                    href={`#${link.toLowerCase()}`}
-                    onClick={closeMenu}
-                    className="text-lg font-light tracking-[0.08em] text-white/80 transition-all ease-out hover:text-white sm:text-xl"
-                    style={{
-                      transitionDuration: "400ms",
-                      transitionDelay: menuVisible
-                        ? `${350 + index * 50}ms`
-                        : "0ms",
-                      opacity: menuVisible ? 1 : 0,
-                      transform: menuVisible
-                        ? "translateY(0)"
-                        : "translateY(12px)",
-                    }}
-                  >
-                    {link}
-                  </a>
-                ))}
-
-                <Link
-                  href="/login"
-                  onClick={closeMenu}
-                  className="mt-2 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-violet-500 to-violet-600 px-6 py-2.5 text-sm font-semibold text-white transition-all ease-out"
-                  style={{
-                    transitionDuration: "400ms",
-                    transitionDelay: menuVisible
-                      ? `${350 + NAV_LINKS.length * 50}ms`
-                      : "0ms",
-                    opacity: menuVisible ? 1 : 0,
-                    transform: menuVisible
-                      ? "translateY(0)"
-                      : "translateY(12px)",
-                  }}
-                >
-                  LOG IN
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* =====================================================
-            HERO CONTENT
-        ====================================================== */}
-
-        <div className="flex flex-1 flex-col items-center justify-center px-4 py-12 text-center sm:px-6 sm:py-16 md:py-0">
-          {/* Eyebrow */}
-          <div className="mb-6 inline-flex h-[34px] items-center gap-2 rounded-full border border-white/15 bg-white/[0.07] px-4 text-[11px] font-semibold text-white/75 backdrop-blur-xl">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-violet-400" />
-            Intelligent time management
-          </div>
-
-          {/* Headline — two lines, second one lighter, matching the
-              subtitle-then-headline rhythm of the reference layout */}
-          <h1 className="max-w-3xl text-[48px] font-black leading-[0.95] tracking-tighter text-white sm:text-[64px] md:text-[88px] lg:text-[104px]">
+        <div className="tp-falling-stars" ref={starsLayerRef}>
+          {stars.map((star, i) => (
             <span
-              className="block hero-glow"
-              style={{ textShadow: "0 0 80px rgba(255,255,255,0.25)" }}
-            >
-              Take control
-            </span>
-            <span className="block font-light text-white/50">
-              of your time.
-            </span>
-          </h1>
-
-          {/* Description */}
-          <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-white/60 sm:text-lg">
-            TimePilot turns your tasks, priorities and schedule into a
-            focused day you can actually finish.
-          </p>
-
-          {/* Buttons */}
-          <div className="mt-9 flex flex-col items-center gap-3 sm:flex-row">
-            <a
-              href="/signup"
-              className="liquid-glass inline-flex items-center gap-2 rounded-full px-8 py-3.5 text-sm font-medium uppercase tracking-[0.2em] text-white"
-            >
-              Get started
-              <ArrowUpRight className="h-4 w-4" />
-            </a>
-
-            <a
-              href="#features"
-              className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-7 py-3.5 text-sm font-medium tracking-wide text-white/85 backdrop-blur-xl transition-colors duration-200 hover:border-white/25 hover:bg-white/[0.1]"
-            >
-              Explore TimePilot
-              <span className="text-white/45">↓</span>
-            </a>
-          </div>
-
-          {/* Trust row */}
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-4 text-xs font-medium text-white/45 sm:gap-5">
-            <TrustItem color="violet" label="AI-assisted planning" />
-            <span className="hidden h-4 w-px bg-white/10 sm:block" />
-            <TrustItem color="blue" label="Smart scheduling" />
-            <span className="hidden h-4 w-px bg-white/10 sm:block" />
-            <TrustItem color="green" label="Focus analytics" />
-          </div>
+              key={i}
+              className="tp-star"
+              style={
+                {
+                  left: `${star.left}vw`,
+                  width: `${star.size}px`,
+                  height: `${star.size}px`,
+                  animationDuration: `${star.duration}s`,
+                  animationDelay: `${star.delay}s`,
+                  "--tp-drift": `${star.drift}px`,
+                } as React.CSSProperties
+              }
+            />
+          ))}
         </div>
 
-        {/* =====================================================
-            FOOTER
-        ====================================================== */}
+        <div className="tp-space-overlay" />
 
-        <footer className="relative z-10 px-4 pb-8 pt-10 sm:px-6 sm:pb-10 md:px-12 lg:px-16 lg:pt-16">
-          <div className="grid grid-cols-2 gap-6 sm:gap-8 md:grid-cols-4 lg:grid-cols-6 lg:gap-6">
-            {FOOTER_COLUMNS.map((column) => (
-              <div key={column.title}>
-                <h4 className="mb-3 text-[10px] font-bold tracking-[0.15em] text-white sm:mb-4 sm:text-xs">
-                  {column.title}
-                </h4>
-                <ul className="space-y-2 sm:space-y-2.5">
-                  {column.links.map((link) => (
-                    <li key={link}>
-                      <a
-                        href="#"
-                        className="text-[10px] text-white/50 transition-colors duration-200 hover:text-white/80 sm:text-xs"
-                      >
-                        {link}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-
-            {/* Newsletter + Social */}
-            <div className="col-span-2">
-              <h4 className="mb-3 text-[10px] font-bold tracking-[0.15em] text-white sm:mb-4 sm:text-xs">
-                JOIN FOR PRODUCT UPDATES
-              </h4>
-
-              <form className="flex max-w-sm">
-                <input
-                  type="email"
-                  placeholder="Type your email to sign up"
-                  className="min-w-0 flex-1 rounded-l-md bg-white px-3 py-2 text-xs text-black outline-none placeholder:text-black/40"
-                />
-                <button
-                  type="submit"
-                  className="whitespace-nowrap rounded-r-md bg-gradient-to-r from-violet-500 to-violet-600 px-4 py-2 text-xs font-bold tracking-wider text-white"
-                >
-                  SEND IT
-                </button>
-              </form>
-
-              <h4 className="mb-3 mt-5 text-[10px] font-bold tracking-[0.15em] text-white sm:mt-6 sm:text-xs">
-                CONNECT
-              </h4>
-
-              <div className="flex gap-3">
-                {[
-                  FacebookIcon,
-                  TwitterIcon,
-                  DribbbleIcon,
-                  YoutubeIcon,
-                  LinkedinIcon,
-                  InstagramIcon,
-                ].map((Icon, i) => (
-                  <a
-                    key={i}
-                    href="#"
-                    className="text-white/50 transition-colors duration-200 hover:text-white"
-                  >
-                    <Icon className="h-4 w-4" />
-                  </a>
-                ))}
-              </div>
-            </div>
-          </div>
-        </footer>
+        <div
+          className="tp-mars-image"
+          ref={marsImageRef}
+          style={{ backgroundImage: `linear-gradient(135deg, rgba(255,255,255,0.06), rgba(0,0,0,0.08)), url("${BACKGROUNDS.marsImage}")` }}
+        />
+        <div className="tp-mars-glow" ref={marsGlowRef} />
       </div>
 
-      {/* =========================================================
-          STYLES — the liquid-glass border trick needs raw CSS
-          (mask-composite isn't expressible as a Tailwind utility)
-      ========================================================== */}
+      <div className="tp-hero-glow tp-hero-glow-left" ref={glowLeftRef} />
+      <div className="tp-hero-glow tp-hero-glow-right" ref={glowRightRef} />
 
+      {/* CONTENT */}
+      <div className="tp-hero-container">
+        {/* Eyebrow */}
+        <div className="tp-hero-eyebrow">
+          <span className="tp-eyebrow-dot" />
+          <span>{HERO.eyebrow}</span>
+          <span className="tp-eyebrow-arrow">↗</span>
+        </div>
+
+        {/* Title */}
+        <h1 className="tp-hero-title">
+          <span>{HERO.titleLine1}</span>
+          <span className="tp-hero-title-light">{HERO.titleLine2}</span>
+        </h1>
+
+        {/* Description */}
+        <p className="tp-hero-description">{HERO.description}</p>
+
+        {/* Buttons */}
+        <div className="tp-hero-buttons">
+          <Link href={HERO.primaryCta.href} className="tp-get-started">
+            <span>{HERO.primaryCta.label}</span>
+            <span className="tp-get-started-icon">
+              <ArrowUpRight size={18} strokeWidth={2.2} />
+            </span>
+          </Link>
+
+          <a href={HERO.secondaryCta.href} className="tp-explore">
+            <span>{HERO.secondaryCta.label}</span>
+            <span className="tp-explore-arrow">↓</span>
+          </a>
+        </div>
+
+        {/* Trust row */}
+        <div className="tp-trust">
+          {HERO.trust.map((item, i) => (
+            <>
+              {i > 0 && <span key={`d-${i}`} className="tp-trust-divider" />}
+              <div
+                key={item.label}
+                className={`tp-trust-item tp-trust-${item.accent}`}
+              >
+                <span className="tp-trust-icon">
+                  <Check size={12} strokeWidth={2.7} />
+                </span>
+                <span>{item.label}</span>
+              </div>
+            </>
+          ))}
+        </div>
+
+        {/* Product preview */}
+        <div className="tp-preview-wrapper">
+          {/* Floating AI card */}
+          <div className="tp-ai-card">
+            <div className="tp-ai-card-icon">
+              <Sparkles size={17} />
+            </div>
+            <div className="tp-ai-card-content">
+              <div className="tp-ai-card-title">{FLOATING_AI_CARD.title}</div>
+              <div className="tp-ai-card-subtitle">{FLOATING_AI_CARD.subtitle}</div>
+            </div>
+            <span className="tp-ai-live" />
+          </div>
+
+          {/* Floating focus card */}
+          <div className="tp-focus-card">
+            <div className="tp-focus-card-icon">
+              <Clock3 size={17} />
+            </div>
+            <div>
+              <div className="tp-focus-card-label">{FLOATING_FOCUS_CARD.label}</div>
+              <div className="tp-focus-card-time">{FLOATING_FOCUS_CARD.time}</div>
+            </div>
+          </div>
+
+          {/* Browser mock */}
+          <div className="tp-browser-window">
+            <div className="tp-browser-header">
+              <div className="tp-browser-controls">
+                <span />
+                <span />
+                <span />
+              </div>
+              <div className="tp-browser-address">app.{BRAND.name.toLowerCase()}</div>
+              <MoreHorizontal size={18} className="tp-browser-more" />
+            </div>
+
+            <div className="tp-app">
+              {/* Sidebar */}
+              <aside className="tp-app-sidebar">
+                <div className="tp-app-logo">{BRAND.logoLetter}</div>
+
+                <div className="tp-app-navigation">
+                  {APP_SIDEBAR.nav.map((item) => {
+                    const Icon =
+                      item.icon === "calendar"
+                        ? CalendarDays
+                        : item.icon === "brain"
+                        ? Brain
+                        : BarChart3;
+                    return (
+                      <div
+                        key={item.label}
+                        className={`tp-app-nav ${item.active ? "active" : ""}`}
+                      >
+                        <Icon size={16} />
+                        <span>{item.label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="tp-app-user">
+                  <div className="tp-user-avatar">{APP_SIDEBAR.workspace.avatar}</div>
+                  <div>
+                    <div className="tp-user-name">{APP_SIDEBAR.workspace.name}</div>
+                    <div className="tp-user-type">{APP_SIDEBAR.workspace.type}</div>
+                  </div>
+                </div>
+              </aside>
+
+              {/* Main */}
+              <main className="tp-app-main">
+                <div className="tp-app-heading">
+                  <div>
+                    <div className="tp-app-date">{APP_DASHBOARD.date}</div>
+                    <h2>{APP_DASHBOARD.greeting}</h2>
+                    <p>{APP_DASHBOARD.subtitle}</p>
+                  </div>
+                  <div className="tp-profile">{APP_DASHBOARD.profileAvatar}</div>
+                </div>
+
+                <div className="tp-stats">
+                  {APP_DASHBOARD.stats.map((s) => (
+                    <MiniStat
+                      key={s.title}
+                      title={s.title}
+                      value={s.value}
+                      change={s.change}
+                    />
+                  ))}
+                </div>
+
+                <div className="tp-dashboard-grid">
+                  <div className="tp-schedule">
+                    <div className="tp-section-heading">
+                      <div>
+                        <span>TODAY</span>
+                        <h3>Your schedule</h3>
+                      </div>
+                      <button type="button">View all</button>
+                    </div>
+
+                    <div className="tp-schedule-list">
+                      {APP_DASHBOARD.schedule.map((row) => (
+                        <Schedule
+                          key={row.time + row.title}
+                          time={row.time}
+                          title={row.title}
+                          description={row.description}
+                          active={row.active}
+                          type={row.type}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="tp-ai-panel">
+                    <div className="tp-ai-panel-icon">
+                      <Sparkles size={17} />
+                    </div>
+
+                    <span className="tp-ai-panel-label">
+                      {APP_DASHBOARD.aiPanel.label}
+                    </span>
+
+                    <h3>
+                      {APP_DASHBOARD.aiPanel.headline}{" "}
+                      <strong>{APP_DASHBOARD.aiPanel.headlineStrong}</strong>
+                    </h3>
+
+                    <p>{APP_DASHBOARD.aiPanel.body}</p>
+
+                    <div className="tp-progress">
+                      <span style={{ width: `${APP_DASHBOARD.aiPanel.progress}%` }} />
+                    </div>
+
+                    <div className="tp-ai-panel-bottom">
+                      <span>{APP_DASHBOARD.aiPanel.footLeft}</span>
+                      <strong>{APP_DASHBOARD.aiPanel.footRight}</strong>
+                    </div>
+                  </div>
+                </div>
+              </main>
+            </div>
+          </div>
+
+          {/* Caption */}
+          <div className="tp-preview-caption">
+            <span>{PREVIEW_CAPTION.left}</span>
+            <span className="tp-caption-divider" />
+            <span>{PREVIEW_CAPTION.right}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ═══════════════════════════════════════════════════════════
+          STYLES — leave as-is unless changing the design
+      ═══════════════════════════════════════════════════════════ */}
       <style jsx>{`
-        .liquid-glass {
-          background: rgba(255, 255, 255, 0.01);
-          background-blend-mode: luminosity;
-          backdrop-filter: blur(4px);
-          -webkit-backdrop-filter: blur(4px);
-          border: none;
-          box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
+        .tp-hero {
           position: relative;
+          width: 100%;
+          min-height: 100vh;
+          padding-top: 150px;
+          padding-bottom: 100px;
           overflow: hidden;
+          background: #050505;
+          color: #ffffff;
         }
-        .liquid-glass::before {
-          content: "";
+
+        .tp-hero-background {
           position: absolute;
           inset: 0;
-          border-radius: inherit;
-          padding: 1.4px;
-          background: linear-gradient(
-            180deg,
-            rgba(255, 255, 255, 0.45) 0%,
-            rgba(255, 255, 255, 0.15) 20%,
-            rgba(255, 255, 255, 0) 40%,
-            rgba(255, 255, 255, 0) 60%,
-            rgba(255, 255, 255, 0.15) 80%,
-            rgba(255, 255, 255, 0.45) 100%
-          );
-          -webkit-mask: linear-gradient(#fff 0 0) content-box,
-            linear-gradient(#fff 0 0);
-          -webkit-mask-composite: xor;
-          mask-composite: exclude;
           pointer-events: none;
+          overflow: hidden;
+          background: #050505;
+        }
+
+        .tp-space-image {
+          position: absolute;
+          inset: -30px;
+          background-size: cover;
+          background-position: center;
+          background-repeat: no-repeat;
+          opacity: 0.78;
+          transform: scale(1.06);
+          filter: saturate(0.85);
+          will-change: transform;
+          transition: transform 0.1s linear;
+        }
+
+        .tp-falling-stars {
+          position: absolute;
+          inset: -40px;
+          z-index: 2;
+          overflow: hidden;
+          pointer-events: none;
+          will-change: transform;
+        }
+
+        .tp-star {
+          position: absolute;
+          top: -5%;
+          background: #ffffff;
+          border-radius: 50%;
+          box-shadow: 0 0 6px 2px rgba(255, 255, 255, 0.75);
+          animation-name: tp-fall;
+          animation-timing-function: linear;
+          animation-iteration-count: infinite;
+          opacity: 0;
+        }
+
+        .tp-star::after {
+          content: "";
+          position: absolute;
+          top: 50%;
+          right: 100%;
+          width: 46px;
+          height: 1px;
+          background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.7));
+          transform: translateY(-50%);
+        }
+
+        @keyframes tp-fall {
+          0%   { transform: translate(0, -10vh); opacity: 0; }
+          8%   { opacity: 1; }
+          85%  { opacity: 1; }
+          100% { transform: translate(var(--tp-drift, 0px), 115vh); opacity: 0; }
+        }
+
+        .tp-space-overlay {
+          position: absolute;
+          inset: 0;
+          z-index: 3;
+          background:
+            radial-gradient(circle at 50% 12%, rgba(0,0,0,0.05), transparent 28%),
+            radial-gradient(circle at 50% 42%, rgba(0,0,0,0.12), transparent 42%),
+            linear-gradient(to bottom,
+              rgba(3,5,9,0.10) 0%,
+              rgba(3,5,9,0.18) 42%,
+              rgba(3,5,9,0.76) 78%,
+              #050505 100%);
+        }
+
+        .tp-mars-image {
+          position: absolute;
+          left: 50%;
+          bottom: -420px;
+          width: min(920px, 82vw);
+          aspect-ratio: 1 / 1;
+          transform: translateX(-50%);
+          border-radius: 50%;
+          background-size: cover;
+          background-position: center;
+          opacity: 0.88;
+          box-shadow:
+            inset -90px -100px 160px rgba(0,0,0,0.62),
+            inset 60px 40px 120px rgba(255,255,255,0.07),
+            0 -20px 100px rgba(255,110,50,0.08);
+          mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.15) 14%, black 30%, black 100%);
+          -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.15) 14%, black 30%, black 100%);
+          animation: tp-mars-float 10s ease-in-out infinite;
+          will-change: transform;
+          z-index: 4;
+        }
+
+        .tp-mars-glow {
+          position: absolute;
+          left: 50%;
+          bottom: -360px;
+          width: min(850px, 75vw);
+          height: min(260px, 25vw);
+          transform: translateX(-50%);
+          border-radius: 50%;
+          background: radial-gradient(ellipse,
+            rgba(220,78,35,0.24),
+            rgba(150,45,25,0.10) 35%,
+            transparent 72%);
+          filter: blur(45px);
+          opacity: 0.65;
+          will-change: transform;
+          z-index: 4;
+        }
+
+        .tp-hero-glow {
+          position: absolute;
+          width: 600px;
+          height: 600px;
+          border-radius: 50%;
+          filter: blur(120px);
+          pointer-events: none;
+          opacity: 0.28;
+          z-index: 5;
+          will-change: transform;
+        }
+
+        .tp-hero-glow-left  { top: 120px; left: -420px;  background: rgba(92,62,190,0.18); }
+        .tp-hero-glow-right { top: 450px; right: -420px; background: rgba(40,100,180,0.16); }
+
+        .tp-hero-container {
+          position: relative;
+          z-index: 10;
+          width: min(1280px, calc(100% - 40px));
+          margin: 0 auto;
+          text-align: center;
+        }
+
+        .tp-hero-eyebrow {
+          display: inline-flex;
+          align-items: center;
+          gap: 9px;
+          height: 34px;
+          padding: 0 14px;
+          border: 1px solid rgba(255,255,255,0.14);
+          border-radius: 999px;
+          background: rgba(255,255,255,0.07);
+          color: rgba(255,255,255,0.72);
+          font-size: 11px;
+          font-weight: 600;
+          box-shadow: 0 10px 35px rgba(0,0,0,0.22);
+          backdrop-filter: blur(18px);
+          -webkit-backdrop-filter: blur(18px);
+        }
+
+        .tp-eyebrow-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: #62f7c2;
+          box-shadow: 0 0 12px rgba(98,247,194,0.8);
+          animation: tp-pulse 2.5s ease-in-out infinite;
+        }
+
+        .tp-eyebrow-arrow { color: rgba(255,255,255,0.42); }
+
+        .tp-hero-title {
+          max-width: 1000px;
+          margin: 25px auto 0;
+          font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+          font-size: clamp(58px, 8.5vw, 118px);
+          line-height: 0.90;
+          letter-spacing: -0.075em;
+          font-weight: 720;
+          color: #ffffff;
+          text-shadow: 0 10px 50px rgba(0,0,0,0.34);
+        }
+
+        .tp-hero-title > span { display: block; }
+
+        .tp-hero-title-light {
+          color: rgba(255,255,255,0.50);
+          font-weight: 420;
+          letter-spacing: -0.082em;
+        }
+
+        .tp-hero-description {
+          max-width: 620px;
+          margin: 30px auto 0;
+          color: rgba(255,255,255,0.60);
+          font-size: clamp(15px, 1.5vw, 18px);
+          line-height: 1.6;
+          letter-spacing: -0.018em;
+        }
+
+        .tp-hero-buttons {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 12px;
+          margin-top: 32px;
+        }
+
+        .tp-get-started {
+          height: 58px;
+          padding: 0 9px 0 25px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 18px;
+          border: 1px solid rgba(255,255,255,0.9);
+          border-radius: 999px;
+          background: #ffffff;
+          color: #050505;
+          font-size: 15px;
+          font-weight: 650;
+          letter-spacing: -0.025em;
+          text-decoration: none;
+          box-shadow: 0 12px 35px rgba(0,0,0,0.35);
+          transition: transform 0.3s cubic-bezier(.16,1,.3,1), box-shadow 0.3s ease, background 0.3s ease;
+        }
+
+        .tp-get-started:hover {
+          transform: translateY(-3px);
+          background: #f3f3f3;
+          box-shadow: 0 18px 45px rgba(0,0,0,0.45);
+        }
+
+        .tp-get-started-icon {
+          width: 40px;
+          height: 40px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          background: #050505;
+          color: #ffffff;
+          transition: transform 0.3s cubic-bezier(.16,1,.3,1);
+        }
+
+        .tp-get-started:hover .tp-get-started-icon {
+          transform: translate(2px, -2px) rotate(4deg);
+        }
+
+        .tp-explore {
+          height: 58px;
+          padding: 0 22px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 20px;
+          border: 1px solid rgba(255,255,255,0.16);
+          border-radius: 999px;
+          background: rgba(255,255,255,0.07);
+          color: rgba(255,255,255,0.88);
+          font-size: 15px;
+          font-weight: 600;
+          letter-spacing: -0.025em;
+          text-decoration: none;
+          box-shadow: 0 8px 30px rgba(0,0,0,0.16);
+          backdrop-filter: blur(15px);
+          -webkit-backdrop-filter: blur(15px);
+          transition: transform 0.3s ease, border-color 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .tp-explore:hover {
+          transform: translateY(-3px);
+          border-color: rgba(255,255,255,0.30);
+          background: rgba(255,255,255,0.11);
+          box-shadow: 0 14px 35px rgba(0,0,0,0.25);
+        }
+
+        .tp-explore-arrow {
+          color: rgba(255,255,255,0.48);
+          font-size: 19px;
+          transition: transform 0.3s ease, color 0.3s ease;
+        }
+
+        .tp-explore:hover .tp-explore-arrow {
+          color: #ffffff;
+          transform: translateY(3px);
+        }
+
+        .tp-trust {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 17px;
+          margin-top: 27px;
+          color: rgba(255,255,255,0.46);
+          font-size: 12px;
+          font-weight: 500;
+        }
+
+        .tp-trust-item {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          transition: color 0.25s ease;
+        }
+
+        .tp-trust-icon {
+          width: 19px;
+          height: 19px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          border-radius: 50%;
+          transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .tp-trust-purple .tp-trust-icon { background: rgba(139,92,246,0.16); color: #a78bfa; box-shadow: 0 0 0 4px rgba(139,92,246,0.035); }
+        .tp-trust-purple:hover           { color: #c4b5fd; }
+        .tp-trust-purple:hover .tp-trust-icon { transform: scale(1.1); }
+
+        .tp-trust-blue .tp-trust-icon { background: rgba(59,130,246,0.16); color: #60a5fa; box-shadow: 0 0 0 4px rgba(59,130,246,0.035); }
+        .tp-trust-blue:hover          { color: #93c5fd; }
+        .tp-trust-blue:hover .tp-trust-icon { transform: scale(1.1); }
+
+        .tp-trust-green .tp-trust-icon { background: rgba(16,185,129,0.16); color: #34d399; box-shadow: 0 0 0 4px rgba(16,185,129,0.035); }
+        .tp-trust-green:hover           { color: #6ee7b7; }
+        .tp-trust-green:hover .tp-trust-icon { transform: scale(1.1); }
+
+        .tp-trust-divider {
+          width: 1px;
+          height: 18px;
+          background: rgba(255,255,255,0.12);
+        }
+
+        .tp-preview-wrapper {
+          position: relative;
+          width: 100%;
+          margin-top: 70px;
+        }
+
+        .tp-browser-window {
+          position: relative;
+          width: min(1080px, calc(100% - 80px));
+          margin: 0 auto;
+          overflow: hidden;
+          border: 1px solid rgba(255,255,255,0.14);
+          border-radius: 30px;
+          background: #ffffff;
+          box-shadow: 0 45px 120px rgba(0,0,0,0.55), 0 15px 45px rgba(0,0,0,0.30);
+          transform: perspective(1600px) rotateX(1deg);
+          transition: transform 0.5s ease, box-shadow 0.5s ease;
+        }
+
+        .tp-browser-window:hover {
+          transform: perspective(1600px) rotateX(0deg) translateY(-4px);
+          box-shadow: 0 55px 125px rgba(0,0,0,0.62), 0 12px 40px rgba(0,0,0,0.30);
+        }
+
+        .tp-browser-header {
+          height: 58px;
+          padding: 0 22px;
+          display: grid;
+          grid-template-columns: 1fr auto 1fr;
+          align-items: center;
+          border-bottom: 1px solid rgba(0,0,0,0.07);
+          background: rgba(255,255,255,0.96);
+        }
+
+        .tp-browser-controls { display: flex; align-items: center; gap: 8px; }
+        .tp-browser-controls span { width: 9px; height: 9px; border-radius: 50%; background: #d8d8d8; }
+        .tp-browser-controls span:first-child { background: #c5c5c5; }
+
+        .tp-browser-address {
+          min-width: 130px;
+          height: 34px;
+          padding: 0 18px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: 1px solid rgba(0,0,0,0.07);
+          border-radius: 999px;
+          background: #f8f8f8;
+          color: #9a9a9a;
+          font-size: 10px;
+          font-weight: 500;
+        }
+
+        .tp-browser-more { justify-self: end; color: #aaa; }
+
+        .tp-app {
+          display: grid;
+          grid-template-columns: 190px minmax(0, 1fr);
+          min-height: 475px;
+          background: #f6f6f6;
+          text-align: left;
+        }
+
+        .tp-app * { text-align: left; }
+
+        .tp-app-sidebar {
+          padding: 22px 13px;
+          display: flex;
+          flex-direction: column;
+          background: #fff;
+          border-right: 1px solid rgba(0,0,0,0.07);
+        }
+
+        .tp-app-logo {
+          width: 36px;
+          height: 36px;
+          margin: 0 8px 30px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 11px;
+          background: #000;
+          color: #fff;
+          font-size: 14px;
+          font-weight: 700;
+          box-shadow: 0 6px 15px rgba(0,0,0,0.14);
+        }
+
+        .tp-app-navigation { display: flex; flex-direction: column; gap: 5px; }
+
+        .tp-app-nav {
+          position: relative;
+          height: 42px;
+          padding: 0 11px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          border-radius: 11px;
+          color: #999;
+          font-size: 11px;
+          font-weight: 550;
+          transition: background 0.25s ease, color 0.25s ease, transform 0.25s ease;
+        }
+
+        .tp-app-nav:hover { background: #f7f7f7; color: #444; transform: translateX(2px); }
+        .tp-app-nav.active { background: #f1f1f1; color: #111; font-weight: 650; }
+
+        .tp-app-nav.active::before {
+          content: "";
+          position: absolute;
+          left: -13px;
+          top: 9px;
+          width: 3px;
+          height: 24px;
+          border-radius: 999px;
+          background: #000;
+        }
+
+        .tp-app-user {
+          margin-top: auto;
+          padding: 15px 8px 8px;
+          display: flex;
+          align-items: center;
+          gap: 9px;
+          border-top: 1px solid rgba(0,0,0,0.06);
+        }
+
+        .tp-user-avatar {
+          width: 30px;
+          height: 30px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          background: #111;
+          color: #fff;
+          font-size: 9px;
+          font-weight: 700;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+        }
+
+        .tp-user-name { color: #333; font-size: 9px; font-weight: 650; }
+        .tp-user-type { margin-top: 2px; color: #aaa; font-size: 8px; }
+
+        .tp-app-main {
+          min-width: 0;
+          padding: 28px 30px 32px;
+          background: linear-gradient(180deg, #f7f7f7 0%, #f4f4f4 100%);
+        }
+
+        .tp-app-heading {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .tp-app-date { color: #a1a1a1; font-size: 9px; font-weight: 650; letter-spacing: 0.09em; }
+
+        .tp-app-heading h2 {
+          margin: 7px 0 4px;
+          color: #111;
+          font-size: 29px;
+          line-height: 1;
+          font-weight: 650;
+          letter-spacing: -0.055em;
+        }
+
+        .tp-app-heading p { margin: 0; color: #999; font-size: 10px; }
+
+        .tp-profile {
+          width: 36px;
+          height: 36px;
+          flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          background: #111;
+          color: #fff;
+          font-size: 10px;
+          font-weight: 700;
+          box-shadow: 0 5px 15px rgba(0,0,0,0.14);
+        }
+
+        .tp-stats {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 10px;
+          margin-top: 24px;
+        }
+
+        .tp-mini-stat {
+          min-width: 0;
+          padding: 15px 16px;
+          border: 1px solid rgba(0,0,0,0.065);
+          border-radius: 14px;
+          background: rgba(255,255,255,0.82);
+          box-shadow: 0 4px 14px rgba(0,0,0,0.025);
+          transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+        }
+
+        .tp-mini-stat:hover {
+          transform: translateY(-2px);
+          border-color: rgba(0,0,0,0.11);
+          box-shadow: 0 9px 24px rgba(0,0,0,0.055);
+        }
+
+        .tp-mini-stat-label { color: #9b9b9b; font-size: 8px; font-weight: 650; text-transform: uppercase; letter-spacing: 0.06em; }
+        .tp-mini-stat-value { margin-top: 7px; color: #111; font-size: 18px; line-height: 1; font-weight: 700; letter-spacing: -0.045em; }
+        .tp-mini-stat-change { margin-top: 7px; color: #777; font-size: 8px; font-weight: 550; }
+
+        .tp-mini-stat::after { content: ""; display: block; width: 20px; height: 2px; margin-top: 10px; border-radius: 999px; background: #d9d9d9; }
+        .tp-mini-stat:nth-child(1)::after { background: #8B5CF6; }
+        .tp-mini-stat:nth-child(2)::after { background: #3B82F6; }
+        .tp-mini-stat:nth-child(3)::after { background: #10B981; }
+
+        .tp-dashboard-grid {
+          display: grid;
+          grid-template-columns: minmax(0, 1.55fr) minmax(220px, 0.75fr);
+          gap: 12px;
+          margin-top: 12px;
+          align-items: stretch;
+        }
+
+        .tp-schedule {
+          min-width: 0;
+          padding: 18px;
+          border: 1px solid rgba(0,0,0,0.065);
+          border-radius: 16px;
+          background: #fff;
+          box-shadow: 0 5px 18px rgba(0,0,0,0.025);
+        }
+
+        .tp-section-heading {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 10px;
+        }
+
+        .tp-section-heading span { color: #aaa; font-size: 8px; font-weight: 650; letter-spacing: 0.08em; }
+        .tp-section-heading h3 { margin: 5px 0 0; color: #111; font-size: 15px; line-height: 1; font-weight: 650; letter-spacing: -0.035em; }
+
+        .tp-section-heading button {
+          padding: 6px 9px;
+          border: 1px solid rgba(0,0,0,0.07);
+          border-radius: 7px;
+          background: #fafafa;
+          color: #888;
+          font-size: 9px;
+          cursor: pointer;
+          transition: background 0.2s ease, color 0.2s ease;
+        }
+
+        .tp-section-heading button:hover { background: #f1f1f1; color: #222; }
+
+        .tp-schedule-list { width: 100%; }
+
+        .tp-schedule-row {
+          position: relative;
+          display: grid;
+          grid-template-columns: 54px minmax(0, 1fr);
+          gap: 0;
+          min-height: 57px;
+        }
+
+        .tp-schedule-time { padding-top: 10px; color: #a0a0a0; font-size: 9px; line-height: 1; font-weight: 650; }
+
+        .tp-schedule-content {
+          min-width: 0;
+          padding: 9px 12px;
+          border-left: 1px solid #e5e5e5;
+          transition: background 0.2s ease, border-color 0.2s ease;
+        }
+
+        .tp-schedule-row:hover .tp-schedule-content {
+          background: #fafafa;
+          border-radius: 0 9px 9px 0;
+        }
+
+        .tp-schedule-row.active .tp-schedule-content {
+          border-left: 2px solid #111;
+          background: linear-gradient(90deg, #f7f7f7, #ffffff);
+          border-radius: 0 10px 10px 0;
+        }
+
+        .tp-schedule-title { color: #1c1c1c; font-size: 10px; line-height: 1.2; font-weight: 700; }
+        .tp-schedule-description { margin-top: 4px; color: #a0a0a0; font-size: 8px; line-height: 1.2; }
+
+        .tp-schedule-row[data-type="break"] .tp-schedule-content {
+          border-left-style: dashed;
+          background: transparent;
+        }
+
+        .tp-ai-panel {
+          min-width: 0;
+          min-height: 100%;
+          padding: 19px;
+          display: flex;
+          flex-direction: column;
+          border-radius: 16px;
+          background: linear-gradient(145deg, #151515, #0c0c0c);
+          color: #fff;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.13);
+          overflow: hidden;
+        }
+
+        .tp-ai-panel-icon {
+          width: 35px;
+          height: 35px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 10px;
+          background: rgba(255,255,255,0.08);
+          color: #fff;
+        }
+
+        .tp-ai-panel-label { margin-top: 20px; color: #777; font-size: 8px; font-weight: 650; letter-spacing: 0.12em; }
+
+        .tp-ai-panel h3 {
+          max-width: 240px;
+          margin: 10px 0 0;
+          color: #fff;
+          font-size: 15px;
+          line-height: 1.38;
+          font-weight: 450;
+          letter-spacing: -0.035em;
+        }
+
+        .tp-ai-panel h3 strong { color: #fff; font-weight: 700; }
+        .tp-ai-panel p { max-width: 220px; margin: 11px 0 0; color: #777; font-size: 9px; line-height: 1.55; }
+
+        .tp-progress {
+          height: 4px;
+          margin-top: auto;
+          overflow: hidden;
+          border-radius: 999px;
+          background: rgba(255,255,255,0.08);
+        }
+
+        .tp-progress span {
+          display: block;
+          height: 100%;
+          border-radius: inherit;
+          background: linear-gradient(90deg, #fff, #d0d0d0);
+        }
+
+        .tp-ai-panel-bottom {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-top: 8px;
+          color: #666;
+          font-size: 8px;
+        }
+
+        .tp-ai-panel-bottom strong { color: #aaa; }
+
+        .tp-ai-card {
+          position: absolute;
+          z-index: 5;
+          left: max(0px, calc((100% - 1160px) / 2));
+          top: 75px;
+          width: 190px;
+          padding: 11px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          border: 1px solid rgba(255,255,255,0.14);
+          border-radius: 14px;
+          background: rgba(15,15,15,0.72);
+          color: #fff;
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          box-shadow: 0 20px 45px rgba(0,0,0,0.32);
+          animation: tp-float-one 5s ease-in-out infinite;
+        }
+
+        .tp-ai-card-icon {
+          width: 35px;
+          height: 35px;
+          flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 10px;
+          background: #ffffff;
+          color: #000;
+        }
+
+        .tp-ai-card-content { min-width: 0; }
+        .tp-ai-card-title { color: #fff; font-size: 10px; font-weight: 700; }
+        .tp-ai-card-subtitle { margin-top: 3px; color: rgba(255,255,255,0.48); font-size: 8px; }
+
+        .tp-ai-live {
+          width: 6px;
+          height: 6px;
+          margin-left: auto;
+          flex-shrink: 0;
+          border-radius: 50%;
+          background: #62f7c2;
+          box-shadow: 0 0 10px rgba(98,247,194,0.8);
+          animation: tp-pulse 2s ease-in-out infinite;
+        }
+
+        .tp-focus-card {
+          position: absolute;
+          z-index: 5;
+          right: max(0px, calc((100% - 1160px) / 2));
+          bottom: 75px;
+          width: 150px;
+          padding: 11px;
+          display: flex;
+          align-items: center;
+          gap: 9px;
+          border: 1px solid rgba(255,255,255,0.14);
+          border-radius: 14px;
+          background: rgba(15,15,15,0.72);
+          color: #fff;
+          backdrop-filter: blur(18px);
+          -webkit-backdrop-filter: blur(18px);
+          box-shadow: 0 20px 45px rgba(0,0,0,0.32);
+          animation: tp-float-two 6s ease-in-out infinite;
+        }
+
+        .tp-focus-card-icon {
+          width: 34px;
+          height: 34px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 10px;
+          background: rgba(255,255,255,0.10);
+          color: #ffffff;
+        }
+
+        .tp-focus-card-label { color: rgba(255,255,255,0.45); font-size: 8px; }
+        .tp-focus-card-time  { margin-top: 2px; color: #ffffff; font-size: 14px; font-weight: 700; letter-spacing: -0.04em; }
+
+        .tp-preview-caption {
+          margin-top: 18px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 12px;
+          color: rgba(255,255,255,0.42);
+          font-size: 9px;
+          font-weight: 500;
+        }
+
+        .tp-caption-divider {
+          width: 30px;
+          height: 1px;
+          background: rgba(255,255,255,0.20);
+        }
+
+        @keyframes tp-pulse {
+          0%, 100% { transform: scale(0.8); opacity: 0.5; }
+          50%      { transform: scale(1.1); opacity: 1; }
+        }
+
+        @keyframes tp-float-one {
+          0%, 100% { transform: translateY(0); }
+          50%      { transform: translateY(-8px); }
+        }
+
+        @keyframes tp-float-two {
+          0%, 100% { transform: translateY(0); }
+          50%      { transform: translateY(8px); }
+        }
+
+        @keyframes tp-mars-float {
+          0%, 100% { transform: translateX(-50%) translateY(0); }
+          50%      { transform: translateX(-50%) translateY(-10px); }
+        }
+
+        @media (max-width: 1100px) {
+          .tp-browser-window { width: calc(100% - 40px); }
+          .tp-mars-image { width: 850px; }
+        }
+
+        @media (max-width: 900px) {
+          .tp-app { grid-template-columns: 165px minmax(0, 1fr); }
+          .tp-app-main { padding: 23px; }
+          .tp-dashboard-grid { grid-template-columns: minmax(0, 1fr); }
+          .tp-ai-panel { min-height: 190px; }
+          .tp-ai-card { left: 4px; }
+          .tp-focus-card { right: 4px; }
+          .tp-mars-image { width: 760px; bottom: -340px; }
+        }
+
+        @media (max-width: 720px) {
+          .tp-hero { padding-top: 115px; padding-bottom: 60px; }
+          .tp-hero-container { width: calc(100% - 28px); }
+          .tp-hero-title { font-size: clamp(48px, 14vw, 76px); }
+          .tp-hero-description { max-width: 480px; font-size: 15px; }
+          .tp-trust { flex-wrap: wrap; max-width: 440px; margin-left: auto; margin-right: auto; }
+          .tp-trust-divider { display: none; }
+          .tp-preview-wrapper { margin-top: 50px; }
+          .tp-browser-window { width: 100%; border-radius: 22px; }
+          .tp-app { grid-template-columns: 1fr; }
+          .tp-app-sidebar { display: none; }
+          .tp-app-main { padding: 18px; }
+          .tp-app-heading h2 { font-size: 23px; }
+          .tp-dashboard-grid { grid-template-columns: 1fr; }
+          .tp-ai-panel { min-height: 180px; }
+          .tp-ai-card { left: 0; top: 45px; transform: scale(0.78); transform-origin: left top; }
+          .tp-focus-card { right: 0; bottom: 55px; transform: scale(0.78); transform-origin: right bottom; }
+          .tp-mars-image { width: 680px; max-width: none; bottom: -275px; }
+          .tp-mars-glow { width: 600px; height: 200px; bottom: -240px; }
+        }
+
+        @media (max-width: 600px) {
+          .tp-hero-buttons { width: 100%; flex-direction: column; gap: 10px; }
+          .tp-get-started, .tp-explore { width: 100%; }
+          .tp-trust { flex-direction: column; gap: 10px; }
+          .tp-browser-header { height: 50px; padding: 0 14px; }
+          .tp-browser-address { min-width: 90px; height: 30px; padding: 0 12px; }
+          .tp-app-main { padding: 15px; }
+          .tp-app-heading h2 { font-size: 21px; }
+          .tp-app-heading p { font-size: 9px; }
+          .tp-profile { width: 31px; height: 31px; }
+          .tp-stats { grid-template-columns: 1fr 1fr; }
+          .tp-mini-stat:last-child { grid-column: span 2; }
+          .tp-mini-stat { padding: 12px; }
+          .tp-mini-stat-value { font-size: 15px; }
+          .tp-schedule { padding: 14px; }
+          .tp-preview-caption { flex-direction: column; gap: 5px; }
+          .tp-caption-divider { display: none; }
+          .tp-mars-image { width: 560px; bottom: -215px; }
+          .tp-mars-glow { width: 500px; bottom: -185px; }
         }
 
         @media (prefers-reduced-motion: reduce) {
-          .hero-glow,
-          .animate-pulse {
+          .tp-eyebrow-dot, .tp-ai-live, .tp-ai-card, .tp-focus-card, .tp-mars-image, .tp-star {
             animation: none !important;
           }
+          .tp-star { display: none; }
+          .tp-browser-window { transform: none; }
         }
       `}</style>
     </section>
   );
 }
 
-/* ===============================================================
-   TRUST ITEM
-================================================================ */
+/* ═══════════════════════════════════════════════════════════════
+   MINI STAT
+═══════════════════════════════════════════════════════════════ */
 
-function TrustItem({
-  label,
-  color,
+function MiniStat({
+  title,
+  value,
+  change,
 }: {
-  label: string;
-  color: "violet" | "blue" | "green";
+  title: string;
+  value: string;
+  change: string;
 }) {
-  const styles = {
-    violet: "bg-violet-500/16 text-violet-300",
-    blue: "bg-blue-500/16 text-blue-300",
-    green: "bg-emerald-500/16 text-emerald-300",
-  }[color];
-
   return (
-    <div className="flex items-center gap-2">
-      <span
-        className={`flex h-[19px] w-[19px] items-center justify-center rounded-full ${styles}`}
-      >
-        <Check className="h-3 w-3" strokeWidth={2.7} />
-      </span>
-      <span>{label}</span>
+    <div className="tp-mini-stat">
+      <div className="tp-mini-stat-label">{title}</div>
+      <div className="tp-mini-stat-value">{value}</div>
+      <div className="tp-mini-stat-change">{change} this week</div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SCHEDULE ROW
+═══════════════════════════════════════════════════════════════ */
+
+function Schedule({
+  time,
+  title,
+  description,
+  active = false,
+  type = "focus",
+}: {
+  time: string;
+  title: string;
+  description: string;
+  active?: boolean;
+  type?: "focus" | "meeting" | "break";
+}) {
+  return (
+    <div className={`tp-schedule-row ${active ? "active" : ""}`} data-type={type}>
+      <div className="tp-schedule-time">{time}</div>
+      <div className="tp-schedule-content">
+        <div className="tp-schedule-title">{title}</div>
+        <div className="tp-schedule-description">{description}</div>
+      </div>
     </div>
   );
 }
