@@ -247,16 +247,3 @@ canvas {
     display: none;
   }
 }
-/* =========================================================
-   FIX: Top of page seam
-   ========================================================= */
-
-html,
-body {
-  background-color: #03060b !important;
-}
-
-/* Prevent rubber-band overscroll showing white/black */
-html {
-  overscroll-behavior-y: none;
-}
