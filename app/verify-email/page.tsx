@@ -1,24 +1,107 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  "http://localhost:8000";
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-export default function VerifyEmailPage() {
+type VerificationStatus =
+  | "checking"
+  | "waiting"
+  | "success"
+  | "error";
+
+function VerifyEmailContent() {
   const searchParams = useSearchParams();
 
   const email = searchParams.get("email") || "";
+  const token = searchParams.get("token") || "";
+
+  const [status, setStatus] =
+    useState<VerificationStatus>(token ? "checking" : "waiting");
 
   const [resending, setResending] = useState(false);
   const [resent, setResent] = useState(false);
   const [error, setError] = useState("");
 
+  // ============================================================
+  // AUTOMATIC EMAIL VERIFICATION
+  // ============================================================
+
+  useEffect(() => {
+    if (!token) {
+      setStatus("waiting");
+      return;
+    }
+
+    let cancelled = false;
+
+    const verifyEmail = async () => {
+      setStatus("checking");
+      setError("");
+
+      try {
+        const response = await fetch(
+          `${API_URL}/auth/verify-email`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              token,
+            }),
+          }
+        );
+
+        const data = await response.json().catch(() => null);
+
+        if (!response.ok) {
+          throw new Error(
+            typeof data?.detail === "string"
+              ? data.detail
+              : "This verification link is invalid or has expired."
+          );
+        }
+
+        if (!cancelled) {
+          setStatus("success");
+        }
+      } catch (verificationError) {
+        console.error(
+          "EMAIL VERIFICATION ERROR:",
+          verificationError
+        );
+
+        if (!cancelled) {
+          setStatus("error");
+
+          setError(
+            verificationError instanceof Error
+              ? verificationError.message
+              : "Unable to verify your email."
+          );
+        }
+      }
+    };
+
+    verifyEmail();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
+
+  // ============================================================
+  // RESEND VERIFICATION EMAIL
+  // ============================================================
+
   const resendVerification = async () => {
-    if (!email || resending) return;
+    if (!email || resending) {
+      return;
+    }
 
     setResending(true);
     setError("");
@@ -38,22 +121,26 @@ export default function VerifyEmailPage() {
         }
       );
 
-      const data = await response.json();
+      const data = await response.json().catch(() => null);
 
       if (!response.ok) {
         throw new Error(
-          data?.detail ||
-            "Unable to resend verification email."
+          typeof data?.detail === "string"
+            ? data.detail
+            : "Unable to resend verification email."
         );
       }
 
       setResent(true);
-    } catch (error) {
-      console.error(error);
+    } catch (resendError) {
+      console.error(
+        "RESEND VERIFICATION ERROR:",
+        resendError
+      );
 
       setError(
-        error instanceof Error
-          ? error.message
+        resendError instanceof Error
+          ? resendError.message
           : "Unable to resend verification email."
       );
     } finally {
@@ -61,11 +148,18 @@ export default function VerifyEmailPage() {
     }
   };
 
+  // ============================================================
+  // PAGE
+  // ============================================================
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#050505] text-white">
-      {/* BACKGROUND */}
+      {/* ======================================================
+          BACKGROUND
+      ====================================================== */}
 
       <div className="pointer-events-none fixed inset-0">
+        {/* Base */}
         <div className="absolute inset-0 bg-[#050505]" />
 
         {/* Stars */}
@@ -101,7 +195,9 @@ export default function VerifyEmailPage() {
         />
       </div>
 
-      {/* NAVIGATION */}
+      {/* ======================================================
+          NAVIGATION
+      ====================================================== */}
 
       <nav className="relative z-20 flex items-center justify-between px-5 py-5 sm:px-8">
         <Link
@@ -121,65 +217,173 @@ export default function VerifyEmailPage() {
           Already have an account?{" "}
           <Link
             href="/login"
-            className="font-medium text-white hover:text-emerald-300"
+            className="font-medium text-white transition-colors hover:text-emerald-300"
           >
             Log in
           </Link>
         </div>
       </nav>
 
-      {/* CONTENT */}
+      {/* ======================================================
+          CONTENT
+      ====================================================== */}
 
       <section className="relative z-10 flex min-h-[calc(100vh-80px)] items-center justify-center px-5 pb-12 pt-4">
         <div className="w-full max-w-[590px]">
           <div className="rounded-[30px] border border-white/[0.13] bg-black/40 px-6 py-10 shadow-[0_30px_100px_rgba(0,0,0,.45)] backdrop-blur-2xl sm:px-12 sm:py-12">
-            
-            {/* ICON */}
 
-            <div className="mx-auto flex h-[70px] w-[70px] items-center justify-center rounded-[20px] bg-emerald-500/[0.14]">
-              <svg
-                width="30"
-                height="30"
-                viewBox="0 0 24 24"
-                fill="none"
-              >
-                <rect
-                  x="3"
-                  y="5"
-                  width="18"
-                  height="14"
-                  rx="2"
-                  stroke="#00E5A0"
-                  strokeWidth="1.8"
-                />
+            {/* ==================================================
+                ICON
+            ================================================== */}
 
-                <path
-                  d="M4 7L12 13L20 7"
-                  stroke="#00E5A0"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+            <div
+              className={`mx-auto flex h-[70px] w-[70px] items-center justify-center rounded-[20px] ${
+                status === "success"
+                  ? "bg-emerald-500/[0.14]"
+                  : status === "error"
+                    ? "bg-red-500/[0.12]"
+                    : "bg-emerald-500/[0.14]"
+              }`}
+            >
+              {status === "success" ? (
+                <svg
+                  width="32"
+                  height="32"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="9"
+                    stroke="#00E5A0"
+                    strokeWidth="1.8"
+                  />
+
+                  <path
+                    d="M8 12.5L10.5 15L16 9"
+                    stroke="#00E5A0"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              ) : status === "error" ? (
+                <svg
+                  width="32"
+                  height="32"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="9"
+                    stroke="#f87171"
+                    strokeWidth="1.8"
+                  />
+
+                  <path
+                    d="M12 8V13"
+                    stroke="#f87171"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                  />
+
+                  <circle
+                    cx="12"
+                    cy="16"
+                    r="1"
+                    fill="#f87171"
+                  />
+                </svg>
+              ) : (
+                <svg
+                  width="30"
+                  height="30"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <rect
+                    x="3"
+                    y="5"
+                    width="18"
+                    height="14"
+                    rx="2"
+                    stroke="#00E5A0"
+                    strokeWidth="1.8"
+                  />
+
+                  <path
+                    d="M4 7L12 13L20 7"
+                    stroke="#00E5A0"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
             </div>
 
-            {/* TITLE */}
+            {/* ==================================================
+                TITLE
+            ================================================== */}
 
             <h1 className="mt-7 text-center text-3xl font-semibold tracking-[-0.045em] sm:text-4xl">
-              Check your inbox
+              {status === "checking"
+                ? "Verifying your email"
+                : status === "success"
+                  ? "Email verified"
+                  : status === "error"
+                    ? "Verification failed"
+                    : "Check your inbox"}
             </h1>
 
+            {/* ==================================================
+                DESCRIPTION
+            ================================================== */}
+
             <p className="mx-auto mt-4 max-w-[440px] text-center text-sm leading-6 text-white/55 sm:text-base">
-              We sent a verification link to{" "}
-              <strong className="font-semibold text-white">
-                {email || "your email address"}
-              </strong>
-              .
-              <br />
-              Click it to activate your account.
+              {status === "checking" && (
+                <>
+                  We&apos;re verifying your email address.
+                  <br />
+                  Please wait a moment.
+                </>
+              )}
+
+              {status === "waiting" && (
+                <>
+                  We sent a verification link to{" "}
+                  <strong className="font-semibold text-white">
+                    {email || "your email address"}
+                  </strong>
+                  .
+                  <br />
+                  Click it to activate your account.
+                </>
+              )}
+
+              {status === "success" && (
+                <>
+                  Your email address has been verified successfully.
+                  <br />
+                  You can now log in to your TimePilot account.
+                </>
+              )}
+
+              {status === "error" && (
+                <>
+                  We couldn&apos;t verify this email address.
+                  <br />
+                  The verification link may be invalid or expired.
+                </>
+              )}
             </p>
 
-            {/* SUCCESS */}
+            {/* ==================================================
+                RESEND SUCCESS
+            ================================================== */}
 
             {resent && (
               <div className="mt-5 rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.07] px-4 py-3 text-center text-sm text-emerald-300">
@@ -187,37 +391,58 @@ export default function VerifyEmailPage() {
               </div>
             )}
 
-            {/* ERROR */}
+            {/* ==================================================
+                ERROR
+            ================================================== */}
 
             {error && (
-              <div className="mt-5 rounded-2xl border border-red-400/20 bg-red-400/[0.07] px-4 py-3 text-center text-sm text-red-300">
+              <div className="mt-5 rounded-2xl border border-red-400/20 bg-red-400/[0.07] px-4 py-3 text-center text-sm leading-6 text-red-300">
                 {error}
               </div>
             )}
 
-            {/* RESEND */}
+            {/* ==================================================
+                SUCCESS ACTION
+            ================================================== */}
 
-            <button
-              type="button"
-              onClick={resendVerification}
-              disabled={!email || resending}
-              className="mt-8 flex min-h-[64px] w-full items-center justify-center rounded-2xl bg-white px-5 text-base font-medium text-black transition-all duration-200 hover:bg-white/90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {resending
-                ? "Sending verification email..."
-                : "Resend verification email"}
-            </button>
+            {status === "success" && (
+              <Link
+                href="/login"
+                className="mt-8 flex min-h-[64px] w-full items-center justify-center rounded-2xl bg-white px-5 text-base font-medium text-black transition-all duration-200 hover:bg-white/90 active:scale-[0.99]"
+              >
+                Continue to log in
+              </Link>
+            )}
 
-            {/* WRONG EMAIL */}
+            {/* ==================================================
+                WAITING / ERROR ACTIONS
+            ================================================== */}
 
-            <Link
-              href="/signup"
-              className="mt-4 flex min-h-[64px] w-full items-center justify-center rounded-2xl border border-white/[0.13] bg-white/[0.045] px-5 text-base font-medium text-white/75 transition-all duration-200 hover:bg-white/[0.07] hover:text-white"
-            >
-              Wrong email? Start over
-            </Link>
+            {status !== "success" && status !== "checking" && (
+              <>
+                <button
+                  type="button"
+                  onClick={resendVerification}
+                  disabled={!email || resending}
+                  className="mt-8 flex min-h-[64px] w-full items-center justify-center rounded-2xl bg-white px-5 text-base font-medium text-black transition-all duration-200 hover:bg-white/90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {resending
+                    ? "Sending verification email..."
+                    : "Resend verification email"}
+                </button>
 
-            {/* LOGIN */}
+                <Link
+                  href="/signup"
+                  className="mt-4 flex min-h-[64px] w-full items-center justify-center rounded-2xl border border-white/[0.13] bg-white/[0.045] px-5 text-base font-medium text-white/75 transition-all duration-200 hover:bg-white/[0.07] hover:text-white"
+                >
+                  Wrong email? Start over
+                </Link>
+              </>
+            )}
+
+            {/* ==================================================
+                LOGIN
+            ================================================== */}
 
             <div className="mt-7 text-center">
               <Link
@@ -228,15 +453,44 @@ export default function VerifyEmailPage() {
               </Link>
             </div>
 
-            {/* HELP */}
+            {/* ==================================================
+                HELP
+            ================================================== */}
 
-            <p className="mt-8 text-center text-xs leading-5 text-white/30">
-              Didn&apos;t receive the email? Check your spam or
-              promotions folder.
-            </p>
+            {status !== "success" && (
+              <p className="mt-8 text-center text-xs leading-5 text-white/30">
+                Didn&apos;t receive the email? Check your spam or
+                promotions folder.
+              </p>
+            )}
           </div>
         </div>
       </section>
     </main>
+  );
+}
+
+// ============================================================
+// SUSPENSE WRAPPER
+// Required because VerifyEmailContent uses useSearchParams()
+// ============================================================
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen items-center justify-center bg-[#050505] text-white">
+          <div className="text-center">
+            <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-emerald-400" />
+
+            <p className="text-sm text-white/50">
+              Loading TimePilot...
+            </p>
+          </div>
+        </main>
+      }
+    >
+      <VerifyEmailContent />
+    </Suspense>
   );
 }
