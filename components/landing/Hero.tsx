@@ -16,7 +16,7 @@ export default function Hero() {
       className="
         relative
         min-h-screen
-        w-full
+        w-screen
         overflow-hidden
         bg-[#03060b]
         text-white
@@ -28,7 +28,7 @@ export default function Hero() {
 
       <div className="pointer-events-none absolute inset-0 z-0">
 
-        {/* 🎬 VIDEO BACKGROUND (Replaces space-bg.jpg) */}
+        {/* 🎬 VIDEO BACKGROUND — overshoots by 4px on all sides to kill sub-pixel seams */}
         <video
           autoPlay
           loop
@@ -36,11 +36,12 @@ export default function Hero() {
           playsInline
           className="
             absolute
-            inset-0
-            h-full
-            w-full
+            -inset-1
+            h-[calc(100%+8px)]
+            w-[calc(100%+8px)]
+            scale-[1.01]
             object-cover
-            opacity-70
+            object-center
           "
         >
           <source
@@ -49,12 +50,21 @@ export default function Hero() {
           />
         </video>
 
-        {/* Space darkness overlay */}
+        {/* Space darkness overlay — reduced so the video reads clearly */}
+        <div className="absolute inset-0 bg-[#03060b]/30" />
+
+        {/* 🔝 Top blend — hides the seam between navbar and hero */}
         <div
           className="
             absolute
-            inset-0
-            bg-[#03060b]/40
+            inset-x-0
+            top-0
+            z-[8]
+            h-32
+            bg-gradient-to-b
+            from-[#03060b]
+            via-[#03060b]/70
+            to-transparent
           "
         />
 
@@ -103,7 +113,6 @@ export default function Hero() {
         ================================================== */}
 
         {/* Top darkness */}
-
         <div
           className="
             absolute
@@ -112,14 +121,13 @@ export default function Hero() {
             z-[6]
             h-[40%]
             bg-gradient-to-b
-            from-black/75
-            via-black/30
+            from-black/60
+            via-black/20
             to-transparent
           "
         />
 
         {/* Bottom fade */}
-
         <div
           className="
             absolute
@@ -135,7 +143,6 @@ export default function Hero() {
         />
 
         {/* Soft vignette */}
-
         <div
           className="
             absolute
@@ -173,7 +180,6 @@ export default function Hero() {
         <div className="w-full max-w-[1180px] text-center">
 
           {/* Badge */}
-
           <div
             className="
               mx-auto
@@ -202,19 +208,11 @@ export default function Hero() {
                 shadow-[0_0_12px_rgba(52,211,153,0.9)]
               "
             />
-
-            <span>
-              Intelligent time management
-            </span>
-
-            <ArrowUpRight
-              size={13}
-              className="text-white/45"
-            />
+            <span>Intelligent time management</span>
+            <ArrowUpRight size={13} className="text-white/45" />
           </div>
 
           {/* Heading */}
-
           <h1
             className="
               mx-auto
@@ -251,7 +249,6 @@ export default function Hero() {
           </h1>
 
           {/* Description */}
-
           <p
             className="
               mx-auto
@@ -271,7 +268,6 @@ export default function Hero() {
           </p>
 
           {/* Buttons */}
-
           <div
             className="
               mt-9
@@ -307,10 +303,7 @@ export default function Hero() {
                 sm:w-auto
               "
             >
-              <span className="!text-black">
-                Get started
-              </span>
-
+              <span className="!text-black">Get started</span>
               <span
                 className="
                   flex
@@ -327,11 +320,7 @@ export default function Hero() {
                   group-hover:rotate-45
                 "
               >
-                <ArrowUpRight
-                  size={17}
-                  className="!text-white"
-                  strokeWidth={2.2}
-                />
+                <ArrowUpRight size={17} className="!text-white" strokeWidth={2.2} />
               </span>
             </Link>
 
@@ -361,10 +350,7 @@ export default function Hero() {
                 sm:w-auto
               "
             >
-              <span className="!text-white">
-                Explore TimePilot
-              </span>
-
+              <span className="!text-white">Explore TimePilot</span>
               <ArrowDown
                 size={18}
                 className="
@@ -378,7 +364,6 @@ export default function Hero() {
           </div>
 
           {/* Feature points */}
-
           <div
             className="
               mt-9
@@ -407,19 +392,10 @@ export default function Hero() {
               >
                 <Check size={12} />
               </span>
-
               <span>AI-assisted planning</span>
             </div>
 
-            <span
-              className="
-                hidden
-                h-4
-                w-px
-                bg-white/15
-                sm:block
-              "
-            />
+            <span className="hidden h-4 w-px bg-white/15 sm:block" />
 
             <div className="flex items-center gap-2">
               <span
@@ -436,19 +412,10 @@ export default function Hero() {
               >
                 <Check size={12} />
               </span>
-
               <span>Smart scheduling</span>
             </div>
 
-            <span
-              className="
-                hidden
-                h-4
-                w-px
-                bg-white/15
-                sm:block
-              "
-            />
+            <span className="hidden h-4 w-px bg-white/15 sm:block" />
 
             <div className="flex items-center gap-2">
               <span
@@ -465,13 +432,11 @@ export default function Hero() {
               >
                 <Check size={12} />
               </span>
-
               <span>Focus analytics</span>
             </div>
           </div>
 
           {/* Bottom label */}
-
           <div className="mx-auto mt-14 max-w-[700px]">
             <div
               className="
@@ -486,11 +451,7 @@ export default function Hero() {
               "
             >
               <span className="h-px w-12 bg-white/15" />
-
-              <span>
-                Plan your day · Own your time
-              </span>
-
+              <span>Plan your day · Own your time</span>
               <span className="h-px w-12 bg-white/15" />
             </div>
           </div>
@@ -498,7 +459,6 @@ export default function Hero() {
       </div>
 
       {/* Bottom transition */}
-
       <div
         className="
           pointer-events-none
@@ -508,7 +468,7 @@ export default function Hero() {
           z-30
           h-28
           bg-gradient-to-t
-          from-[#08090B]
+          from-[#03060b]
           to-transparent
         "
       />
