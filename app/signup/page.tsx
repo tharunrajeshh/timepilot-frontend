@@ -602,6 +602,7 @@ export default function SignupForm() {
                         />
                       </div>
 
+                      {/* Password requirements — FIXED: no overlapping labels */}
                       <div
                         id="password-requirements"
                         className="mt-3 rounded-xl border border-white/[0.08] bg-white/[0.04] p-3 backdrop-blur-xl"
@@ -619,11 +620,11 @@ export default function SignupForm() {
                           </span>
                         </div>
 
-                        <div className="mb-3 flex gap-1" aria-hidden="true">
+                        <div className="mb-3 flex h-1 gap-1" aria-hidden="true">
                           {[1, 2, 3, 4, 5].map((step) => (
                             <span
                               key={step}
-                              className={`h-1 flex-1 rounded-full transition-colors ${
+                              className={`h-full flex-1 rounded-full transition-colors ${
                                 step <= passwordScore
                                   ? STRENGTH_BAR[passwordScore]
                                   : "bg-white/10"
@@ -632,23 +633,23 @@ export default function SignupForm() {
                           ))}
                         </div>
 
-                        <ul className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+                        <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                           {passwordChecks.map((rule) => (
                             <li
                               key={rule.id}
-                              className={`flex items-center gap-1.5 text-xs ${
+                              className={`flex min-h-[18px] items-center gap-2 text-xs leading-none ${
                                 rule.passed ? "text-emerald-300" : "text-white/50"
                               }`}
                             >
                               <span
-                                className={`flex h-3.5 w-3.5 items-center justify-center rounded-full ${
+                                className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full ${
                                   rule.passed ? "bg-emerald-400/20" : "bg-white/[0.08]"
                                 }`}
                                 aria-hidden="true"
                               >
                                 {rule.passed ? <CheckIcon /> : null}
                               </span>
-                              {rule.label}
+                              <span className="leading-tight">{rule.label}</span>
                             </li>
                           ))}
                         </ul>
@@ -1135,9 +1136,7 @@ function AnalogClock({ time }: { time: Date }) {
   );
 }
 
-/* ═══════════════════════════════════════════════
-   Live Mars background — stars & shooting stars
-═══════════════════════════════════════════════ */
+/* Mars background — stars & shooting stars */
 
 function Stars({
   count,
