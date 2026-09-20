@@ -19,7 +19,12 @@ export default function Hero() {
           HERO BACKGROUND
       ========================================================== */}
 
-      <div className="tp-hero-background" />
+      <div className="tp-hero-background">
+        <div className="tp-space-image" />
+        <div className="tp-space-overlay" />
+        <div className="tp-mars-image" />
+        <div className="tp-mars-glow" />
+      </div>
 
       <div className="tp-hero-glow tp-hero-glow-left" />
       <div className="tp-hero-glow tp-hero-glow-right" />
@@ -438,9 +443,7 @@ export default function Hero() {
 
         .tp-hero {
           position: relative;
-
           width: 100%;
-
           min-height: 100vh;
 
           padding-top: 150px;
@@ -448,35 +451,158 @@ export default function Hero() {
 
           overflow: hidden;
 
-          background: #ffffff;
-
-          color: #050505;
+          background: #050505;
+          color: #ffffff;
         }
+
+        /* ========================================================
+           SPACE BACKGROUND
+        ======================================================== */
 
         .tp-hero-background {
           position: absolute;
-
           inset: 0;
 
           pointer-events: none;
+          overflow: hidden;
+
+          background: #050505;
+        }
+
+        .tp-space-image {
+          position: absolute;
+          inset: 0;
+
+          background-image:
+            url("/images/space-bg.jpg");
+
+          background-size: cover;
+          background-position: center;
+          background-repeat: no-repeat;
+
+          opacity: 0.78;
+
+          transform: scale(1.04);
+
+          filter: saturate(0.85);
+        }
+
+        .tp-space-overlay {
+          position: absolute;
+          inset: 0;
 
           background:
             radial-gradient(
               circle at 50% 12%,
-              rgba(0, 0, 0, 0.035),
-              transparent 32%
+              rgba(0, 0, 0, 0.05),
+              transparent 28%
             ),
             radial-gradient(
-              circle at 10% 55%,
-              rgba(139, 92, 246, 0.025),
-              transparent 25%
+              circle at 50% 42%,
+              rgba(0, 0, 0, 0.12),
+              transparent 42%
             ),
-            radial-gradient(
-              circle at 90% 65%,
-              rgba(59, 130, 246, 0.022),
-              transparent 25%
+            linear-gradient(
+              to bottom,
+              rgba(3, 5, 9, 0.10) 0%,
+              rgba(3, 5, 9, 0.18) 42%,
+              rgba(3, 5, 9, 0.76) 78%,
+              #050505 100%
             );
         }
+
+        /* ========================================================
+           MARS
+        ======================================================== */
+
+        .tp-mars-image {
+          position: absolute;
+
+          left: 50%;
+          bottom: -420px;
+
+          width: min(920px, 82vw);
+          aspect-ratio: 1 / 1;
+
+          transform: translateX(-50%);
+
+          border-radius: 50%;
+
+          background-image:
+            linear-gradient(
+              135deg,
+              rgba(255, 255, 255, 0.06),
+              rgba(0, 0, 0, 0.08)
+            ),
+            url("/images/mars-surface.jpg");
+
+          background-size: cover;
+          background-position: center;
+
+          opacity: 0.88;
+
+          box-shadow:
+            inset -90px -100px 160px
+              rgba(0, 0, 0, 0.62),
+            inset 60px 40px 120px
+              rgba(255, 255, 255, 0.07),
+            0 -20px 100px
+              rgba(255, 110, 50, 0.08);
+
+          mask-image:
+            linear-gradient(
+              to bottom,
+              transparent 0%,
+              rgba(0, 0, 0, 0.15) 14%,
+              black 30%,
+              black 100%
+            );
+
+          -webkit-mask-image:
+            linear-gradient(
+              to bottom,
+              transparent 0%,
+              rgba(0, 0, 0, 0.15) 14%,
+              black 30%,
+              black 100%
+            );
+
+          animation:
+            tp-mars-float
+            10s
+            ease-in-out
+            infinite;
+        }
+
+        .tp-mars-glow {
+          position: absolute;
+
+          left: 50%;
+          bottom: -360px;
+
+          width: min(850px, 75vw);
+          height: min(260px, 25vw);
+
+          transform: translateX(-50%);
+
+          border-radius: 50%;
+
+          background:
+            radial-gradient(
+              ellipse,
+              rgba(220, 78, 35, 0.24),
+              rgba(150, 45, 25, 0.10) 35%,
+              transparent 72%
+            );
+
+          filter: blur(45px);
+
+          opacity: 0.65;
+        }
+
+        /* ========================================================
+           DECORATIVE GLOWS
+        ======================================================== */
 
         .tp-hero-glow {
           position: absolute;
@@ -486,27 +612,27 @@ export default function Hero() {
 
           border-radius: 50%;
 
-          filter: blur(100px);
+          filter: blur(120px);
 
           pointer-events: none;
 
-          opacity: 0.3;
+          opacity: 0.28;
         }
 
         .tp-hero-glow-left {
-          top: 150px;
-          left: -400px;
+          top: 120px;
+          left: -420px;
 
           background:
-            rgba(139, 92, 246, 0.035);
+            rgba(92, 62, 190, 0.18);
         }
 
         .tp-hero-glow-right {
-          top: 500px;
-          right: -400px;
+          top: 450px;
+          right: -420px;
 
           background:
-            rgba(59, 130, 246, 0.035);
+            rgba(40, 100, 180, 0.16);
         }
 
         /* ========================================================
@@ -540,34 +666,34 @@ export default function Hero() {
 
           gap: 9px;
 
-          height: 32px;
+          height: 34px;
 
-          padding: 0 13px;
+          padding: 0 14px;
 
           border:
             1px solid
-            rgba(0, 0, 0, 0.10);
+            rgba(255, 255, 255, 0.14);
 
           border-radius: 999px;
 
           background:
-            rgba(255, 255, 255, 0.78);
+            rgba(255, 255, 255, 0.07);
 
-          color: #666;
+          color: rgba(255, 255, 255, 0.72);
 
           font-size: 11px;
 
           font-weight: 600;
 
           box-shadow:
-            0 5px 20px
-            rgba(0, 0, 0, 0.035);
+            0 10px 35px
+            rgba(0, 0, 0, 0.22);
 
           backdrop-filter:
-            blur(12px);
+            blur(18px);
 
           -webkit-backdrop-filter:
-            blur(12px);
+            blur(18px);
         }
 
         .tp-eyebrow-dot {
@@ -576,7 +702,11 @@ export default function Hero() {
 
           border-radius: 50%;
 
-          background: #000;
+          background: #62f7c2;
+
+          box-shadow:
+            0 0 12px
+            rgba(98, 247, 194, 0.8);
 
           animation:
             tp-pulse
@@ -586,7 +716,7 @@ export default function Hero() {
         }
 
         .tp-eyebrow-arrow {
-          color: #aaa;
+          color: rgba(255, 255, 255, 0.42);
         }
 
         /* ========================================================
@@ -619,7 +749,11 @@ export default function Hero() {
 
           font-weight: 720;
 
-          color: #050505;
+          color: #ffffff;
+
+          text-shadow:
+            0 10px 50px
+            rgba(0, 0, 0, 0.34);
         }
 
         .tp-hero-title > span {
@@ -627,7 +761,8 @@ export default function Hero() {
         }
 
         .tp-hero-title-light {
-          color: #999;
+          color:
+            rgba(255, 255, 255, 0.50);
 
           font-weight: 420;
 
@@ -644,7 +779,8 @@ export default function Hero() {
           margin:
             30px auto 0;
 
-          color: #666;
+          color:
+            rgba(255, 255, 255, 0.60);
 
           font-size:
             clamp(
@@ -689,13 +825,14 @@ export default function Hero() {
           gap: 18px;
 
           border:
-            1px solid #000;
+            1px solid
+            rgba(255, 255, 255, 0.9);
 
           border-radius: 999px;
 
-          background: #000;
+          background: #ffffff;
 
-          color: #fff;
+          color: #050505;
 
           font-size: 15px;
 
@@ -706,8 +843,8 @@ export default function Hero() {
           text-decoration: none;
 
           box-shadow:
-            0 9px 25px
-            rgba(0, 0, 0, 0.16);
+            0 12px 35px
+            rgba(0, 0, 0, 0.35);
 
           transition:
             transform 0.3s
@@ -720,11 +857,11 @@ export default function Hero() {
           transform:
             translateY(-3px);
 
-          background: #111;
+          background: #f3f3f3;
 
           box-shadow:
-            0 15px 35px
-            rgba(0, 0, 0, 0.22);
+            0 18px 45px
+            rgba(0, 0, 0, 0.45);
         }
 
         .tp-get-started-icon {
@@ -739,9 +876,9 @@ export default function Hero() {
 
           border-radius: 50%;
 
-          background: #fff;
+          background: #050505;
 
-          color: #000;
+          color: #ffffff;
 
           transition:
             transform 0.3s
@@ -777,15 +914,16 @@ export default function Hero() {
           gap: 20px;
 
           border:
-            1.5px solid
-            rgba(0, 0, 0, 0.17);
+            1px solid
+            rgba(255, 255, 255, 0.16);
 
           border-radius: 999px;
 
           background:
-            rgba(255, 255, 255, 0.78);
+            rgba(255, 255, 255, 0.07);
 
-          color: #111;
+          color:
+            rgba(255, 255, 255, 0.88);
 
           font-size: 15px;
 
@@ -796,14 +934,14 @@ export default function Hero() {
           text-decoration: none;
 
           box-shadow:
-            0 4px 18px
-            rgba(0, 0, 0, 0.035);
+            0 8px 30px
+            rgba(0, 0, 0, 0.16);
 
           backdrop-filter:
-            blur(12px);
+            blur(15px);
 
           -webkit-backdrop-filter:
-            blur(12px);
+            blur(15px);
 
           transition:
             transform 0.3s ease,
@@ -817,18 +955,19 @@ export default function Hero() {
             translateY(-3px);
 
           border-color:
-            rgba(0, 0, 0, 0.34);
+            rgba(255, 255, 255, 0.30);
 
           background:
-            #fff;
+            rgba(255, 255, 255, 0.11);
 
           box-shadow:
-            0 12px 28px
-            rgba(0, 0, 0, 0.08);
+            0 14px 35px
+            rgba(0, 0, 0, 0.25);
         }
 
         .tp-explore-arrow {
-          color: #999;
+          color:
+            rgba(255, 255, 255, 0.48);
 
           font-size: 19px;
 
@@ -839,7 +978,7 @@ export default function Hero() {
 
         .tp-explore:hover
         .tp-explore-arrow {
-          color: #111;
+          color: #ffffff;
 
           transform:
             translateY(3px);
@@ -860,7 +999,8 @@ export default function Hero() {
 
           margin-top: 27px;
 
-          color: #888;
+          color:
+            rgba(255, 255, 255, 0.46);
 
           font-size: 12px;
 
@@ -900,10 +1040,10 @@ export default function Hero() {
         .tp-trust-purple
         .tp-trust-icon {
           background:
-            rgba(139, 92, 246, 0.10);
+            rgba(139, 92, 246, 0.16);
 
           color:
-            #8B5CF6;
+            #a78bfa;
 
           box-shadow:
             0 0 0 4px
@@ -912,26 +1052,22 @@ export default function Hero() {
 
         .tp-trust-purple:hover {
           color:
-            #8B5CF6;
+            #c4b5fd;
         }
 
         .tp-trust-purple:hover
         .tp-trust-icon {
           transform:
             scale(1.1);
-
-          box-shadow:
-            0 0 0 6px
-            rgba(139, 92, 246, 0.06);
         }
 
         .tp-trust-blue
         .tp-trust-icon {
           background:
-            rgba(59, 130, 246, 0.10);
+            rgba(59, 130, 246, 0.16);
 
           color:
-            #3B82F6;
+            #60a5fa;
 
           box-shadow:
             0 0 0 4px
@@ -940,26 +1076,22 @@ export default function Hero() {
 
         .tp-trust-blue:hover {
           color:
-            #3B82F6;
+            #93c5fd;
         }
 
         .tp-trust-blue:hover
         .tp-trust-icon {
           transform:
             scale(1.1);
-
-          box-shadow:
-            0 0 0 6px
-            rgba(59, 130, 246, 0.06);
         }
 
         .tp-trust-green
         .tp-trust-icon {
           background:
-            rgba(16, 185, 129, 0.10);
+            rgba(16, 185, 129, 0.16);
 
           color:
-            #10B981;
+            #34d399;
 
           box-shadow:
             0 0 0 4px
@@ -968,17 +1100,13 @@ export default function Hero() {
 
         .tp-trust-green:hover {
           color:
-            #10B981;
+            #6ee7b7;
         }
 
         .tp-trust-green:hover
         .tp-trust-icon {
           transform:
             scale(1.1);
-
-          box-shadow:
-            0 0 0 6px
-            rgba(16, 185, 129, 0.06);
         }
 
         .tp-trust-divider {
@@ -987,7 +1115,7 @@ export default function Hero() {
           height: 18px;
 
           background:
-            rgba(0, 0, 0, 0.12);
+            rgba(255, 255, 255, 0.12);
         }
 
         /* ========================================================
@@ -1022,17 +1150,17 @@ export default function Hero() {
 
           border:
             1px solid
-            rgba(0, 0, 0, 0.10);
+            rgba(255, 255, 255, 0.14);
 
           border-radius: 30px;
 
-          background: #fff;
+          background: #ffffff;
 
           box-shadow:
             0 45px 120px
-            rgba(0, 0, 0, 0.13),
+            rgba(0, 0, 0, 0.55),
             0 15px 45px
-            rgba(0, 0, 0, 0.06);
+            rgba(0, 0, 0, 0.30);
 
           transform:
             perspective(1600px)
@@ -1051,9 +1179,9 @@ export default function Hero() {
 
           box-shadow:
             0 55px 125px
-            rgba(0, 0, 0, 0.15),
+            rgba(0, 0, 0, 0.62),
             0 12px 40px
-            rgba(0, 0, 0, 0.06);
+            rgba(0, 0, 0, 0.30);
         }
 
         /* ========================================================
@@ -1091,7 +1219,6 @@ export default function Hero() {
 
         .tp-browser-controls span {
           width: 9px;
-
           height: 9px;
 
           border-radius: 50%;
@@ -1183,7 +1310,6 @@ export default function Hero() {
 
         .tp-app-logo {
           width: 36px;
-
           height: 36px;
 
           margin:
@@ -1300,7 +1426,6 @@ export default function Hero() {
 
         .tp-user-avatar {
           width: 30px;
-
           height: 30px;
 
           display: flex;
@@ -1411,7 +1536,6 @@ export default function Hero() {
 
         .tp-profile {
           width: 36px;
-
           height: 36px;
 
           flex-shrink: 0;
@@ -1529,15 +1653,12 @@ export default function Hero() {
           font-weight: 550;
         }
 
-        /* Small accent indicators */
-
         .tp-mini-stat::after {
           content: "";
 
           display: block;
 
           width: 20px;
-
           height: 2px;
 
           margin-top: 10px;
@@ -1779,10 +1900,6 @@ export default function Hero() {
           text-align: left;
         }
 
-        /* ========================================================
-           BREAK ROW
-        ======================================================== */
-
         .tp-schedule-row[data-type="break"]
         .tp-schedule-content {
           border-left-style: dashed;
@@ -1827,7 +1944,6 @@ export default function Hero() {
 
         .tp-ai-panel-icon {
           width: 35px;
-
           height: 35px;
 
           display: flex;
@@ -1981,12 +2097,14 @@ export default function Hero() {
 
           border:
             1px solid
-            rgba(0, 0, 0, 0.08);
+            rgba(255, 255, 255, 0.14);
 
           border-radius: 14px;
 
           background:
-            rgba(255, 255, 255, 0.94);
+            rgba(15, 15, 15, 0.72);
+
+          color: #fff;
 
           backdrop-filter:
             blur(20px);
@@ -1996,7 +2114,7 @@ export default function Hero() {
 
           box-shadow:
             0 20px 45px
-            rgba(0, 0, 0, 0.12);
+            rgba(0, 0, 0, 0.32);
 
           text-align: left;
 
@@ -2009,7 +2127,6 @@ export default function Hero() {
 
         .tp-ai-card-icon {
           width: 35px;
-
           height: 35px;
 
           flex-shrink: 0;
@@ -2022,9 +2139,9 @@ export default function Hero() {
 
           border-radius: 10px;
 
-          background: #000;
+          background: #ffffff;
 
-          color: #fff;
+          color: #000;
         }
 
         .tp-ai-card-content {
@@ -2034,7 +2151,7 @@ export default function Hero() {
         }
 
         .tp-ai-card-title {
-          color: #111;
+          color: #fff;
 
           font-size: 10px;
 
@@ -2044,14 +2161,14 @@ export default function Hero() {
         .tp-ai-card-subtitle {
           margin-top: 3px;
 
-          color: #999;
+          color:
+            rgba(255, 255, 255, 0.48);
 
           font-size: 8px;
         }
 
         .tp-ai-live {
           width: 6px;
-
           height: 6px;
 
           margin-left: auto;
@@ -2060,7 +2177,11 @@ export default function Hero() {
 
           border-radius: 50%;
 
-          background: #111;
+          background: #62f7c2;
+
+          box-shadow:
+            0 0 10px
+            rgba(98, 247, 194, 0.8);
 
           animation:
             tp-pulse
@@ -2100,12 +2221,14 @@ export default function Hero() {
 
           border:
             1px solid
-            rgba(0, 0, 0, 0.07);
+            rgba(255, 255, 255, 0.14);
 
           border-radius: 14px;
 
           background:
-            rgba(255, 255, 255, 0.94);
+            rgba(15, 15, 15, 0.72);
+
+          color: #fff;
 
           backdrop-filter:
             blur(18px);
@@ -2115,7 +2238,7 @@ export default function Hero() {
 
           box-shadow:
             0 20px 45px
-            rgba(0, 0, 0, 0.10);
+            rgba(0, 0, 0, 0.32);
 
           text-align: left;
 
@@ -2128,7 +2251,6 @@ export default function Hero() {
 
         .tp-focus-card-icon {
           width: 34px;
-
           height: 34px;
 
           display: flex;
@@ -2139,13 +2261,15 @@ export default function Hero() {
 
           border-radius: 10px;
 
-          background: #f1f1f1;
+          background:
+            rgba(255, 255, 255, 0.10);
 
-          color: #111;
+          color: #ffffff;
         }
 
         .tp-focus-card-label {
-          color: #999;
+          color:
+            rgba(255, 255, 255, 0.45);
 
           font-size: 8px;
         }
@@ -2153,7 +2277,7 @@ export default function Hero() {
         .tp-focus-card-time {
           margin-top: 2px;
 
-          color: #111;
+          color: #ffffff;
 
           font-size: 14px;
 
@@ -2177,7 +2301,8 @@ export default function Hero() {
 
           gap: 12px;
 
-          color: #aaa;
+          color:
+            rgba(255, 255, 255, 0.42);
 
           font-size: 9px;
 
@@ -2189,7 +2314,8 @@ export default function Hero() {
 
           height: 1px;
 
-          background: #ddd;
+          background:
+            rgba(255, 255, 255, 0.20);
         }
 
         /* ========================================================
@@ -2200,13 +2326,11 @@ export default function Hero() {
           0%,
           100% {
             transform: scale(0.8);
-
             opacity: 0.5;
           }
 
           50% {
             transform: scale(1.1);
-
             opacity: 1;
           }
         }
@@ -2237,6 +2361,21 @@ export default function Hero() {
           }
         }
 
+        @keyframes tp-mars-float {
+          0%,
+          100% {
+            transform:
+              translateX(-50%)
+              translateY(0);
+          }
+
+          50% {
+            transform:
+              translateX(-50%)
+              translateY(-10px);
+          }
+        }
+
         /* ========================================================
            TABLET
         ======================================================== */
@@ -2245,6 +2384,10 @@ export default function Hero() {
           .tp-browser-window {
             width:
               calc(100% - 40px);
+          }
+
+          .tp-mars-image {
+            width: 850px;
           }
         }
 
@@ -2276,6 +2419,11 @@ export default function Hero() {
 
           .tp-focus-card {
             right: 4px;
+          }
+
+          .tp-mars-image {
+            width: 760px;
+            bottom: -340px;
           }
         }
 
@@ -2399,6 +2547,21 @@ export default function Hero() {
             transform-origin:
               right bottom;
           }
+
+          .tp-mars-image {
+            width: 680px;
+
+            max-width: none;
+
+            bottom: -275px;
+          }
+
+          .tp-mars-glow {
+            width: 600px;
+            height: 200px;
+
+            bottom: -240px;
+          }
         }
 
         /* ========================================================
@@ -2510,6 +2673,18 @@ export default function Hero() {
             display:
               none;
           }
+
+          .tp-mars-image {
+            width: 560px;
+
+            bottom: -215px;
+          }
+
+          .tp-mars-glow {
+            width: 500px;
+
+            bottom: -185px;
+          }
         }
 
         /* ========================================================
@@ -2520,7 +2695,8 @@ export default function Hero() {
           .tp-eyebrow-dot,
           .tp-ai-live,
           .tp-ai-card,
-          .tp-focus-card {
+          .tp-focus-card,
+          .tp-mars-image {
             animation:
               none !important;
           }
