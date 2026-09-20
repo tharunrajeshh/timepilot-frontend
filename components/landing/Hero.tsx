@@ -13,27 +13,46 @@ export default function Hero() {
   return (
     <section
       id="hero"
-      className="relative min-h-screen w-full overflow-hidden bg-[#03060b] text-white"
+      className="
+        relative
+        min-h-screen
+        w-full
+        overflow-hidden
+        bg-[#03060b]
+        text-white
+      "
     >
       {/* =====================================================
-          SPACE + EARTH BACKGROUND
+          FULL SCREEN BACKGROUND
       ====================================================== */}
 
-      <div className="absolute inset-0 z-0 overflow-hidden bg-[#03060b]">
+      <div className="pointer-events-none absolute inset-0 z-0">
 
         {/* Space background */}
 
         <div
-          className="absolute inset-0 bg-cover bg-center"
+          className="
+            absolute
+            -inset-2
+            bg-cover
+            bg-center
+            bg-no-repeat
+          "
           style={{
             backgroundImage:
               "url('/images/space-bg.jpg')",
           }}
         />
 
-        {/* Subtle space darkness */}
+        {/* Space darkness */}
 
-        <div className="absolute inset-0 bg-black/15" />
+        <div
+          className="
+            absolute
+            inset-0
+            bg-[#03060b]/25
+          "
+        />
 
         {/* =================================================
             EARTH
@@ -44,7 +63,6 @@ export default function Hero() {
           alt=""
           draggable={false}
           className="
-            pointer-events-none
             absolute
             bottom-[-14%]
             left-1/2
@@ -54,15 +72,14 @@ export default function Hero() {
             -translate-x-1/2
             select-none
             object-contain
-            drop-shadow-[0_-20px_80px_rgba(40,130,255,0.18)]
+            drop-shadow-[0_-20px_90px_rgba(40,130,255,0.2)]
           "
         />
 
-        {/* Earth atmospheric glow */}
+        {/* Earth glow */}
 
         <div
           className="
-            pointer-events-none
             absolute
             bottom-[-5%]
             left-1/2
@@ -71,69 +88,61 @@ export default function Hero() {
             w-[1050px]
             -translate-x-1/2
             rounded-full
-            bg-blue-400/[0.13]
+            bg-blue-400/[0.12]
             blur-[110px]
           "
         />
 
         {/* =================================================
-            CINEMATIC OVERLAYS
+            CINEMATIC LIGHTING
         ================================================== */}
 
-        {/* Overall dark overlay */}
-
-        <div className="pointer-events-none absolute inset-0 z-[5] bg-black/20" />
-
-        {/* Top cinematic darkness */}
+        {/* Top darkness */}
 
         <div
           className="
-            pointer-events-none
             absolute
             inset-x-0
             top-0
             z-[6]
-            h-[38%]
+            h-[40%]
             bg-gradient-to-b
-            from-black/85
-            via-black/40
+            from-black/75
+            via-black/30
             to-transparent
           "
         />
 
-        {/* Bottom cinematic darkness */}
+        {/* Bottom fade */}
 
         <div
           className="
-            pointer-events-none
             absolute
             inset-x-0
             bottom-0
             z-[6]
-            h-[34%]
+            h-[32%]
             bg-gradient-to-t
             from-[#03060b]
-            via-[#03060b]/55
+            via-[#03060b]/50
             to-transparent
           "
         />
 
-        {/* Cinematic vignette */}
+        {/* Soft vignette */}
 
         <div
           className="
-            pointer-events-none
             absolute
             inset-0
             z-[7]
-            bg-[radial-gradient(circle_at_center,transparent_18%,rgba(0,0,0,0.16)_52%,rgba(0,0,0,0.68)_100%)]
+            bg-[radial-gradient(circle_at_center,transparent_25%,rgba(0,0,0,0.12)_55%,rgba(0,0,0,0.55)_100%)]
           "
         />
       </div>
 
       {/* =====================================================
           FALLING STARS
-          Must stay ABOVE EARTH
       ====================================================== */}
 
       <Starfield />
@@ -158,9 +167,7 @@ export default function Hero() {
       >
         <div className="w-full max-w-[1180px] text-center">
 
-          {/* =================================================
-              BADGE
-          ================================================== */}
+          {/* Badge */}
 
           <div
             className="
@@ -201,9 +208,7 @@ export default function Hero() {
             />
           </div>
 
-          {/* =================================================
-              MAIN HEADING
-          ================================================== */}
+          {/* Heading */}
 
           <h1
             className="
@@ -240,9 +245,7 @@ export default function Hero() {
             </span>
           </h1>
 
-          {/* =================================================
-              DESCRIPTION
-          ================================================== */}
+          {/* Description */}
 
           <p
             className="
@@ -262,9 +265,7 @@ export default function Hero() {
             actually finish.
           </p>
 
-          {/* =================================================
-              BUTTONS
-          ================================================== */}
+          {/* Buttons */}
 
           <div
             className="
@@ -277,9 +278,6 @@ export default function Hero() {
               sm:flex-row
             "
           >
-
-            {/* Get Started */}
-
             <Link
               href="/signup"
               className="
@@ -304,14 +302,12 @@ export default function Hero() {
                 sm:w-auto
               "
             >
-              <span className="relative z-10 !text-black">
+              <span className="!text-black">
                 Get started
               </span>
 
               <span
                 className="
-                  relative
-                  z-10
                   flex
                   h-9
                   w-9
@@ -333,8 +329,6 @@ export default function Hero() {
                 />
               </span>
             </Link>
-
-            {/* Explore */}
 
             <a
               href="#preview"
@@ -362,15 +356,13 @@ export default function Hero() {
                 sm:w-auto
               "
             >
-              <span className="relative z-10 !text-white">
+              <span className="!text-white">
                 Explore TimePilot
               </span>
 
               <ArrowDown
                 size={18}
                 className="
-                  relative
-                  z-10
                   !text-white/70
                   transition-transform
                   duration-300
@@ -380,9 +372,7 @@ export default function Hero() {
             </a>
           </div>
 
-          {/* =================================================
-              FEATURE POINTS
-          ================================================== */}
+          {/* Feature points */}
 
           <div
             className="
@@ -397,8 +387,6 @@ export default function Hero() {
               text-white/55
             "
           >
-            {/* AI */}
-
             <div className="flex items-center gap-2">
               <span
                 className="
@@ -415,9 +403,7 @@ export default function Hero() {
                 <Check size={12} />
               </span>
 
-              <span>
-                AI-assisted planning
-              </span>
+              <span>AI-assisted planning</span>
             </div>
 
             <span
@@ -429,8 +415,6 @@ export default function Hero() {
                 sm:block
               "
             />
-
-            {/* Scheduling */}
 
             <div className="flex items-center gap-2">
               <span
@@ -448,9 +432,7 @@ export default function Hero() {
                 <Check size={12} />
               </span>
 
-              <span>
-                Smart scheduling
-              </span>
+              <span>Smart scheduling</span>
             </div>
 
             <span
@@ -462,8 +444,6 @@ export default function Hero() {
                 sm:block
               "
             />
-
-            {/* Analytics */}
 
             <div className="flex items-center gap-2">
               <span
@@ -481,15 +461,11 @@ export default function Hero() {
                 <Check size={12} />
               </span>
 
-              <span>
-                Focus analytics
-              </span>
+              <span>Focus analytics</span>
             </div>
           </div>
 
-          {/* =================================================
-              BOTTOM LABEL
-          ================================================== */}
+          {/* Bottom label */}
 
           <div className="mx-auto mt-14 max-w-[700px]">
             <div
@@ -516,9 +492,7 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* =====================================================
-          BOTTOM TRANSITION
-      ====================================================== */}
+      {/* Bottom transition */}
 
       <div
         className="
