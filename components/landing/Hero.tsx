@@ -11,13 +11,12 @@ import Starfield from "./Starfield";
 
 export default function Hero() {
   return (
-    {/* Added w-screen to force full viewport width */}
     <section
       id="hero"
       className="
         relative
         min-h-screen
-        w-screen
+        w-full
         overflow-hidden
         bg-[#03060b]
         text-white
@@ -29,7 +28,7 @@ export default function Hero() {
 
       <div className="pointer-events-none absolute inset-0 z-0">
 
-        {/* 🎬 VIDEO BACKGROUND */}
+        {/* 🎬 VIDEO BACKGROUND (Replaces space-bg.jpg) */}
         <video
           autoPlay
           loop
