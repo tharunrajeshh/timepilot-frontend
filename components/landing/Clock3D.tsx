@@ -2,183 +2,388 @@
 
 import { Float, Sparkles } from "@react-three/drei";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { RefObject } from "react";
 import * as THREE from "three";
 
 /* ============================================================
-   PROCEDURAL MARS TEXTURE
-   Generated on a <canvas> at runtime — no external image assets,
-   so the component stays fully self-contained.
+   CONSTANTS
 ============================================================ */
 
-function useMarsTexture() {
-  return useMemo(() => {
-    if (typeof document === "undefined") return null;
+const PLANET_RADIUS = 1.6;
 
-    const canvas = document.createElement("canvas");
-    canvas.width = 1024;
-    canvas.height = 512;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
+/** Radius of the "dial surface" — just above the planet skin */
+const SURFACE = PLANET_RADIUS + 0.008;
 
-    // Base rust-orange gradient (lighter near the "equator", darker at poles)
-    const base = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    base.addColorStop(0, "#5a2a1e");
-    base.addColorStop(0.15, "#8a3d24");
-    base.addColorStop(0.5, "#c1602f");
-    base.addColorStop(0.85, "#8a3d24");
-    base.addColorStop(1, "#4a221a");
-    ctx.fillStyle = base;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+/** Angular radius (radians) of the clock dial carved into Mars */
+const DIAL_ANGLE = 0.8;
 
-    // Mottled surface noise — layered translucent blobs
-    const blobColors = [
-      "rgba(120,55,30,0.35)",
-      "rgba(200,110,60,0.28)",
-      "rgba(90,40,25,0.3)",
-      "rgba(230,150,90,0.18)",
-    ];
+/** Angular distance from the pole where the 12 hour markers sit */
+const MARKER_ANGLE = 0.66;
 
-    for (let i = 0; i < 260; i++) {
-      const x = Math.random() * canvas.width;
-      const y = Math.random() * canvas.height;
-      const r = 8 + Math.random() * 46;
-      ctx.beginPath();
-      ctx.fillStyle =
-        blobColors[Math.floor(Math.random() * blobColors.length)];
-      ctx.ellipse(
-        x,
-        y,
-        r,
-        r * (0.5 + Math.random() * 0.5),
-        Math.random() * Math.PI,
-        0,
-        Math.PI * 2
-      );
-      ctx.fill();
-    }
+/* ============================================================
+   SEEDED RANDOM (deterministic Mars surface)
+============================================================ */
 
-    // Crater rims — small dark rings with a lighter inner highlight
-    for (let i = 0; i < 45; i++) {
-      const x = Math.random() * canvas.width;
-      const y = Math.random() * canvas.height;
-      const r = 4 + Math.random() * 14;
-
-      ctx.beginPath();
-      ctx.strokeStyle = "rgba(50,20,12,0.45)";
-      ctx.lineWidth = 1.5 + Math.random() * 2;
-      ctx.arc(x, y, r, 0, Math.PI * 2);
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.fillStyle = "rgba(30,12,8,0.35)";
-      ctx.arc(x, y, r * 0.55, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    // Polar ice caps
-    const capGradientTop = ctx.createRadialGradient(
-      canvas.width / 2,
-      0,
-      0,
-      canvas.width / 2,
-      0,
-      canvas.height * 0.22
-    );
-    capGradientTop.addColorStop(0, "rgba(255,240,235,0.85)");
-    capGradientTop.addColorStop(1, "rgba(255,240,235,0)");
-    ctx.fillStyle = capGradientTop;
-    ctx.fillRect(0, 0, canvas.width, canvas.height * 0.3);
-
-    const capGradientBottom = ctx.createRadialGradient(
-      canvas.width / 2,
-      canvas.height,
-      0,
-      canvas.width / 2,
-      canvas.height,
-      canvas.height * 0.22
-    );
-    capGradientBottom.addColorStop(0, "rgba(255,240,235,0.75)");
-    capGradientBottom.addColorStop(1, "rgba(255,240,235,0)");
-    ctx.fillStyle = capGradientBottom;
-    ctx.fillRect(0, canvas.height * 0.7, canvas.width, canvas.height * 0.3);
-
-    // Faint violet tint bands, ties the planet back into the page's
-    // purple theme without breaking the Mars read
-    ctx.globalCompositeOperation = "overlay";
-    const tint = ctx.createLinearGradient(0, 0, canvas.width, 0);
-    tint.addColorStop(0, "rgba(124,58,237,0.12)");
-    tint.addColorStop(0.5, "rgba(168,85,247,0.05)");
-    tint.addColorStop(1, "rgba(59,130,246,0.1)");
-    ctx.fillStyle = tint;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.globalCompositeOperation = "source-over";
-
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.wrapS = THREE.RepeatWrapping;
-    texture.colorSpace = THREE.SRGBColorSpace;
-    return texture;
-  }, []);
+function mulberry32(seed: number) {
+  let a = seed;
+  return () => {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
 }
 
 /* ============================================================
-   MARS PLANET BODY (slow self-rotation, independent of the clock)
+   PROCEDURAL MARS TEXTURE (equirectangular canvas)
 ============================================================ */
 
-function MarsPlanet() {
-  const planetRef = useRef<THREE.Mesh>(null);
-  const atmosphereRef = useRef<THREE.Mesh>(null);
-  const texture = useMarsTexture();
+function createMarsTexture(): THREE.CanvasTexture | null {
+  if (typeof document === "undefined") return null;
 
-  useFrame((_, delta) => {
-    if (planetRef.current) {
-      planetRef.current.rotation.y += delta * 0.045;
-    }
-    if (atmosphereRef.current) {
-      atmosphereRef.current.rotation.y -= delta * 0.015;
-    }
-  });
+  const width = 1024;
+  const height = 512;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+
+  const rnd = mulberry32(0x4d415253); // "MARS"
+
+  /* ---------- base rust gradient ---------- */
+  const base = ctx.createLinearGradient(0, 0, 0, height);
+  base.addColorStop(0.0, "#8f3d1c");
+  base.addColorStop(0.22, "#bb5c2d");
+  base.addColorStop(0.5, "#d0753c");
+  base.addColorStop(0.78, "#b25226");
+  base.addColorStop(1.0, "#7b3115");
+  ctx.fillStyle = base;
+  ctx.fillRect(0, 0, width, height);
+
+  /* ---------- dark albedo patches (Syrtis Major-ish) ---------- */
+  for (let i = 0; i < 34; i++) {
+    const x = rnd() * width;
+    const y = height * 0.1 + rnd() * height * 0.8;
+    const r = 40 + rnd() * 150;
+
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, `rgba(84, 30, 12, ${0.2 + rnd() * 0.32})`);
+    g.addColorStop(1, "rgba(84, 30, 12, 0)");
+
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  /* ---------- bright dusty highlands ---------- */
+  for (let i = 0; i < 46; i++) {
+    const x = rnd() * width;
+    const y = rnd() * height;
+    const r = 28 + rnd() * 120;
+
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, `rgba(238, 176, 126, ${0.08 + rnd() * 0.16})`);
+    g.addColorStop(1, "rgba(238, 176, 126, 0)");
+
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  /* ---------- craters ---------- */
+  for (let i = 0; i < 150; i++) {
+    const x = rnd() * width;
+    const y = rnd() * height;
+    const r = 2 + rnd() * 16;
+
+    const g = ctx.createRadialGradient(x, y, r * 0.08, x, y, r);
+    g.addColorStop(0.0, "rgba(70, 24, 10, 0.34)");
+    g.addColorStop(0.62, "rgba(70, 24, 10, 0.16)");
+    g.addColorStop(0.86, "rgba(255, 208, 170, 0.30)");
+    g.addColorStop(1.0, "rgba(255, 208, 170, 0)");
+
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  /* ---------- polar ice caps ---------- */
+  const north = ctx.createLinearGradient(0, 0, 0, height * 0.15);
+  north.addColorStop(0, "rgba(255, 247, 240, 0.95)");
+  north.addColorStop(0.5, "rgba(255, 238, 226, 0.38)");
+  north.addColorStop(1, "rgba(255, 238, 226, 0)");
+  ctx.fillStyle = north;
+  ctx.fillRect(0, 0, width, height * 0.15);
+
+  const south = ctx.createLinearGradient(0, height, 0, height * 0.85);
+  south.addColorStop(0, "rgba(255, 247, 240, 0.9)");
+  south.addColorStop(0.5, "rgba(255, 238, 226, 0.34)");
+  south.addColorStop(1, "rgba(255, 238, 226, 0)");
+  ctx.fillStyle = south;
+  ctx.fillRect(0, height * 0.85, width, height * 0.15);
+
+  /* ---------- fine grain / speckle ---------- */
+  for (let i = 0; i < 2800; i++) {
+    const x = rnd() * width;
+    const y = rnd() * height;
+    const a = 0.02 + rnd() * 0.06;
+    ctx.fillStyle =
+      rnd() > 0.5
+        ? `rgba(255, 222, 192, ${a})`
+        : `rgba(58, 20, 8, ${a})`;
+    ctx.fillRect(x, y, 1 + rnd() * 2, 1 + rnd() * 2);
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.anisotropy = 4;
+  texture.needsUpdate = true;
+
+  return texture;
+}
+
+/* ============================================================
+   ATMOSPHERE (fresnel rim glow)
+============================================================ */
+
+function MarsAtmosphere() {
+  const material = useMemo(
+    () =>
+      new THREE.ShaderMaterial({
+        uniforms: {
+          uColor: { value: new THREE.Color("#ff7a3a") },
+          uIntensity: { value: 0.95 },
+        },
+        vertexShader: /* glsl */ `
+          varying vec3 vNormal;
+          varying vec3 vViewDir;
+
+          void main() {
+            vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+            vNormal = normalize(normalMatrix * normal);
+            vViewDir = normalize(-mvPosition.xyz);
+            gl_Position = projectionMatrix * mvPosition;
+          }
+        `,
+        fragmentShader: /* glsl */ `
+          uniform vec3 uColor;
+          uniform float uIntensity;
+
+          varying vec3 vNormal;
+          varying vec3 vViewDir;
+
+          void main() {
+            float rim = 1.0 - abs(dot(normalize(vNormal), normalize(vViewDir)));
+            float glow = pow(clamp(rim, 0.0, 1.0), 3.0);
+            gl_FragColor = vec4(uColor, glow * uIntensity);
+          }
+        `,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.FrontSide,
+      }),
+    []
+  );
+
+  useEffect(() => () => material.dispose(), [material]);
+
+  return (
+    <mesh scale={1.15} material={material}>
+      <sphereGeometry args={[PLANET_RADIUS, 64, 64]} />
+    </mesh>
+  );
+}
+
+/* ============================================================
+   CLOCK DIAL (hour markers + rings laid onto the sphere)
+============================================================ */
+
+function ClockDial() {
+  const markers = useMemo(() => {
+    const matrix = new THREE.Matrix4();
+
+    return Array.from({ length: 12 }).map((_, i) => {
+      const phi = (i / 12) * Math.PI * 2; // 0 = 12 o'clock, clockwise
+      const theta = MARKER_ANGLE;
+
+      const sinT = Math.sin(theta);
+      const cosT = Math.cos(theta);
+      const sinP = Math.sin(phi);
+      const cosP = Math.cos(phi);
+
+      // local Z = outward normal
+      const normal = new THREE.Vector3(sinT * sinP, sinT * cosP, cosT);
+      // local Y = meridian tangent (points away from the clock centre)
+      const meridian = new THREE.Vector3(
+        cosT * sinP,
+        cosT * cosP,
+        -sinT
+      );
+      // local X = tangential
+      const tangent = new THREE.Vector3(cosP, -sinP, 0);
+
+      matrix.makeBasis(tangent, meridian, normal);
+      const quaternion = new THREE.Quaternion().setFromRotationMatrix(
+        matrix
+      );
+
+      const position = normal.clone().multiplyScalar(SURFACE + 0.02);
+
+      return {
+        key: i,
+        position,
+        quaternion,
+        isQuarter: i % 3 === 0,
+      };
+    });
+  }, []);
+
+  const ringRadius = SURFACE * Math.sin(DIAL_ANGLE);
+  const ringZ = SURFACE * Math.cos(DIAL_ANGLE);
 
   return (
     <group>
-      {/* Planet core */}
-      <mesh ref={planetRef}>
-        <sphereGeometry args={[1.42, 64, 64]} />
-        {texture ? (
-          <meshStandardMaterial
-            map={texture}
-            metalness={0.05}
-            roughness={0.85}
-          />
-        ) : (
-          <meshStandardMaterial
-            color="#a3502c"
-            metalness={0.05}
-            roughness={0.85}
-          />
-        )}
+      {/* Dark glass dial pressed into the planet */}
+      <mesh rotation={[Math.PI / 2, 0, 0]}>
+        <sphereGeometry
+          args={[SURFACE, 96, 64, 0, Math.PI * 2, 0, DIAL_ANGLE]}
+        />
+        <meshStandardMaterial
+          color="#2b1008"
+          metalness={0.45}
+          roughness={0.4}
+          emissive="#63200a"
+          emissiveIntensity={0.28}
+          transparent
+          opacity={0.66}
+          side={THREE.DoubleSide}
+        />
       </mesh>
 
-      {/* Soft rim-lit atmosphere shell */}
-      <mesh ref={atmosphereRef} scale={1.06}>
-        <sphereGeometry args={[1.42, 48, 48]} />
+      {/* Glowing rim of the dial */}
+      <mesh position={[0, 0, ringZ]}>
+        <torusGeometry args={[ringRadius, 0.016, 16, 128]} />
         <meshBasicMaterial
-          color="#ff8a5b"
+          color="#ff9d5c"
           transparent
-          opacity={0.1}
-          side={THREE.BackSide}
+          opacity={0.75}
           toneMapped={false}
         />
       </mesh>
 
-      {/* Cool violet outer halo, blends the planet into the page glow */}
-      <mesh scale={1.16}>
-        <sphereGeometry args={[1.42, 32, 32]} />
+      {/* Faint inner ring */}
+      <mesh position={[0, 0, SURFACE * Math.cos(0.42)]}>
+        <torusGeometry
+          args={[SURFACE * Math.sin(0.42), 0.006, 12, 96]}
+        />
         <meshBasicMaterial
-          color="#7c3aed"
+          color="#ffd0a8"
           transparent
-          opacity={0.05}
-          side={THREE.BackSide}
+          opacity={0.25}
+          toneMapped={false}
+        />
+      </mesh>
+
+      {/* Hour markers */}
+      {markers.map((marker) => (
+        <mesh
+          key={marker.key}
+          position={marker.position}
+          quaternion={marker.quaternion}
+        >
+          <boxGeometry
+            args={
+              marker.isQuarter
+                ? [0.085, 0.26, 0.05]
+                : [0.05, 0.17, 0.05]
+            }
+          />
+          <meshStandardMaterial
+            color="#ffd7b0"
+            emissive="#ff8a3d"
+            emissiveIntensity={marker.isQuarter ? 1.6 : 0.85}
+            metalness={0.5}
+            roughness={0.3}
+            toneMapped={false}
+          />
+        </mesh>
+      ))}
+
+      {/* Centre hub */}
+      <mesh position={[0, 0, SURFACE + 0.05]}>
+        <sphereGeometry args={[0.075, 32, 32]} />
+        <meshStandardMaterial
+          color="#1a0a06"
+          metalness={0.9}
+          roughness={0.15}
+          emissive="#ff7a2f"
+          emissiveIntensity={1.1}
+          toneMapped={false}
+        />
+      </mesh>
+    </group>
+  );
+}
+
+/* ============================================================
+   SINGLE HAND (a great-circle arc hugging the sphere)
+============================================================ */
+
+function Hand({
+  groupRef,
+  radius,
+  tube,
+  length,
+  color,
+  emissive,
+  emissiveIntensity,
+}: {
+  groupRef: RefObject<THREE.Group | null>;
+  radius: number;
+  tube: number;
+  length: number;
+  color: string;
+  emissive: string;
+  emissiveIntensity: number;
+}) {
+  const tipPosition = useMemo<[number, number, number]>(
+    () => [0, radius * Math.sin(length), radius * Math.cos(length)],
+    [radius, length]
+  );
+
+  return (
+    <group ref={groupRef}>
+      {/* The arc starts at the pole (+Z) and sweeps toward +Y */}
+      <mesh rotation={[0, -Math.PI / 2, 0]}>
+        <torusGeometry args={[radius, tube, 14, 128, length]} />
+        <meshStandardMaterial
+          color={color}
+          emissive={emissive}
+          emissiveIntensity={emissiveIntensity}
+          metalness={0.72}
+          roughness={0.22}
+          toneMapped={false}
+        />
+      </mesh>
+
+      {/* Rounded tip */}
+      <mesh position={tipPosition}>
+        <sphereGeometry args={[tube * 1.55, 16, 16]} />
+        <meshStandardMaterial
+          color={color}
+          emissive={emissive}
+          emissiveIntensity={emissiveIntensity * 1.5}
           toneMapped={false}
         />
       </mesh>
@@ -213,177 +418,131 @@ function ClockHands() {
     }
     if (secondGlow.current) {
       secondGlow.current.intensity =
-        1.4 + Math.sin(state.clock.elapsedTime * 3) * 0.5;
+        1.5 + Math.sin(state.clock.elapsedTime * 3) * 0.6;
     }
   });
 
+  const secondLength = 0.64;
+
   return (
     <group>
-      <group ref={hourHand}>
-        <mesh position={[0, 0.42, 0]}>
-          <boxGeometry args={[0.09, 0.84, 0.05]} />
-          <meshStandardMaterial
-            color="#fff3ea"
-            emissive="#ffb37a"
-            emissiveIntensity={0.5}
-            metalness={0.6}
-            roughness={0.25}
-          />
-        </mesh>
-      </group>
+      <Hand
+        groupRef={hourHand}
+        radius={SURFACE + 0.025}
+        tube={0.038}
+        length={0.38}
+        color="#ffe6d0"
+        emissive="#ff9a4d"
+        emissiveIntensity={0.6}
+      />
 
-      <group ref={minuteHand}>
-        <mesh position={[0, 0.64, 0.03]}>
-          <boxGeometry args={[0.065, 1.28, 0.045]} />
-          <meshStandardMaterial
-            color="#ffe4d1"
-            emissive="#ff9d5c"
-            emissiveIntensity={0.55}
-            metalness={0.6}
-            roughness={0.25}
-          />
-        </mesh>
-      </group>
+      <Hand
+        groupRef={minuteHand}
+        radius={SURFACE + 0.045}
+        tube={0.026}
+        length={0.55}
+        color="#ffd9bd"
+        emissive="#ffa45f"
+        emissiveIntensity={0.85}
+      />
 
-      <group ref={secondHand}>
-        <mesh position={[0, 0.75, 0.06]}>
-          <boxGeometry args={[0.022, 1.5, 0.03]} />
-          <meshStandardMaterial
-            color="#c084fc"
-            emissive="#a855f7"
-            emissiveIntensity={2.2}
-            toneMapped={false}
-          />
-        </mesh>
-        <pointLight
-          ref={secondGlow}
-          position={[0, 1.35, 0.08]}
-          color="#c084fc"
-          intensity={1.4}
-          distance={1.3}
-        />
-      </group>
+      <Hand
+        groupRef={secondHand}
+        radius={SURFACE + 0.062}
+        tube={0.012}
+        length={secondLength}
+        color="#ffb27a"
+        emissive="#ff6a1f"
+        emissiveIntensity={2.4}
+      />
 
-      {/* center hub */}
-      <mesh position={[0, 0, 0.08]}>
-        <cylinderGeometry args={[0.075, 0.075, 0.07, 32]} />
-        <meshStandardMaterial
-          color="#1a0f0a"
-          metalness={0.9}
-          roughness={0.15}
-          emissive="#ff7a45"
-          emissiveIntensity={0.9}
-          toneMapped={false}
-        />
-      </mesh>
-      <mesh position={[0, 0, 0.11]}>
-        <sphereGeometry args={[0.038, 24, 24]} />
-        <meshStandardMaterial color="#ffffff" metalness={1} roughness={0.05} />
-      </mesh>
-    </group>
-  );
-}
-
-/* ============================================================
-   CLOCK FACE — a glass dial mounted just in front of the planet,
-   like a porthole cut into Mars
-============================================================ */
-
-function ClockFace() {
-  return (
-    <group position={[0, 0, 1.02]}>
-      {/* dark glass backing so the planet doesn't show through the dial */}
-      <mesh position={[0, 0, -0.02]}>
-        <circleGeometry args={[1.02, 64]} />
-        <meshStandardMaterial
-          color="#140b08"
-          metalness={0.4}
-          roughness={0.5}
-          transparent
-          opacity={0.88}
-        />
-      </mesh>
-
-      {/* thin metal bezel ring */}
-      <mesh position={[0, 0, -0.01]}>
-        <ringGeometry args={[0.98, 1.06, 64]} />
-        <meshStandardMaterial
-          color="#2a1712"
-          metalness={0.9}
-          roughness={0.2}
-          emissive="#ff7a45"
-          emissiveIntensity={0.35}
-        />
-      </mesh>
-
-      {/* glowing edge line */}
-      <mesh position={[0, 0, 0.005]}>
-        <ringGeometry args={[0.96, 1.0, 64]} />
-        <meshBasicMaterial
-          color="#ffb37a"
-          transparent
-          opacity={0.6}
-          toneMapped={false}
-        />
-      </mesh>
-
-      {/* Hour markers */}
-      {Array.from({ length: 12 }).map((_, i) => {
-        const angle = (i / 12) * Math.PI * 2;
-        const radius = 0.8;
-        const isQuarter = i % 3 === 0;
-
-        return (
-          <mesh
-            key={i}
-            position={[
-              Math.sin(angle) * radius,
-              Math.cos(angle) * radius,
-              0.02,
-            ]}
-            rotation={[0, 0, -angle]}
-          >
-            <boxGeometry
-              args={isQuarter ? [0.045, 0.15, 0.03] : [0.032, 0.1, 0.03]}
-            />
-            <meshStandardMaterial
-              color="#ffd9bd"
-              emissive="#ff9d5c"
-              emissiveIntensity={isQuarter ? 1.2 : 0.6}
-              toneMapped={false}
-            />
-          </mesh>
-        );
-      })}
-
-      <ClockHands />
-
-      <Sparkles
-        count={16}
-        scale={[1.7, 1.7, 0.4]}
-        size={1.4}
-        speed={0.2}
-        opacity={0.45}
-        color="#ffcda0"
+      {/* Small light that travels with the second hand */}
+      <pointLight
+        ref={secondGlow}
+        position={[
+          0,
+          (SURFACE + 0.062) * Math.sin(secondLength),
+          (SURFACE + 0.062) * Math.cos(secondLength),
+        ]}
+        color="#ff7a2f"
+        intensity={1.5}
+        distance={1.6}
       />
     </group>
   );
 }
 
 /* ============================================================
-   FLOATING ORBITAL PARTICLES (dust ring around the planet)
+   MARS PLANET (surface + dial + hands)
+============================================================ */
+
+function MarsPlanet() {
+  const [texture, setTexture] = useState<THREE.CanvasTexture | null>(null);
+  const surfaceRef = useRef<THREE.Mesh>(null);
+
+  useEffect(() => {
+    const generated = createMarsTexture();
+    setTexture(generated);
+
+    return () => {
+      generated?.dispose();
+    };
+  }, []);
+
+  // The planet itself spins slowly behind the fixed clock face
+  useFrame((_, delta) => {
+    if (surfaceRef.current) {
+      surfaceRef.current.rotation.y += delta * 0.04;
+    }
+  });
+
+  return (
+    <group>
+      {/* ---------- Mars body ---------- */}
+      <mesh ref={surfaceRef}>
+        <sphereGeometry args={[PLANET_RADIUS, 96, 96]} />
+        <meshStandardMaterial
+          map={texture ?? undefined}
+          color={texture ? "#ffffff" : "#b4552a"}
+          roughness={0.94}
+          metalness={0.06}
+        />
+      </mesh>
+
+      {/* ---------- Glowing atmosphere ---------- */}
+      <MarsAtmosphere />
+
+      {/* ---------- Clock ---------- */}
+      <ClockDial />
+      <ClockHands />
+
+      {/* ---------- Dust / magic drifting over the surface ---------- */}
+      <Sparkles
+        count={26}
+        scale={[4.2, 4.2, 4.2]}
+        size={1.7}
+        speed={0.25}
+        opacity={0.5}
+        color="#ffb37a"
+      />
+    </group>
+  );
+}
+
+/* ============================================================
+   FLOATING ORBITAL PARTICLES
 ============================================================ */
 
 function OrbitingParticles() {
   const groupRef = useRef<THREE.Group>(null);
 
   const particles = useMemo(() => {
-    return Array.from({ length: 50 }).map(() => {
-      const radius = 2.0 + Math.random() * 1.5;
+    return Array.from({ length: 46 }).map(() => {
+      const radius = 2.2 + Math.random() * 1.5;
       const angle = Math.random() * Math.PI * 2;
-      const yOffset = (Math.random() - 0.5) * 2.2;
-      const speed = 0.04 + Math.random() * 0.14;
-      const size = 0.012 + Math.random() * 0.028;
+      const yOffset = (Math.random() - 0.5) * 3.4;
+      const speed = 0.05 + Math.random() * 0.16;
+      const size = 0.014 + Math.random() * 0.032;
 
       return { radius, angle, yOffset, speed, size };
     });
@@ -406,9 +565,9 @@ function OrbitingParticles() {
         <mesh key={i} position={[0, p.yOffset, 0]}>
           <sphereGeometry args={[p.size, 8, 8]} />
           <meshBasicMaterial
-            color={i % 3 === 0 ? "#ff9d5c" : "#c084fc"}
+            color={i % 3 === 0 ? "#ff8a3d" : "#ffc79a"}
             transparent
-            opacity={0.7}
+            opacity={0.75}
             toneMapped={false}
           />
         </mesh>
@@ -418,10 +577,10 @@ function OrbitingParticles() {
 }
 
 /* ============================================================
-   PLANET-CLOCK + POINTER INTERACTION
+   PLANET + INTERACTION
 ============================================================ */
 
-function FloatingPlanetClock() {
+function FloatingPlanet() {
   const groupRef = useRef<THREE.Group>(null);
 
   useFrame((state, delta) => {
@@ -446,9 +605,8 @@ function FloatingPlanetClock() {
 
   return (
     <group ref={groupRef}>
-      <Float speed={1.3} rotationIntensity={0.12} floatIntensity={0.6}>
+      <Float speed={1.5} rotationIntensity={0.16} floatIntensity={0.7}>
         <MarsPlanet />
-        <ClockFace />
       </Float>
 
       <OrbitingParticles />
@@ -468,19 +626,24 @@ export default function Clock3D() {
         gl={{ antialias: true, alpha: true }}
         camera={{ position: [0, 0, 7], fov: 38 }}
       >
-        <ambientLight intensity={0.4} />
+        <ambientLight intensity={0.32} />
 
-        <directionalLight position={[4, 5, 6]} intensity={1.6} color="#ffe6d5" />
+        {/* Warm key light — makes the rust read as Mars */}
+        <directionalLight
+          position={[4, 5, 6]}
+          intensity={1.9}
+          color="#ffd9b8"
+        />
 
-        <pointLight position={[-5, 1, 4]} intensity={2.0} color="#ff7a45" />
+        {/* Cool fill from behind for depth */}
+        <pointLight position={[-5, 1, 4]} intensity={1.9} color="#7c3aed" />
+        <pointLight position={[3, -4, 2]} intensity={1.2} color="#3b82f6" />
+        <pointLight position={[0, 2, -5]} intensity={0.9} color="#10b981" />
 
-        <pointLight position={[3, -4, 2]} intensity={1.3} color="#7c3aed" />
+        {/* Rim light so the planet reads as a distinct, glossy object */}
+        <pointLight position={[0, 0, 5]} intensity={0.7} color="#ffffff" />
 
-        <pointLight position={[0, 2, -5]} intensity={0.9} color="#3b82f6" />
-
-        <pointLight position={[0, 0, 5]} intensity={0.6} color="#ffffff" />
-
-        <FloatingPlanetClock />
+        <FloatingPlanet />
       </Canvas>
     </div>
   );
