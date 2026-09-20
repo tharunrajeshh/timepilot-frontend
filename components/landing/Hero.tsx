@@ -18,39 +18,39 @@ export default function Hero() {
         min-h-screen
         w-full
         overflow-hidden
-        bg-[#03060b]
+        bg-[#02050a]
         text-white
       "
     >
       {/* =====================================================
-          FULL SCREEN BACKGROUND
+          BACKGROUND
       ====================================================== */}
 
       <div className="pointer-events-none absolute inset-0 z-0">
 
-        {/* Space background */}
-
-        <div
-          className="
-            absolute
-            -inset-2
-            bg-cover
-            bg-center
-            bg-no-repeat
-          "
-          style={{
-            backgroundImage:
-              "url('/images/space-bg.jpg')",
-          }}
-        />
-
-        {/* Space darkness */}
+        {/* Deep space gradient */}
 
         <div
           className="
             absolute
             inset-0
-            bg-[#03060b]/25
+            bg-[radial-gradient(circle_at_50%_18%,#172238_0%,#0b1220_28%,#050a12_55%,#020409_100%)]
+          "
+        />
+
+        {/* Subtle blue atmospheric light */}
+
+        <div
+          className="
+            absolute
+            left-1/2
+            top-[35%]
+            h-[500px]
+            w-[1000px]
+            -translate-x-1/2
+            rounded-full
+            bg-blue-500/[0.06]
+            blur-[150px]
           "
         />
 
@@ -72,24 +72,24 @@ export default function Hero() {
             -translate-x-1/2
             select-none
             object-contain
-            drop-shadow-[0_-20px_90px_rgba(40,130,255,0.2)]
+            drop-shadow-[0_-20px_90px_rgba(40,130,255,0.22)]
           "
         />
 
-        {/* Earth glow */}
+        {/* Earth atmospheric glow */}
 
         <div
           className="
             absolute
-            bottom-[-5%]
+            bottom-[-3%]
             left-1/2
             z-[3]
-            h-[280px]
-            w-[1050px]
+            h-[300px]
+            w-[1100px]
             -translate-x-1/2
             rounded-full
-            bg-blue-400/[0.12]
-            blur-[110px]
+            bg-blue-400/[0.14]
+            blur-[120px]
           "
         />
 
@@ -107,7 +107,7 @@ export default function Hero() {
             z-[6]
             h-[40%]
             bg-gradient-to-b
-            from-black/75
+            from-black/70
             via-black/30
             to-transparent
           "
@@ -121,22 +121,22 @@ export default function Hero() {
             inset-x-0
             bottom-0
             z-[6]
-            h-[32%]
+            h-[34%]
             bg-gradient-to-t
-            from-[#03060b]
-            via-[#03060b]/50
+            from-[#02050a]
+            via-[#02050a]/55
             to-transparent
           "
         />
 
-        {/* Soft vignette */}
+        {/* Cinematic vignette */}
 
         <div
           className="
             absolute
             inset-0
             z-[7]
-            bg-[radial-gradient(circle_at_center,transparent_25%,rgba(0,0,0,0.12)_55%,rgba(0,0,0,0.55)_100%)]
+            bg-[radial-gradient(circle_at_center,transparent_25%,rgba(0,0,0,0.10)_55%,rgba(0,0,0,0.58)_100%)]
           "
         />
       </div>
@@ -167,7 +167,9 @@ export default function Hero() {
       >
         <div className="w-full max-w-[1180px] text-center">
 
-          {/* Badge */}
+          {/* =================================================
+              BADGE
+          ================================================== */}
 
           <div
             className="
@@ -208,7 +210,9 @@ export default function Hero() {
             />
           </div>
 
-          {/* Heading */}
+          {/* =================================================
+              HEADING
+          ================================================== */}
 
           <h1
             className="
@@ -245,7 +249,9 @@ export default function Hero() {
             </span>
           </h1>
 
-          {/* Description */}
+          {/* =================================================
+              DESCRIPTION
+          ================================================== */}
 
           <p
             className="
@@ -265,7 +271,9 @@ export default function Hero() {
             actually finish.
           </p>
 
-          {/* Buttons */}
+          {/* =================================================
+              BUTTONS
+          ================================================== */}
 
           <div
             className="
@@ -278,6 +286,8 @@ export default function Hero() {
               sm:flex-row
             "
           >
+            {/* Get started */}
+
             <Link
               href="/signup"
               className="
@@ -330,6 +340,8 @@ export default function Hero() {
               </span>
             </Link>
 
+            {/* Explore */}
+
             <a
               href="#preview"
               className="
@@ -372,7 +384,9 @@ export default function Hero() {
             </a>
           </div>
 
-          {/* Feature points */}
+          {/* =================================================
+              FEATURE POINTS
+          ================================================== */}
 
           <div
             className="
@@ -387,6 +401,8 @@ export default function Hero() {
               text-white/55
             "
           >
+            {/* AI */}
+
             <div className="flex items-center gap-2">
               <span
                 className="
@@ -403,7 +419,9 @@ export default function Hero() {
                 <Check size={12} />
               </span>
 
-              <span>AI-assisted planning</span>
+              <span>
+                AI-assisted planning
+              </span>
             </div>
 
             <span
@@ -415,6 +433,8 @@ export default function Hero() {
                 sm:block
               "
             />
+
+            {/* Scheduling */}
 
             <div className="flex items-center gap-2">
               <span
@@ -432,7 +452,9 @@ export default function Hero() {
                 <Check size={12} />
               </span>
 
-              <span>Smart scheduling</span>
+              <span>
+                Smart scheduling
+              </span>
             </div>
 
             <span
@@ -444,6 +466,8 @@ export default function Hero() {
                 sm:block
               "
             />
+
+            {/* Analytics */}
 
             <div className="flex items-center gap-2">
               <span
@@ -461,11 +485,15 @@ export default function Hero() {
                 <Check size={12} />
               </span>
 
-              <span>Focus analytics</span>
+              <span>
+                Focus analytics
+              </span>
             </div>
           </div>
 
-          {/* Bottom label */}
+          {/* =================================================
+              BOTTOM LABEL
+          ================================================== */}
 
           <div className="mx-auto mt-14 max-w-[700px]">
             <div
@@ -492,7 +520,9 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* Bottom transition */}
+      {/* =====================================================
+          BOTTOM TRANSITION
+      ====================================================== */}
 
       <div
         className="
