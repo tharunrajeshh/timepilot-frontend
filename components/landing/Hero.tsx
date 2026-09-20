@@ -109,8 +109,9 @@ const PREVIEW_CAPTION = {
 
 /* Background image paths — drop your own files into /public/images */
 const BACKGROUNDS = {
-  spaceImage: "/images/earth-bg.jpg",       // main hero space image
-  marsImage:  "/images/mars-surface.jpg",   // planet at the bottom
+  spaceImage: "/images/space-bg.jpg",        // fallback image
+  marsImage: "/images/mars-surface.jpg",      // lower planet layer
+  videoUrl: "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260613_180732_a54afbf6-b30d-470e-861f-669871f09f67.mp4",
 };
 
 /* ═══════════════════════════════════════════════════════════════
@@ -123,6 +124,7 @@ type StarDef = {
   duration: number;
   delay: number;
   drift: number;
+  angle: number;
 };
 
 function useStarField(count: number): StarDef[] {
@@ -132,7 +134,8 @@ function useStarField(count: number): StarDef[] {
       size: 1 + Math.random() * 2,
       duration: 3 + Math.random() * 5,
       delay: Math.random() * 8,
-      drift: -60 + Math.random() * 120,
+      drift: -140 + Math.random() * 280,
+      angle: -28 + Math.random() * 56,
     }));
   }, [count]);
 }
@@ -142,10 +145,11 @@ function useStarField(count: number): StarDef[] {
 ═══════════════════════════════════════════════════════════════ */
 
 export default function Hero() {
-  const stars = useStarField(35);
+  const stars = useStarField(60);
 
   const heroRef = useRef<HTMLElement>(null);
   const spaceImageRef = useRef<HTMLDivElement>(null);
+  const heroVideoRef = useRef<HTMLVideoElement>(null);
   const marsImageRef = useRef<HTMLDivElement>(null);
   const marsGlowRef = useRef<HTMLDivElement>(null);
   const starsLayerRef = useRef<HTMLDivElement>(null);
@@ -212,6 +216,19 @@ export default function Hero() {
     <section id="top" className="tp-hero" ref={heroRef}>
       {/* BACKGROUND */}
       <div className="tp-hero-background">
+        {/* Cinematic hero video. The local image underneath is the fallback. */}
+        <video
+          ref={heroVideoRef}
+          className="tp-hero-video"
+          src={BACKGROUNDS.videoUrl}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          aria-hidden="true"
+        />
+
         <div
           className="tp-space-image"
           ref={spaceImageRef}
@@ -231,6 +248,7 @@ export default function Hero() {
                   animationDuration: `${star.duration}s`,
                   animationDelay: `${star.delay}s`,
                   "--tp-drift": `${star.drift}px`,
+                  "--tp-angle": `${star.angle}deg`,
                 } as React.CSSProperties
               }
             />
@@ -480,13 +498,28 @@ export default function Hero() {
           background: #050505;
         }
 
+        .tp-hero-video {
+          position: absolute;
+          inset: -2%;
+          z-index: 1;
+          width: 104%;
+          height: 104%;
+          object-fit: cover;
+          object-position: center center;
+          opacity: 0.92;
+          filter: saturate(1.05) contrast(1.04) brightness(0.82);
+          transform: scale(1.04);
+          will-change: transform;
+        }
+
         .tp-space-image {
           position: absolute;
           inset: -30px;
           background-size: cover;
           background-position: center;
           background-repeat: no-repeat;
-          opacity: 0.78;
+          opacity: 0.20;
+          z-index: 0;
           transform: scale(1.06);
           filter: saturate(0.85);
           will-change: transform;
@@ -507,7 +540,10 @@ export default function Hero() {
           top: -5%;
           background: #ffffff;
           border-radius: 50%;
-          box-shadow: 0 0 6px 2px rgba(255, 255, 255, 0.75);
+          box-shadow:
+            0 0 5px 2px rgba(255,255,255,0.95),
+            0 0 14px 4px rgba(91,174,255,0.45);
+          rotate: var(--tp-angle, 0deg);
           animation-name: tp-fall;
           animation-timing-function: linear;
           animation-iteration-count: infinite;
@@ -519,9 +555,10 @@ export default function Hero() {
           position: absolute;
           top: 50%;
           right: 100%;
-          width: 46px;
-          height: 1px;
-          background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.7));
+          width: 72px;
+          height: 2px;
+          background: linear-gradient(90deg, rgba(255,255,255,0), rgba(120,196,255,0.9), rgba(255,255,255,0.95));
+          box-shadow: 0 0 8px rgba(89,174,255,0.55);
           transform: translateY(-50%);
         }
 
@@ -539,10 +576,11 @@ export default function Hero() {
           background:
             radial-gradient(circle at 50% 12%, rgba(0,0,0,0.05), transparent 28%),
             radial-gradient(circle at 50% 42%, rgba(0,0,0,0.12), transparent 42%),
+            radial-gradient(circle at 50% 28%, rgba(30,110,190,0.10), transparent 34%),
             linear-gradient(to bottom,
-              rgba(3,5,9,0.10) 0%,
-              rgba(3,5,9,0.18) 42%,
-              rgba(3,5,9,0.76) 78%,
+              rgba(3,5,9,0.16) 0%,
+              rgba(3,5,9,0.20) 40%,
+              rgba(3,5,9,0.70) 76%,
               #050505 100%);
         }
 
@@ -1337,7 +1375,18 @@ export default function Hero() {
           .tp-mars-glow { width: 500px; bottom: -185px; }
         }
 
+        @media (max-width: 720px) {
+          .tp-hero-video {
+            object-position: center center;
+            opacity: 0.86;
+          }
+        }
+
         @media (prefers-reduced-motion: reduce) {
+          .tp-hero-video {
+            display: none;
+          }
+
           .tp-eyebrow-dot, .tp-ai-live, .tp-ai-card, .tp-focus-card, .tp-mars-image, .tp-star {
             animation: none !important;
           }
