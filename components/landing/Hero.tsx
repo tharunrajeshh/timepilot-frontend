@@ -13,9 +13,9 @@ export default function Hero() {
       id="hero"
       className="relative min-h-screen w-full overflow-hidden bg-[#020408] text-white"
     >
-      {/* =========================================================
+      {/* =====================================================
           EARTH VIDEO BACKGROUND
-      ========================================================= */}
+      ====================================================== */}
 
       <div className="absolute inset-0 z-0 overflow-hidden">
         <video
@@ -26,6 +26,7 @@ export default function Hero() {
           playsInline
           preload="auto"
           poster="/images/space-bg.jpg"
+          aria-hidden="true"
         >
           <source
             src={EARTH_VIDEO}
@@ -33,36 +34,40 @@ export default function Hero() {
           />
         </video>
 
-        {/* Dark overlay */}
-        <div className="absolute inset-0 bg-[#020408]/55" />
+        {/* Main dark overlay */}
+        <div className="absolute inset-0 bg-black/50" />
 
-        {/* Top darkness for navbar */}
-        <div className="absolute inset-x-0 top-0 h-[35%] bg-gradient-to-b from-black/75 via-black/30 to-transparent" />
+        {/* Top cinematic darkness */}
+        <div className="absolute inset-x-0 top-0 h-[42%] bg-gradient-to-b from-black/80 via-black/35 to-transparent" />
 
-        {/* Bottom darkness */}
-        <div className="absolute inset-x-0 bottom-0 h-[55%] bg-gradient-to-t from-[#020408] via-[#020408]/75 to-transparent" />
+        {/* Bottom cinematic darkness */}
+        <div className="absolute inset-x-0 bottom-0 h-[55%] bg-gradient-to-t from-[#020408] via-[#020408]/80 to-transparent" />
 
         {/* Side vignette */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_20%,rgba(0,0,0,0.35)_70%,rgba(0,0,0,0.75)_100%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_20%,rgba(0,0,0,0.18)_55%,rgba(0,0,0,0.72)_100%)]" />
 
-        {/* Blue Earth glow */}
-        <div className="absolute bottom-[-150px] left-1/2 h-[420px] w-[1000px] -translate-x-1/2 rounded-full bg-blue-500/15 blur-[100px]" />
+        {/* Soft Earth glow */}
+        <div className="absolute bottom-[-180px] left-1/2 h-[430px] w-[1000px] -translate-x-1/2 rounded-full bg-blue-500/20 blur-[110px]" />
       </div>
 
-      {/* =========================================================
+      {/* =====================================================
           FALLING STARS
-      ========================================================= */}
+      ====================================================== */}
 
       <Starfield />
 
-      {/* =========================================================
+      {/* =====================================================
           HERO CONTENT
-      ========================================================= */}
+      ====================================================== */}
 
       <div className="relative z-20 flex min-h-screen items-center justify-center px-5 pb-20 pt-32 sm:px-8 sm:pt-36">
         <div className="w-full max-w-[1180px] text-center">
-          {/* Eyebrow */}
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/30 px-4 py-2 text-xs font-medium text-white/75 shadow-[0_10px_40px_rgba(0,0,0,0.3)] backdrop-blur-xl">
+
+          {/* =================================================
+              EYEBROW
+          ================================================== */}
+
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/35 px-4 py-2 text-xs font-medium text-white/80 shadow-[0_10px_40px_rgba(0,0,0,0.35)] backdrop-blur-xl">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.9)]" />
 
             <span>
@@ -71,12 +76,15 @@ export default function Hero() {
 
             <ArrowUpRight
               size={13}
-              className="text-white/45"
+              className="text-white/50"
             />
           </div>
 
-          {/* Main heading */}
-          <h1 className="mx-auto mt-7 max-w-[1050px] text-[clamp(52px,9vw,124px)] font-semibold leading-[0.86] tracking-[-0.075em] text-white drop-shadow-[0_15px_50px_rgba(0,0,0,0.8)]">
+          {/* =================================================
+              MAIN HEADING
+          ================================================== */}
+
+          <h1 className="mx-auto mt-7 max-w-[1050px] text-[clamp(52px,9vw,124px)] font-semibold leading-[0.86] tracking-[-0.075em] text-white drop-shadow-[0_15px_50px_rgba(0,0,0,0.85)]">
             <span className="block">
               Take control
             </span>
@@ -86,48 +94,72 @@ export default function Hero() {
             </span>
           </h1>
 
-          {/* Description */}
-          <p className="mx-auto mt-8 max-w-[650px] text-[15px] leading-7 text-white/65 sm:text-lg sm:leading-8">
+          {/* =================================================
+              DESCRIPTION
+          ================================================== */}
+
+          <p className="mx-auto mt-8 max-w-[650px] text-[15px] leading-7 text-white/70 drop-shadow-[0_5px_20px_rgba(0,0,0,0.8)] sm:text-lg sm:leading-8">
             TimePilot turns your tasks, priorities and
             schedule into a focused day you can
             actually finish.
           </p>
 
-          {/* Buttons */}
+          {/* =================================================
+              CTA BUTTONS
+          ================================================== */}
+
           <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+
+            {/* GET STARTED */}
+
             <Link
               href="/signup"
-              className="group flex h-[58px] w-full items-center justify-center gap-4 rounded-full bg-white px-6 text-[15px] font-semibold text-black shadow-[0_15px_45px_rgba(0,0,0,0.45)] transition duration-300 hover:-translate-y-1 hover:bg-white/90 sm:w-auto"
+              className="group flex h-[58px] w-full items-center justify-center gap-4 rounded-full bg-white px-6 text-[15px] font-semibold !text-black shadow-[0_15px_45px_rgba(0,0,0,0.5)] transition-all duration-300 hover:-translate-y-1 hover:bg-white sm:w-auto"
             >
-              <span>
+              <span className="relative z-10 !text-black">
                 Get started
               </span>
 
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-black text-white transition-transform duration-300 group-hover:rotate-45">
-                <ArrowUpRight size={17} />
+              <span className="relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black !text-white transition-transform duration-300 group-hover:rotate-45">
+                <ArrowUpRight
+                  size={17}
+                  className="!text-white"
+                  strokeWidth={2.2}
+                />
               </span>
             </Link>
 
+            {/* EXPLORE */}
+
             <a
               href="#features"
-              className="group flex h-[58px] w-full items-center justify-center gap-5 rounded-full border border-white/20 bg-black/30 px-6 text-[15px] font-semibold text-white/85 backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:bg-white/10 sm:w-auto"
+              className="group flex h-[58px] w-full items-center justify-center gap-5 rounded-full border border-white/20 bg-black/35 px-6 text-[15px] font-semibold !text-white backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:bg-white/10 sm:w-auto"
             >
-              <span>
+              <span className="relative z-10 !text-white">
                 Explore TimePilot
               </span>
 
               <ArrowDown
                 size={18}
-                className="text-white/60 transition-transform duration-300 group-hover:translate-y-1"
+                className="relative z-10 !text-white/70 transition-transform duration-300 group-hover:translate-y-1"
+                strokeWidth={2}
               />
             </a>
           </div>
 
-          {/* Trust points */}
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-x-5 gap-y-3 text-xs text-white/50">
+          {/* =================================================
+              TRUST POINTS
+          ================================================== */}
+
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-x-5 gap-y-3 text-xs text-white/55">
+
+            {/* AI */}
             <div className="flex items-center gap-2">
               <span className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-500/15 text-violet-300">
-                <Check size={12} />
+                <Check
+                  size={12}
+                  strokeWidth={2.5}
+                />
               </span>
 
               <span>
@@ -137,9 +169,13 @@ export default function Hero() {
 
             <span className="hidden h-4 w-px bg-white/15 sm:block" />
 
+            {/* SCHEDULING */}
             <div className="flex items-center gap-2">
               <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-500/15 text-blue-300">
-                <Check size={12} />
+                <Check
+                  size={12}
+                  strokeWidth={2.5}
+                />
               </span>
 
               <span>
@@ -149,9 +185,13 @@ export default function Hero() {
 
             <span className="hidden h-4 w-px bg-white/15 sm:block" />
 
+            {/* ANALYTICS */}
             <div className="flex items-center gap-2">
               <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-300">
-                <Check size={12} />
+                <Check
+                  size={12}
+                  strokeWidth={2.5}
+                />
               </span>
 
               <span>
@@ -160,9 +200,9 @@ export default function Hero() {
             </div>
           </div>
 
-          {/* =====================================================
-              SMALL EARTH CAPTION
-          ===================================================== */}
+          {/* =================================================
+              BOTTOM LABEL
+          ================================================== */}
 
           <div className="mx-auto mt-14 max-w-[760px]">
             <div className="flex items-center justify-center gap-3 text-[10px] uppercase tracking-[0.25em] text-white/35">
@@ -178,11 +218,17 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* =========================================================
-          BOTTOM FADE
-      ========================================================= */}
+      {/* =====================================================
+          BOTTOM FADE INTO NEXT SECTION
+      ====================================================== */}
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 h-24 bg-gradient-to-t from-[#08090B] to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 h-28 bg-gradient-to-t from-[#08090B] to-transparent" />
+
+      {/* =====================================================
+          MOBILE VIDEO DARKENING
+      ====================================================== */}
+
+      <div className="pointer-events-none absolute inset-0 z-[1] bg-black/5 sm:hidden" />
     </section>
   );
 }
