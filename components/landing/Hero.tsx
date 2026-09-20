@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useMemo, useRef } from "react";
 import {
   ArrowUpRight,
   BarChart3,
@@ -12,36 +13,158 @@ import {
   Sparkles,
 } from "lucide-react";
 
+/* ============================================================
+   STAR FIELD DATA
+   Generated once per mount so every star gets a random position,
+   size, speed and delay — real falling stars, not four repeats.
+============================================================ */
+
+type StarDef = {
+  left: number; // vw
+  size: number; // px
+  duration: number; // s
+  delay: number; // s
+  drift: number; // px, horizontal drift while falling
+};
+
+function useStarField(count: number): StarDef[] {
+  return useMemo(() => {
+    return Array.from({ length: count }).map(() => ({
+      left: Math.random() * 100,
+      size: 1 + Math.random() * 2,
+      duration: 3 + Math.random() * 5,
+      delay: Math.random() * 8,
+      drift: -60 + Math.random() * 120,
+    }));
+  }, [count]);
+}
+
 export default function Hero() {
+  const stars = useStarField(35);
+
+  /* ============================================================
+     MOUSE PARALLAX
+     Space image, Mars, and glows drift a little opposite the
+     cursor for depth. Applied directly via refs so it doesn't
+     trigger a React re-render on every mousemove.
+  ============================================================ */
+
+  const heroRef = useRef<HTMLElement>(null);
+  const spaceImageRef = useRef<HTMLDivElement>(null);
+  const marsImageRef = useRef<HTMLDivElement>(null);
+  const marsGlowRef = useRef<HTMLDivElement>(null);
+  const starsLayerRef = useRef<HTMLDivElement>(null);
+  const glowLeftRef = useRef<HTMLDivElement>(null);
+  const glowRightRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+    if (reduceMotion) return;
+
+    const hero = heroRef.current;
+    if (!hero) return;
+
+    let raf = 0;
+    let targetX = 0;
+    let targetY = 0;
+    let currentX = 0;
+    let currentY = 0;
+
+    const handleMove = (e: MouseEvent) => {
+      const rect = hero.getBoundingClientRect();
+      // normalized -1..1 relative to the hero's own box
+      targetX = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
+      targetY = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
+    };
+
+    const tick = () => {
+      // ease toward the target for a smooth, weighty drift
+      currentX += (targetX - currentX) * 0.06;
+      currentY += (targetY - currentY) * 0.06;
+
+      if (spaceImageRef.current) {
+        spaceImageRef.current.style.transform = `scale(1.06) translate(${
+          currentX * -10
+        }px, ${currentY * -8}px)`;
+      }
+      if (marsImageRef.current) {
+        marsImageRef.current.style.transform = `translateX(calc(-50% + ${
+          currentX * 22
+        }px)) translateY(${currentY * 14}px)`;
+      }
+      if (marsGlowRef.current) {
+        marsGlowRef.current.style.transform = `translateX(calc(-50% + ${
+          currentX * 16
+        }px))`;
+      }
+      if (starsLayerRef.current) {
+        starsLayerRef.current.style.transform = `translate(${
+          currentX * 18
+        }px, ${currentY * 12}px)`;
+      }
+      if (glowLeftRef.current) {
+        glowLeftRef.current.style.transform = `translate(${
+          currentX * 26
+        }px, ${currentY * 18}px)`;
+      }
+      if (glowRightRef.current) {
+        glowRightRef.current.style.transform = `translate(${
+          currentX * -26
+        }px, ${currentY * -18}px)`;
+      }
+
+      raf = requestAnimationFrame(tick);
+    };
+
+    window.addEventListener("mousemove", handleMove);
+    raf = requestAnimationFrame(tick);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMove);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
+
   return (
-    <section id="top" className="tp-hero">
+    <section id="top" className="tp-hero" ref={heroRef}>
       {/* =========================================================
           HERO BACKGROUND
       ========================================================== */}
 
       <div className="tp-hero-background">
-        {/* Space Background Image */}
-        <div className="tp-space-image" />
-        
-        {/* NEW: Falling Stars Animation Layer */}
-        <div className="tp-falling-stars">
-          <span className="tp-star" />
-          <span className="tp-star" />
-          <span className="tp-star" />
-          <span className="tp-star" />
-          <span className="tp-star" />
-          <span className="tp-star" />
-          <span className="tp-star" />
-          <span className="tp-star" />
+        {/* Space / Earth Background Image — parallaxed opposite the cursor */}
+        <div className="tp-space-image" ref={spaceImageRef} />
+
+        {/* Falling stars, each with its own random path */}
+        <div className="tp-falling-stars" ref={starsLayerRef}>
+          {stars.map((star, i) => (
+            <span
+              key={i}
+              className="tp-star"
+              style={
+                {
+                  left: `${star.left}vw`,
+                  width: `${star.size}px`,
+                  height: `${star.size}px`,
+                  animationDuration: `${star.duration}s`,
+                  animationDelay: `${star.delay}s`,
+                  "--tp-drift": `${star.drift}px`,
+                } as React.CSSProperties
+              }
+            />
+          ))}
         </div>
 
         <div className="tp-space-overlay" />
-        <div className="tp-mars-image" />
-        <div className="tp-mars-glow" />
+
+        <div className="tp-mars-image" ref={marsImageRef} />
+        <div className="tp-mars-glow" ref={marsGlowRef} />
       </div>
 
-      <div className="tp-hero-glow tp-hero-glow-left" />
-      <div className="tp-hero-glow tp-hero-glow-right" />
+      <div className="tp-hero-glow tp-hero-glow-left" ref={glowLeftRef} />
+      <div className="tp-hero-glow tp-hero-glow-right" ref={glowRightRef} />
 
       {/* =========================================================
           HERO CONTENT
@@ -454,74 +577,73 @@ export default function Hero() {
 
         .tp-space-image {
           position: absolute;
-          inset: 0;
-          /* 🔴 UPDATED: Points to your Earth image. Ensure it is in public/images/ */
+          inset: -30px;
           background-image: url("/images/earth-bg.jpg");
           background-size: cover;
           background-position: center;
           background-repeat: no-repeat;
           opacity: 0.78;
-          transform: scale(1.04);
+          transform: scale(1.06);
           filter: saturate(0.85);
+          will-change: transform;
+          transition: transform 0.1s linear;
         }
 
         /* ========================================================
-           NEW: FALLING STARS ANIMATION
+           FALLING STARS
+           Randomized per-star via inline style; the keyframe just
+           handles the fall + fade + horizontal drift variable.
         ======================================================== */
+
         .tp-falling-stars {
           position: absolute;
-          inset: 0;
-          z-index: 2; /* Above space image, below overlay */
+          inset: -40px;
+          z-index: 2;
           overflow: hidden;
           pointer-events: none;
+          will-change: transform;
         }
 
         .tp-star {
           position: absolute;
-          height: 2px;
-          width: 2px;
+          top: -5%;
           background: #ffffff;
           border-radius: 50%;
-          box-shadow: 0 0 6px 2px rgba(255, 255, 255, 0.8);
-          animation: tp-fall linear infinite;
+          box-shadow: 0 0 6px 2px rgba(255, 255, 255, 0.75);
+          animation-name: tp-fall;
+          animation-timing-function: linear;
+          animation-iteration-count: infinite;
+          opacity: 0;
         }
 
-        /* Creates the "tail" for the shooting star */
         .tp-star::after {
-          content: '';
+          content: "";
           position: absolute;
           top: 50%;
-          right: 0;
-          width: 80px;
+          right: 100%;
+          width: 46px;
           height: 1px;
-          background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.8));
-          transform: translateY(-50%) rotate(-45deg);
-          transform-origin: right center;
+          background: linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0),
+            rgba(255, 255, 255, 0.7)
+          );
+          transform: translateY(-50%);
         }
-
-        /* Randomize star positions, speeds, and delays */
-        .tp-star:nth-child(1) { top: -10%; left: 20%; animation-duration: 3s; animation-delay: 0s; }
-        .tp-star:nth-child(2) { top: -20%; left: 50%; animation-duration: 4s; animation-delay: 1.5s; }
-        .tp-star:nth-child(3) { top: -10%; left: 80%; animation-duration: 2.5s; animation-delay: 3s; }
-        .tp-star:nth-child(4) { top: -30%; left: 10%; animation-duration: 5s; animation-delay: 2s; }
-        .tp-star:nth-child(5) { top: -10%; left: 65%; animation-duration: 3.5s; animation-delay: 4s; }
-        .tp-star:nth-child(6) { top: -20%; left: 35%; animation-duration: 4.5s; animation-delay: 5s; }
-        .tp-star:nth-child(7) { top: -15%; left: 90%; animation-duration: 3.2s; animation-delay: 1s; }
-        .tp-star:nth-child(8) { top: -25%; left: 5%; animation-duration: 5.5s; animation-delay: 6s; }
 
         @keyframes tp-fall {
           0% {
-            transform: translateY(-100px) translateX(100px);
+            transform: translate(0, -10vh);
             opacity: 0;
           }
-          10% {
+          8% {
             opacity: 1;
           }
-          90% {
+          85% {
             opacity: 1;
           }
           100% {
-            transform: translateY(100vh) translateX(-100px);
+            transform: translate(var(--tp-drift, 0px), 115vh);
             opacity: 0;
           }
         }
@@ -533,7 +655,7 @@ export default function Hero() {
         .tp-space-overlay {
           position: absolute;
           inset: 0;
-          z-index: 3; /* Keep overlay above the stars */
+          z-index: 3;
           background:
             radial-gradient(
               circle at 50% 12%,
@@ -591,7 +713,8 @@ export default function Hero() {
               black 100%
             );
           animation: tp-mars-float 10s ease-in-out infinite;
-          z-index: 4; /* Keep Mars above the overlay */
+          will-change: transform;
+          z-index: 4;
         }
 
         .tp-mars-glow {
@@ -610,6 +733,7 @@ export default function Hero() {
             );
           filter: blur(45px);
           opacity: 0.65;
+          will-change: transform;
           z-index: 4;
         }
 
@@ -626,6 +750,7 @@ export default function Hero() {
           pointer-events: none;
           opacity: 0.28;
           z-index: 5;
+          will-change: transform;
         }
 
         .tp-hero-glow-left {
@@ -646,7 +771,7 @@ export default function Hero() {
 
         .tp-hero-container {
           position: relative;
-          z-index: 10; /* Ensure content is above all background layers */
+          z-index: 10;
           width: min(1280px, calc(100% - 40px));
           margin: 0 auto;
           text-align: center;
@@ -1849,6 +1974,9 @@ export default function Hero() {
           .tp-mars-image,
           .tp-star {
             animation: none !important;
+          }
+          .tp-star {
+            display: none;
           }
           .tp-browser-window {
             transform: none;
