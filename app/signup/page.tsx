@@ -354,10 +354,16 @@ export default function SignupForm() {
         <div className="absolute left-0 right-0 top-[38%] h-[45%] bg-gradient-to-b from-transparent via-orange-500/10 to-transparent blur-2xl" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,transparent_35%,rgba(0,0,0,0.85)_100%)]" />
 
+        {/* Twinkling stars (stay in place, just pulse) */}
         <Stars layer={1} count={60} size={1} duration={3} opacity={0.55} />
         <Stars layer={2} count={40} size={1.5} duration={5} opacity={0.75} />
-        <Stars layer={3} count={25} size={2} duration={7} opacity={1} />
 
+        {/* ⭐ Falling stars — vertical, three layers with different speeds */}
+        <FallingStars count={30} layer={1} />
+        <FallingStars count={20} layer={2} />
+        <FallingStars count={12} layer={3} />
+
+        {/* Occasional diagonal shooting stars */}
         <ShootingStars />
 
         <div className="absolute right-[8%] top-[8%] h-24 w-24">
@@ -584,7 +590,7 @@ export default function SignupForm() {
                         />
                       </div>
 
-                      {/* ── PASSWORD REQUIREMENTS — COMPACT VERSION ── */}
+                      {/* Password requirements */}
                       <div
                         id="password-requirements"
                         className="mt-2.5 rounded-lg border border-white/[0.06] bg-white/[0.03] px-2.5 py-2"
@@ -1171,6 +1177,56 @@ function Stars({
                 ? "0 0 6px 1px rgba(255,255,255,0.8)"
                 : "0 0 3px 0.5px rgba(255,255,255,0.5)",
           }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/* ⭐ NEW — Falling stars (vertical, drifting) */
+
+function FallingStars({
+  count = 35,
+  layer = 1,
+}: {
+  count?: number;
+  layer?: number;
+}) {
+  const stars = useMemo(() => {
+    let seed = layer * 9973 + 7919;
+    const rand = () => {
+      seed = (seed * 9301 + 49297) % 233280;
+      return seed / 233280;
+    };
+
+    return Array.from({ length: count }).map(() => ({
+      left: rand() * 100,
+      size: 1 + rand() * 2,
+      duration: 3 + rand() * 5,
+      delay: rand() * 8,
+      drift: -60 + rand() * 120,
+    }));
+  }, [count, layer]);
+
+  return (
+    <div
+      className="pointer-events-none absolute inset-0 overflow-hidden"
+      aria-hidden="true"
+    >
+      {stars.map((star, i) => (
+        <span
+          key={i}
+          className="tp-falling-star"
+          style={
+            {
+              left: `${star.left}vw`,
+              width: `${star.size}px`,
+              height: `${star.size}px`,
+              animationDuration: `${star.duration}s`,
+              animationDelay: `${star.delay}s`,
+              "--tp-drift": `${star.drift}px`,
+            } as React.CSSProperties
+          }
         />
       ))}
     </div>
