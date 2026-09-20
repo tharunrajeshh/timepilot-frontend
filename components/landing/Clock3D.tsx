@@ -1,9 +1,190 @@
 "use client";
 
-import { Float, RoundedBox, Sparkles } from "@react-three/drei";
+import { Float, Sparkles } from "@react-three/drei";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
+
+/* ============================================================
+   PROCEDURAL MARS TEXTURE
+   Generated on a <canvas> at runtime — no external image assets,
+   so the component stays fully self-contained.
+============================================================ */
+
+function useMarsTexture() {
+  return useMemo(() => {
+    if (typeof document === "undefined") return null;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = 1024;
+    canvas.height = 512;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+
+    // Base rust-orange gradient (lighter near the "equator", darker at poles)
+    const base = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    base.addColorStop(0, "#5a2a1e");
+    base.addColorStop(0.15, "#8a3d24");
+    base.addColorStop(0.5, "#c1602f");
+    base.addColorStop(0.85, "#8a3d24");
+    base.addColorStop(1, "#4a221a");
+    ctx.fillStyle = base;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Mottled surface noise — layered translucent blobs
+    const blobColors = [
+      "rgba(120,55,30,0.35)",
+      "rgba(200,110,60,0.28)",
+      "rgba(90,40,25,0.3)",
+      "rgba(230,150,90,0.18)",
+    ];
+
+    for (let i = 0; i < 260; i++) {
+      const x = Math.random() * canvas.width;
+      const y = Math.random() * canvas.height;
+      const r = 8 + Math.random() * 46;
+      ctx.beginPath();
+      ctx.fillStyle =
+        blobColors[Math.floor(Math.random() * blobColors.length)];
+      ctx.ellipse(
+        x,
+        y,
+        r,
+        r * (0.5 + Math.random() * 0.5),
+        Math.random() * Math.PI,
+        0,
+        Math.PI * 2
+      );
+      ctx.fill();
+    }
+
+    // Crater rims — small dark rings with a lighter inner highlight
+    for (let i = 0; i < 45; i++) {
+      const x = Math.random() * canvas.width;
+      const y = Math.random() * canvas.height;
+      const r = 4 + Math.random() * 14;
+
+      ctx.beginPath();
+      ctx.strokeStyle = "rgba(50,20,12,0.45)";
+      ctx.lineWidth = 1.5 + Math.random() * 2;
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.fillStyle = "rgba(30,12,8,0.35)";
+      ctx.arc(x, y, r * 0.55, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Polar ice caps
+    const capGradientTop = ctx.createRadialGradient(
+      canvas.width / 2,
+      0,
+      0,
+      canvas.width / 2,
+      0,
+      canvas.height * 0.22
+    );
+    capGradientTop.addColorStop(0, "rgba(255,240,235,0.85)");
+    capGradientTop.addColorStop(1, "rgba(255,240,235,0)");
+    ctx.fillStyle = capGradientTop;
+    ctx.fillRect(0, 0, canvas.width, canvas.height * 0.3);
+
+    const capGradientBottom = ctx.createRadialGradient(
+      canvas.width / 2,
+      canvas.height,
+      0,
+      canvas.width / 2,
+      canvas.height,
+      canvas.height * 0.22
+    );
+    capGradientBottom.addColorStop(0, "rgba(255,240,235,0.75)");
+    capGradientBottom.addColorStop(1, "rgba(255,240,235,0)");
+    ctx.fillStyle = capGradientBottom;
+    ctx.fillRect(0, canvas.height * 0.7, canvas.width, canvas.height * 0.3);
+
+    // Faint violet tint bands, ties the planet back into the page's
+    // purple theme without breaking the Mars read
+    ctx.globalCompositeOperation = "overlay";
+    const tint = ctx.createLinearGradient(0, 0, canvas.width, 0);
+    tint.addColorStop(0, "rgba(124,58,237,0.12)");
+    tint.addColorStop(0.5, "rgba(168,85,247,0.05)");
+    tint.addColorStop(1, "rgba(59,130,246,0.1)");
+    ctx.fillStyle = tint;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.globalCompositeOperation = "source-over";
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.colorSpace = THREE.SRGBColorSpace;
+    return texture;
+  }, []);
+}
+
+/* ============================================================
+   MARS PLANET BODY (slow self-rotation, independent of the clock)
+============================================================ */
+
+function MarsPlanet() {
+  const planetRef = useRef<THREE.Mesh>(null);
+  const atmosphereRef = useRef<THREE.Mesh>(null);
+  const texture = useMarsTexture();
+
+  useFrame((_, delta) => {
+    if (planetRef.current) {
+      planetRef.current.rotation.y += delta * 0.045;
+    }
+    if (atmosphereRef.current) {
+      atmosphereRef.current.rotation.y -= delta * 0.015;
+    }
+  });
+
+  return (
+    <group>
+      {/* Planet core */}
+      <mesh ref={planetRef}>
+        <sphereGeometry args={[1.42, 64, 64]} />
+        {texture ? (
+          <meshStandardMaterial
+            map={texture}
+            metalness={0.05}
+            roughness={0.85}
+          />
+        ) : (
+          <meshStandardMaterial
+            color="#a3502c"
+            metalness={0.05}
+            roughness={0.85}
+          />
+        )}
+      </mesh>
+
+      {/* Soft rim-lit atmosphere shell */}
+      <mesh ref={atmosphereRef} scale={1.06}>
+        <sphereGeometry args={[1.42, 48, 48]} />
+        <meshBasicMaterial
+          color="#ff8a5b"
+          transparent
+          opacity={0.1}
+          side={THREE.BackSide}
+          toneMapped={false}
+        />
+      </mesh>
+
+      {/* Cool violet outer halo, blends the planet into the page glow */}
+      <mesh scale={1.16}>
+        <sphereGeometry args={[1.42, 32, 32]} />
+        <meshBasicMaterial
+          color="#7c3aed"
+          transparent
+          opacity={0.05}
+          side={THREE.BackSide}
+          toneMapped={false}
+        />
+      </mesh>
+    </group>
+  );
+}
 
 /* ============================================================
    CLOCK HANDS
@@ -31,7 +212,6 @@ function ClockHands() {
       secondHand.current.rotation.z = -(seconds / 60) * Math.PI * 2;
     }
     if (secondGlow.current) {
-      // gentle pulse so the second hand feels alive rather than mechanical
       secondGlow.current.intensity =
         1.4 + Math.sin(state.clock.elapsedTime * 3) * 0.5;
     }
@@ -40,170 +220,109 @@ function ClockHands() {
   return (
     <group>
       <group ref={hourHand}>
-        <RoundedBox
-          args={[0.1, 1.0, 0.06]}
-          radius={0.04}
-          smoothness={4}
-          position={[0, 0.5, 0]}
-        >
+        <mesh position={[0, 0.42, 0]}>
+          <boxGeometry args={[0.09, 0.84, 0.05]} />
           <meshStandardMaterial
-            color="#e8e8ff"
-            emissive="#5b6bff"
-            emissiveIntensity={0.4}
-            metalness={0.75}
-            roughness={0.2}
+            color="#fff3ea"
+            emissive="#ffb37a"
+            emissiveIntensity={0.5}
+            metalness={0.6}
+            roughness={0.25}
           />
-        </RoundedBox>
+        </mesh>
       </group>
 
       <group ref={minuteHand}>
-        <RoundedBox
-          args={[0.07, 1.5, 0.05]}
-          radius={0.03}
-          smoothness={4}
-          position={[0, 0.75, 0.04]}
-        >
+        <mesh position={[0, 0.64, 0.03]}>
+          <boxGeometry args={[0.065, 1.28, 0.045]} />
           <meshStandardMaterial
-            color="#c9ccff"
-            emissive="#7c8dff"
-            emissiveIntensity={0.5}
-            metalness={0.75}
-            roughness={0.2}
+            color="#ffe4d1"
+            emissive="#ff9d5c"
+            emissiveIntensity={0.55}
+            metalness={0.6}
+            roughness={0.25}
           />
-        </RoundedBox>
+        </mesh>
       </group>
 
       <group ref={secondHand}>
-        <RoundedBox
-          args={[0.025, 1.75, 0.03]}
-          radius={0.012}
-          smoothness={4}
-          position={[0, 0.875, 0.08]}
-        >
+        <mesh position={[0, 0.75, 0.06]}>
+          <boxGeometry args={[0.022, 1.5, 0.03]} />
           <meshStandardMaterial
-            color="#a855f7"
+            color="#c084fc"
             emissive="#a855f7"
-            emissiveIntensity={2.4}
+            emissiveIntensity={2.2}
             toneMapped={false}
           />
-        </RoundedBox>
+        </mesh>
         <pointLight
           ref={secondGlow}
-          position={[0, 1.6, 0.1]}
+          position={[0, 1.35, 0.08]}
           color="#c084fc"
           intensity={1.4}
-          distance={1.4}
+          distance={1.3}
         />
       </group>
 
-      <mesh position={[0, 0, 0.1]}>
-        <cylinderGeometry args={[0.09, 0.09, 0.08, 32]} />
+      {/* center hub */}
+      <mesh position={[0, 0, 0.08]}>
+        <cylinderGeometry args={[0.075, 0.075, 0.07, 32]} />
         <meshStandardMaterial
-          color="#0f0f1a"
-          metalness={0.95}
-          roughness={0.08}
-          emissive="#7c3aed"
-          emissiveIntensity={1.1}
+          color="#1a0f0a"
+          metalness={0.9}
+          roughness={0.15}
+          emissive="#ff7a45"
+          emissiveIntensity={0.9}
           toneMapped={false}
         />
       </mesh>
-
-      {/* subtle chrome cap for extra shine */}
-      <mesh position={[0, 0, 0.135]}>
-        <sphereGeometry args={[0.045, 24, 24]} />
-        <meshStandardMaterial
-          color="#ffffff"
-          metalness={1}
-          roughness={0.05}
-        />
+      <mesh position={[0, 0, 0.11]}>
+        <sphereGeometry args={[0.038, 24, 24]} />
+        <meshStandardMaterial color="#ffffff" metalness={1} roughness={0.05} />
       </mesh>
     </group>
   );
 }
 
 /* ============================================================
-   CLOCK FACE
+   CLOCK FACE — a glass dial mounted just in front of the planet,
+   like a porthole cut into Mars
 ============================================================ */
 
 function ClockFace() {
   return (
-    <group>
-      {/* Body — dark polished metal */}
-      <RoundedBox
-        args={[3.2, 3.2, 0.35]}
-        radius={0.35}
-        smoothness={8}
-        position={[0, 0, -0.18]}
-      >
+    <group position={[0, 0, 1.02]}>
+      {/* dark glass backing so the planet doesn't show through the dial */}
+      <mesh position={[0, 0, -0.02]}>
+        <circleGeometry args={[1.02, 64]} />
         <meshStandardMaterial
-          color="#0d0d1c"
-          metalness={0.92}
-          roughness={0.18}
-          emissive="#1b1b3a"
-          emissiveIntensity={0.65}
-        />
-      </RoundedBox>
-
-      {/* Glass-like bevel just inside the rim, for a "domed glass" feel */}
-      <mesh position={[0, 0, 0.16]}>
-        <torusGeometry args={[1.58, 0.035, 16, 64]} />
-        <meshStandardMaterial
-          color="#ffffff"
-          metalness={0.3}
-          roughness={0.05}
-          transparent
-          opacity={0.35}
-        />
-      </mesh>
-
-      {/* Inner face */}
-      <mesh position={[0, 0, 0.01]}>
-        <circleGeometry args={[1.5, 64]} />
-        <meshStandardMaterial
-          color="#101020"
+          color="#140b08"
           metalness={0.4}
           roughness={0.5}
+          transparent
+          opacity={0.88}
         />
       </mesh>
 
-      {/* Faint radial sheen across the face */}
-      <mesh position={[0, 0, 0.02]}>
-        <circleGeometry args={[1.5, 64]} />
-        <meshBasicMaterial
-          color="#8b9dff"
-          transparent
-          opacity={0.045}
-          toneMapped={false}
+      {/* thin metal bezel ring */}
+      <mesh position={[0, 0, -0.01]}>
+        <ringGeometry args={[0.98, 1.06, 64]} />
+        <meshStandardMaterial
+          color="#2a1712"
+          metalness={0.9}
+          roughness={0.2}
+          emissive="#ff7a45"
+          emissiveIntensity={0.35}
         />
       </mesh>
 
-      {/* Glow ring around face */}
-      <mesh position={[0, 0, 0.015]}>
-        <ringGeometry args={[1.5, 1.56, 64]} />
+      {/* glowing edge line */}
+      <mesh position={[0, 0, 0.005]}>
+        <ringGeometry args={[0.96, 1.0, 64]} />
         <meshBasicMaterial
-          color="#a855f7"
+          color="#ffb37a"
           transparent
-          opacity={0.7}
-          toneMapped={false}
-        />
-      </mesh>
-
-      {/* Outer soft halo, doubled for more depth */}
-      <mesh position={[0, 0, -0.05]}>
-        <ringGeometry args={[1.65, 2.15, 64]} />
-        <meshBasicMaterial
-          color="#5b3aff"
-          transparent
-          opacity={0.09}
-          toneMapped={false}
-        />
-      </mesh>
-      <mesh position={[0, 0, -0.06]}>
-        <ringGeometry args={[2.2, 2.75, 64]} />
-        <meshBasicMaterial
-          color="#7c3aed"
-          transparent
-          opacity={0.04}
+          opacity={0.6}
           toneMapped={false}
         />
       </mesh>
@@ -211,7 +330,7 @@ function ClockFace() {
       {/* Hour markers */}
       {Array.from({ length: 12 }).map((_, i) => {
         const angle = (i / 12) * Math.PI * 2;
-        const radius = 1.25;
+        const radius = 0.8;
         const isQuarter = i % 3 === 0;
 
         return (
@@ -220,21 +339,17 @@ function ClockFace() {
             position={[
               Math.sin(angle) * radius,
               Math.cos(angle) * radius,
-              0.04,
+              0.02,
             ]}
             rotation={[0, 0, -angle]}
           >
             <boxGeometry
-              args={
-                isQuarter
-                  ? [0.06, 0.22, 0.04]
-                  : [0.045, 0.15, 0.04]
-              }
+              args={isQuarter ? [0.045, 0.15, 0.03] : [0.032, 0.1, 0.03]}
             />
             <meshStandardMaterial
-              color="#a9b0ff"
-              emissive="#5b6bff"
-              emissiveIntensity={isQuarter ? 1.3 : 0.65}
+              color="#ffd9bd"
+              emissive="#ff9d5c"
+              emissiveIntensity={isQuarter ? 1.2 : 0.6}
               toneMapped={false}
             />
           </mesh>
@@ -243,33 +358,32 @@ function ClockFace() {
 
       <ClockHands />
 
-      {/* Tiny drifting sparkles inside the dome for a "magic" feel */}
       <Sparkles
-        count={22}
-        scale={[2.6, 2.6, 0.6]}
-        size={1.6}
-        speed={0.25}
-        opacity={0.5}
-        color="#c4b5fd"
+        count={16}
+        scale={[1.7, 1.7, 0.4]}
+        size={1.4}
+        speed={0.2}
+        opacity={0.45}
+        color="#ffcda0"
       />
     </group>
   );
 }
 
 /* ============================================================
-   FLOATING ORBITAL PARTICLES
+   FLOATING ORBITAL PARTICLES (dust ring around the planet)
 ============================================================ */
 
 function OrbitingParticles() {
   const groupRef = useRef<THREE.Group>(null);
 
   const particles = useMemo(() => {
-    return Array.from({ length: 46 }).map(() => {
-      const radius = 2.2 + Math.random() * 1.5;
+    return Array.from({ length: 50 }).map(() => {
+      const radius = 2.0 + Math.random() * 1.5;
       const angle = Math.random() * Math.PI * 2;
-      const yOffset = (Math.random() - 0.5) * 3.4;
-      const speed = 0.05 + Math.random() * 0.16;
-      const size = 0.014 + Math.random() * 0.032;
+      const yOffset = (Math.random() - 0.5) * 2.2;
+      const speed = 0.04 + Math.random() * 0.14;
+      const size = 0.012 + Math.random() * 0.028;
 
       return { radius, angle, yOffset, speed, size };
     });
@@ -292,9 +406,9 @@ function OrbitingParticles() {
         <mesh key={i} position={[0, p.yOffset, 0]}>
           <sphereGeometry args={[p.size, 8, 8]} />
           <meshBasicMaterial
-            color={i % 3 === 0 ? "#a855f7" : "#8b9dff"}
+            color={i % 3 === 0 ? "#ff9d5c" : "#c084fc"}
             transparent
-            opacity={0.75}
+            opacity={0.7}
             toneMapped={false}
           />
         </mesh>
@@ -304,10 +418,10 @@ function OrbitingParticles() {
 }
 
 /* ============================================================
-   CLOCK + INTERACTION
+   PLANET-CLOCK + POINTER INTERACTION
 ============================================================ */
 
-function FloatingClock() {
+function FloatingPlanetClock() {
   const groupRef = useRef<THREE.Group>(null);
 
   useFrame((state, delta) => {
@@ -332,7 +446,8 @@ function FloatingClock() {
 
   return (
     <group ref={groupRef}>
-      <Float speed={1.5} rotationIntensity={0.18} floatIntensity={0.7}>
+      <Float speed={1.3} rotationIntensity={0.12} floatIntensity={0.6}>
+        <MarsPlanet />
         <ClockFace />
       </Float>
 
@@ -353,24 +468,19 @@ export default function Clock3D() {
         gl={{ antialias: true, alpha: true }}
         camera={{ position: [0, 0, 7], fov: 38 }}
       >
-        <ambientLight intensity={0.38} />
+        <ambientLight intensity={0.4} />
 
-        <directionalLight
-          position={[4, 5, 6]}
-          intensity={1.7}
-          color="#dfe6ff"
-        />
+        <directionalLight position={[4, 5, 6]} intensity={1.6} color="#ffe6d5" />
 
-        <pointLight position={[-5, 1, 4]} intensity={2.4} color="#7c3aed" />
+        <pointLight position={[-5, 1, 4]} intensity={2.0} color="#ff7a45" />
 
-        <pointLight position={[3, -4, 2]} intensity={1.3} color="#3b82f6" />
+        <pointLight position={[3, -4, 2]} intensity={1.3} color="#7c3aed" />
 
-        <pointLight position={[0, 2, -5]} intensity={1.0} color="#10b981" />
+        <pointLight position={[0, 2, -5]} intensity={0.9} color="#3b82f6" />
 
-        {/* rim light so the clock reads as a distinct, glossy object */}
         <pointLight position={[0, 0, 5]} intensity={0.6} color="#ffffff" />
 
-        <FloatingClock />
+        <FloatingPlanetClock />
       </Canvas>
     </div>
   );
