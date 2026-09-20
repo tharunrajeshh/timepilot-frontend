@@ -566,8 +566,14 @@ canvas {
    ========================================================= */
 
 @keyframes mars-twinkle {
-  0%, 100% { opacity: 0.25; transform: scale(0.9); }
-  50%      { opacity: 1;    transform: scale(1.15); }
+  0%, 100% {
+    opacity: 0.25;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
 }
 
 .mars-star {
@@ -582,8 +588,12 @@ canvas {
     transform: translate3d(0, 0, 0) rotate(-35deg);
     opacity: 0;
   }
-  10% { opacity: 1; }
-  60% { opacity: 1; }
+  10% {
+    opacity: 1;
+  }
+  60% {
+    opacity: 1;
+  }
   100% {
     transform: translate3d(-600px, 420px, 0) rotate(-35deg);
     opacity: 0;
