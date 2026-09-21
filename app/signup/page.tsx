@@ -64,14 +64,19 @@ export default function SignupForm() {
   const [resendIn, setResendIn] = useState(0);
 
   const honeypotRef = useRef<HTMLInputElement>(null);
-  const mountedAtRef = useRef(Date.now());
+  // null until the mount effect below stamps it — reading Date.now() here
+  // directly during render is what the purity lint rule flags.
+  const mountedAtRef = useRef<number | null>(null);
 
   const [attempts, setAttempts] = useState(0);
   const [cooldownUntil, setCooldownUntil] = useState(0);
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(0);
   const cooldownLeft = Math.max(0, Math.ceil((cooldownUntil - now) / 1000));
 
-  const [currentTime, setCurrentTime] = useState(new Date());
+  // Start as null so the server-rendered markup has no time baked into it —
+  // the real value is filled in on the client after mount, avoiding a
+  // hydration mismatch between the server's render time and the client's.
+  const [currentTime, setCurrentTime] = useState<Date | null>(null);
 
   const cardRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -99,8 +104,14 @@ export default function SignupForm() {
   }, [name, email]);
 
   useEffect(() => {
+    // Stamp mount time and the real clock/now values on the client only.
+    mountedAtRef.current = Date.now();
+    setCurrentTime(new Date());
+    setNow(Date.now());
+
     const t = setInterval(() => setCurrentTime(new Date()), 1000);
     const n = setInterval(() => setNow(Date.now()), 500);
+
     return () => {
       clearInterval(t);
       clearInterval(n);
@@ -232,7 +243,7 @@ export default function SignupForm() {
     setFormError("");
 
     if (honeypotRef.current?.value) return;
-    if (Date.now() - mountedAtRef.current < 1500) {
+    if (mountedAtRef.current !== null && Date.now() - mountedAtRef.current < 1500) {
       setFormError("Please take a moment to review your details.");
       return;
     }
@@ -329,12 +340,18 @@ export default function SignupForm() {
     animate(buttonRef.current, { scale: 1, duration: 220, ease: "outQuad" });
   };
 
-  const digitalTime = currentTime.toLocaleTimeString("en-IN", {
-    hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
-  });
-  const date = currentTime.toLocaleDateString("en-IN", {
-    weekday: "long", day: "2-digit", month: "long", year: "numeric",
-  });
+  // Placeholders until currentTime is set on the client (first render is null).
+  const digitalTime = currentTime
+    ? currentTime.toLocaleTimeString("en-IN", {
+        hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
+      })
+    : "--:--:--";
+
+  const date = currentTime
+    ? currentTime.toLocaleDateString("en-IN", {
+        weekday: "long", day: "2-digit", month: "long", year: "numeric",
+      })
+    : "";
 
   const submitDisabled =
     loading ||
@@ -434,7 +451,7 @@ export default function SignupForm() {
                   {/* Live clock */}
                   <div className="signup-field mb-6 flex items-center justify-between rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 py-4 shadow-[0_8px_30px_rgba(0,0,0,0.25)] backdrop-blur-xl">
                     <div className="flex items-center gap-3">
-                      <AnalogClock time={currentTime} />
+                      <AnalogClock time={currentTime ?? new Date(0)} />
                       <div>
                         <p className="font-mono text-sm font-medium tracking-[0.08em] text-white">
                           {digitalTime}
