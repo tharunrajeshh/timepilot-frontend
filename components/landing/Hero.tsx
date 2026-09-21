@@ -15,46 +15,46 @@ export default function Hero() {
       id="hero"
       className="
         relative
-        isolate
-        left-1/2
         min-h-screen
-        w-screen
-        -translate-x-1/2
+        w-full
         overflow-hidden
-        bg-[#02050a]
-        font-sans
+        bg-[#03060b]
         text-white
       "
     >
       {/* =====================================================
-          BACKGROUND
+          FULL SCREEN BACKGROUND
       ====================================================== */}
 
-      <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden bg-[#02050a]">
+      <div className="pointer-events-none absolute inset-0 z-0">
 
-        {/* Deep space */}
+        {/* 🎬 VIDEO BACKGROUND (Replaces space-bg.jpg) */}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="
+            absolute
+            inset-0
+            h-full
+            w-full
+            object-cover
+            opacity-70
+          "
+        >
+          <source
+            src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260613_180732_a54afbf6-b30d-470e-861f-669871f09f67.mp4"
+            type="video/mp4"
+          />
+        </video>
 
+        {/* Space darkness overlay */}
         <div
           className="
             absolute
             inset-0
-            bg-[radial-gradient(circle_at_50%_18%,#18243a_0%,#0c1422_28%,#050a12_58%,#020409_100%)]
-          "
-        />
-
-        {/* Soft atmospheric glow */}
-
-        <div
-          className="
-            absolute
-            left-1/2
-            top-[20%]
-            h-[500px]
-            w-[1000px]
-            -translate-x-1/2
-            rounded-full
-            bg-blue-500/[0.045]
-            blur-[160px]
+            bg-[#03060b]/40
           "
         />
 
@@ -68,15 +68,15 @@ export default function Hero() {
           draggable={false}
           className="
             absolute
-            bottom-[-29%]
+            bottom-[-14%]
             left-1/2
             z-[4]
-            w-[1180px]
-            max-w-none
+            w-full
+            max-w-[1250px]
             -translate-x-1/2
             select-none
             object-contain
-            drop-shadow-[0_-25px_100px_rgba(30,120,255,0.22)]
+            drop-shadow-[0_-20px_90px_rgba(40,130,255,0.2)]
           "
         />
 
@@ -85,19 +85,24 @@ export default function Hero() {
         <div
           className="
             absolute
-            bottom-[-15%]
+            bottom-[-5%]
             left-1/2
             z-[3]
-            h-[260px]
-            w-[1000px]
+            h-[280px]
+            w-full
+            max-w-[1050px]
             -translate-x-1/2
             rounded-full
-            bg-blue-400/[0.13]
-            blur-[120px]
+            bg-blue-400/[0.12]
+            blur-[110px]
           "
         />
 
-        {/* Top cinematic fade */}
+        {/* =================================================
+            CINEMATIC LIGHTING
+        ================================================== */}
+
+        {/* Top darkness */}
 
         <div
           className="
@@ -105,15 +110,15 @@ export default function Hero() {
             inset-x-0
             top-0
             z-[6]
-            h-[34%]
+            h-[40%]
             bg-gradient-to-b
-            from-black/70
-            via-black/25
+            from-black/75
+            via-black/30
             to-transparent
           "
         />
 
-        {/* Bottom cinematic fade */}
+        {/* Bottom fade */}
 
         <div
           className="
@@ -121,22 +126,22 @@ export default function Hero() {
             inset-x-0
             bottom-0
             z-[6]
-            h-[30%]
+            h-[32%]
             bg-gradient-to-t
-            from-[#02050a]
-            via-[#02050a]/55
+            from-[#03060b]
+            via-[#03060b]/50
             to-transparent
           "
         />
 
-        {/* Vignette */}
+        {/* Soft vignette */}
 
         <div
           className="
             absolute
             inset-0
             z-[7]
-            bg-[radial-gradient(circle_at_center,transparent_28%,rgba(0,0,0,0.08)_58%,rgba(0,0,0,0.5)_100%)]
+            bg-[radial-gradient(circle_at_center,transparent_25%,rgba(0,0,0,0.12)_55%,rgba(0,0,0,0.55)_100%)]
           "
         />
       </div>
@@ -157,20 +162,17 @@ export default function Hero() {
           z-20
           flex
           min-h-screen
-          w-full
           items-center
           justify-center
           px-5
-          pb-20
-          pt-28
+          pb-24
+          pt-32
           sm:px-8
         "
       >
         <div className="w-full max-w-[1180px] text-center">
 
-          {/* =================================================
-              BADGE
-          ================================================== */}
+          {/* Badge */}
 
           <div
             className="
@@ -211,28 +213,24 @@ export default function Hero() {
             />
           </div>
 
-          {/* =================================================
-              HEADING
-          ================================================== */}
+          {/* Heading */}
 
           <h1
             className="
               mx-auto
               mt-8
               max-w-[1050px]
-              font-sans
-              text-[clamp(54px,8.5vw,118px)]
+              text-[clamp(52px,9vw,124px)]
               font-semibold
-              leading-[0.88]
+              leading-[0.86]
               tracking-[-0.075em]
             "
           >
             <span
               className="
                 block
-                whitespace-nowrap
                 text-white
-                drop-shadow-[0_12px_40px_rgba(0,0,0,0.95)]
+                drop-shadow-[0_15px_50px_rgba(0,0,0,0.95)]
               "
             >
               Take control
@@ -240,35 +238,28 @@ export default function Hero() {
 
             <span
               className="
-                mt-4
+                mt-3
                 block
-                whitespace-nowrap
                 font-normal
-                tracking-[-0.08em]
+                tracking-[-0.085em]
                 text-white/55
-                drop-shadow-[0_12px_40px_rgba(0,0,0,0.95)]
+                drop-shadow-[0_15px_50px_rgba(0,0,0,0.95)]
               "
             >
               of your time.
             </span>
           </h1>
 
-          {/* =================================================
-              DESCRIPTION
-          ================================================== */}
+          {/* Description */}
 
           <p
             className="
-              relative
-              z-30
               mx-auto
               mt-8
               max-w-[650px]
-              font-sans
               text-[15px]
-              font-normal
               leading-7
-              !text-white/70
+              text-white/65
               drop-shadow-[0_5px_25px_rgba(0,0,0,0.95)]
               sm:text-lg
               sm:leading-8
@@ -279,14 +270,10 @@ export default function Hero() {
             actually finish.
           </p>
 
-          {/* =================================================
-              BUTTONS
-          ================================================== */}
+          {/* Buttons */}
 
           <div
             className="
-              relative
-              z-30
               mt-9
               flex
               flex-col
@@ -296,8 +283,6 @@ export default function Hero() {
               sm:flex-row
             "
           >
-            {/* Get started */}
-
             <Link
               href="/signup"
               className="
@@ -311,7 +296,6 @@ export default function Hero() {
                 rounded-full
                 bg-white
                 px-7
-                font-sans
                 text-[15px]
                 font-semibold
                 !text-black
@@ -351,8 +335,6 @@ export default function Hero() {
               </span>
             </Link>
 
-            {/* Explore */}
-
             <a
               href="#preview"
               className="
@@ -366,9 +348,8 @@ export default function Hero() {
                 rounded-full
                 border
                 border-white/20
-                bg-white/[0.07]
+                bg-white/[0.06]
                 px-7
-                font-sans
                 text-[15px]
                 font-semibold
                 !text-white
@@ -376,7 +357,7 @@ export default function Hero() {
                 transition-all
                 duration-300
                 hover:-translate-y-1
-                hover:bg-white/[0.11]
+                hover:bg-white/[0.1]
                 sm:w-auto
               "
             >
@@ -396,14 +377,10 @@ export default function Hero() {
             </a>
           </div>
 
-          {/* =================================================
-              FEATURES
-          ================================================== */}
+          {/* Feature points */}
 
           <div
             className="
-              relative
-              z-30
               mt-9
               flex
               flex-wrap
@@ -411,9 +388,8 @@ export default function Hero() {
               justify-center
               gap-x-5
               gap-y-3
-              font-sans
               text-xs
-              !text-white/55
+              text-white/55
             "
           >
             <div className="flex items-center gap-2">
@@ -494,18 +470,15 @@ export default function Hero() {
             </div>
           </div>
 
-          {/* =================================================
-              BOTTOM LABEL
-          ================================================== */}
+          {/* Bottom label */}
 
-          <div className="relative z-30 mx-auto mt-14 max-w-[700px]">
+          <div className="mx-auto mt-14 max-w-[700px]">
             <div
               className="
                 flex
                 items-center
                 justify-center
                 gap-3
-                font-sans
                 text-[10px]
                 uppercase
                 tracking-[0.28em]
@@ -532,8 +505,8 @@ export default function Hero() {
           absolute
           inset-x-0
           bottom-0
-          z-40
-          h-24
+          z-30
+          h-28
           bg-gradient-to-t
           from-[#08090B]
           to-transparent
