@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowDown,
-  ArrowUpRight,
   Check,
 } from "lucide-react";
 
@@ -62,10 +62,14 @@ export default function Hero() {
             EARTH
         ================================================== */}
 
-        <img
+        <Image
           src="/images/earth.png"
           alt=""
+          width={1360}
+          height={750}
           draggable={false}
+          priority
+          sizes="(min-width: 1250px) 1250px, 100vw"
           className="
             absolute
             bottom-[-14%]
@@ -73,6 +77,7 @@ export default function Hero() {
             z-[4]
             w-full
             max-w-[1250px]
+            h-auto
             -translate-x-1/2
             select-none
             object-contain
@@ -93,7 +98,7 @@ export default function Hero() {
             max-w-[1050px]
             -translate-x-1/2
             rounded-full
-            bg-blue-400/[0.12]
+            bg-[#5ec8d8]/[0.12]
             blur-[110px]
           "
         />
@@ -179,7 +184,7 @@ export default function Hero() {
               mx-auto
               inline-flex
               items-center
-              gap-2
+              gap-2.5
               rounded-full
               border
               border-white/15
@@ -198,19 +203,14 @@ export default function Hero() {
                 h-1.5
                 w-1.5
                 rounded-full
-                bg-emerald-400
-                shadow-[0_0_12px_rgba(52,211,153,0.9)]
+                bg-[#ff9f4a]
+                shadow-[0_0_12px_rgba(255,159,74,0.9)]
               "
             />
 
             <span>
               Intelligent time management
             </span>
-
-            <ArrowUpRight
-              size={13}
-              className="text-white/45"
-            />
           </div>
 
           {/* Heading */}
@@ -220,10 +220,11 @@ export default function Hero() {
               mx-auto
               mt-8
               max-w-[1050px]
+              font-[family-name:var(--font-serif-display)]
               text-[clamp(52px,9vw,124px)]
-              font-semibold
-              leading-[0.86]
-              tracking-[-0.075em]
+              font-medium
+              leading-[0.9]
+              tracking-[-0.02em]
             "
           >
             <span
@@ -238,10 +239,10 @@ export default function Hero() {
 
             <span
               className="
-                mt-3
+                mt-1
                 block
+                italic
                 font-normal
-                tracking-[-0.085em]
                 text-white/55
                 drop-shadow-[0_15px_50px_rgba(0,0,0,0.95)]
               "
@@ -292,50 +293,27 @@ export default function Hero() {
                 w-full
                 items-center
                 justify-center
-                gap-4
+                gap-3
                 rounded-full
-                bg-white
-                px-7
+                bg-[#ff9f4a]
+                px-8
                 text-[15px]
                 font-semibold
-                !text-black
-                shadow-[0_15px_50px_rgba(0,0,0,0.5)]
+                !text-[#06090f]
+                shadow-[0_15px_50px_rgba(255,159,74,0.25)]
                 transition-all
                 duration-300
                 hover:-translate-y-1
-                hover:bg-white/90
+                hover:bg-[#ffb26c]
                 sm:w-auto
               "
             >
-              <span className="!text-black">
+              <span className="!text-[#06090f]">
                 Get started
-              </span>
-
-              <span
-                className="
-                  flex
-                  h-9
-                  w-9
-                  shrink-0
-                  items-center
-                  justify-center
-                  rounded-full
-                  bg-black
-                  !text-white
-                  transition-transform
-                  duration-300
-                  group-hover:rotate-45
-                "
-              >
-                <ArrowUpRight
-                  size={17}
-                  className="!text-white"
-                  strokeWidth={2.2}
-                />
               </span>
             </Link>
 
-            <a
+            
               href="#preview"
               className="
                 group
@@ -344,12 +322,12 @@ export default function Hero() {
                 w-full
                 items-center
                 justify-center
-                gap-5
+                gap-3
                 rounded-full
                 border
                 border-white/20
                 bg-white/[0.06]
-                px-7
+                px-8
                 text-[15px]
                 font-semibold
                 !text-white
@@ -401,8 +379,8 @@ export default function Hero() {
                   items-center
                   justify-center
                   rounded-full
-                  bg-violet-500/15
-                  text-violet-300
+                  bg-[#ff9f4a]/15
+                  text-[#ff9f4a]
                 "
               >
                 <Check size={12} />
@@ -430,8 +408,8 @@ export default function Hero() {
                   items-center
                   justify-center
                   rounded-full
-                  bg-blue-500/15
-                  text-blue-300
+                  bg-[#5ec8d8]/15
+                  text-[#5ec8d8]
                 "
               >
                 <Check size={12} />
@@ -459,8 +437,8 @@ export default function Hero() {
                   items-center
                   justify-center
                   rounded-full
-                  bg-emerald-500/15
-                  text-emerald-300
+                  bg-[#ff9f4a]/15
+                  text-[#ff9f4a]
                 "
               >
                 <Check size={12} />
@@ -472,28 +450,17 @@ export default function Hero() {
 
           {/* Bottom label */}
 
-          <div className="mx-auto mt-14 max-w-[700px]">
-            <div
-              className="
-                flex
-                items-center
-                justify-center
-                gap-3
-                text-[10px]
-                uppercase
-                tracking-[0.28em]
-                text-white/30
-              "
-            >
-              <span className="h-px w-12 bg-white/15" />
-
-              <span>
-                Plan your day · Own your time
-              </span>
-
-              <span className="h-px w-12 bg-white/15" />
-            </div>
-          </div>
+          <p
+            className="
+              mx-auto
+              mt-14
+              max-w-[420px]
+              text-sm
+              text-white/35
+            "
+          >
+            Plan your day. Own your time.
+          </p>
         </div>
       </div>
 
