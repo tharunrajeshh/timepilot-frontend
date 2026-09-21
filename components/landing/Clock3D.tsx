@@ -2,7 +2,7 @@
 
 import { Float, Sparkles } from "@react-three/drei";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type { RefObject } from "react";
 import * as THREE from "three";
 
@@ -477,17 +477,17 @@ function ClockHands() {
 ============================================================ */
 
 function MarsPlanet() {
-  const [texture, setTexture] = useState<THREE.CanvasTexture | null>(null);
+  // Deterministic and computed directly during render (no effect + setState
+  // round-trip): createMarsTexture only touches `document`, which the R3F
+  // Canvas already guarantees runs client-side only, so this is safe here.
+  const texture = useMemo(() => createMarsTexture(), []);
   const surfaceRef = useRef<THREE.Mesh>(null);
 
   useEffect(() => {
-    const generated = createMarsTexture();
-    setTexture(generated);
-
     return () => {
-      generated?.dispose();
+      texture?.dispose();
     };
-  }, []);
+  }, [texture]);
 
   // The planet itself spins slowly behind the fixed clock face
   useFrame((_, delta) => {
@@ -536,13 +536,17 @@ function MarsPlanet() {
 function OrbitingParticles() {
   const groupRef = useRef<THREE.Group>(null);
 
+  // Seeded, not Math.random(): the positions are still visually random, but
+  // deterministic so this stays a pure function of its (empty) inputs.
   const particles = useMemo(() => {
+    const rnd = mulberry32(0x50415254); // "PART"
+
     return Array.from({ length: 46 }).map(() => {
-      const radius = 2.2 + Math.random() * 1.5;
-      const angle = Math.random() * Math.PI * 2;
-      const yOffset = (Math.random() - 0.5) * 3.4;
-      const speed = 0.05 + Math.random() * 0.16;
-      const size = 0.014 + Math.random() * 0.032;
+      const radius = 2.2 + rnd() * 1.5;
+      const angle = rnd() * Math.PI * 2;
+      const yOffset = (rnd() - 0.5) * 3.4;
+      const speed = 0.05 + rnd() * 0.16;
+      const size = 0.014 + rnd() * 0.032;
 
       return { radius, angle, yOffset, speed, size };
     });
