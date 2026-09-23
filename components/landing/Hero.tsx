@@ -8,8 +8,8 @@ export default function Hero() {
     <section
       id="hero"
       className="
-        relative isolate
-        -mt-px
+        relative
+        isolate
         min-h-[100svh]
         w-full
         overflow-hidden
@@ -18,31 +18,28 @@ export default function Hero() {
       "
     >
       {/* =====================================================
-          BASE BACKGROUND
+          SPACE BACKGROUND
           ===================================================== */}
 
       <div
         aria-hidden="true"
         className="
-          absolute inset-0
-          z-[-30]
+          absolute
+          inset-0
+          z-0
           bg-[#02050a]
         "
       />
-
-      {/* =====================================================
-          SPACE VIDEO
-          ===================================================== */}
 
       <video
         className="
           absolute
           inset-0
-          z-[-25]
+          z-0
           h-full
           w-full
           object-cover
-          opacity-[0.55]
+          opacity-60
         "
         autoPlay
         muted
@@ -58,7 +55,7 @@ export default function Hero() {
       </video>
 
       {/* =====================================================
-          CINEMATIC SPACE OVERLAY
+          SPACE DARKENING
           ===================================================== */}
 
       <div
@@ -67,29 +64,8 @@ export default function Hero() {
           pointer-events-none
           absolute
           inset-0
-          z-[-20]
-          bg-[radial-gradient(circle_at_50%_65%,rgba(20,90,170,0.20),transparent_42%),linear-gradient(to_bottom,rgba(2,5,10,0.48)_0%,rgba(2,5,10,0.08)_42%,rgba(2,5,10,0.88)_100%)]
-        "
-      />
-
-      {/* =====================================================
-          TOP GRADIENT
-          Prevents harsh line / edge
-          ===================================================== */}
-
-      <div
-        aria-hidden="true"
-        className="
-          pointer-events-none
-          absolute
-          inset-x-0
-          top-0
           z-[1]
-          h-32
-          bg-gradient-to-b
-          from-[#02050a]
-          via-[#02050a]/70
-          to-transparent
+          bg-[linear-gradient(to_bottom,rgba(2,5,10,0.30)_0%,rgba(2,5,10,0.05)_45%,rgba(2,5,10,0.72)_100%)]
         "
       />
 
@@ -103,7 +79,7 @@ export default function Hero() {
           pointer-events-none
           absolute
           inset-0
-          z-[5]
+          z-[2]
         "
       >
         <Starfield />
@@ -118,10 +94,11 @@ export default function Hero() {
         className="
           pointer-events-none
           absolute
-          inset-x-0
           bottom-0
-          z-[4]
-          h-[55%]
+          left-0
+          right-0
+          z-[3]
+          h-[52%]
           overflow-hidden
         "
       >
@@ -131,18 +108,18 @@ export default function Hero() {
           draggable={false}
           className="
             absolute
+            bottom-[-57%]
             left-1/2
-            bottom-[-55%]
-            w-[1050px]
+            w-[1100px]
             max-w-none
             -translate-x-1/2
             select-none
             object-contain
-            drop-shadow-[0_-20px_90px_rgba(30,120,255,0.28)]
-            sm:w-[1250px]
-            md:w-[1450px]
-            lg:w-[1650px]
-            xl:w-[1850px]
+            drop-shadow-[0_-20px_90px_rgba(35,130,255,0.30)]
+            sm:w-[1300px]
+            md:w-[1500px]
+            lg:w-[1750px]
+            xl:w-[1950px]
           "
         />
       </div>
@@ -156,14 +133,14 @@ export default function Hero() {
         className="
           pointer-events-none
           absolute
-          bottom-[-15%]
+          bottom-[-12%]
           left-1/2
-          z-[6]
-          h-[420px]
+          z-[4]
+          h-[400px]
           w-[1100px]
           -translate-x-1/2
           rounded-[50%]
-          bg-[radial-gradient(ellipse,rgba(50,145,255,0.18)_0%,rgba(20,90,180,0.08)_35%,transparent_70%)]
+          bg-[radial-gradient(ellipse,rgba(40,140,255,0.18)_0%,rgba(20,90,180,0.06)_40%,transparent_72%)]
           blur-3xl
         "
       />
@@ -179,12 +156,13 @@ export default function Hero() {
           mx-auto
           flex
           min-h-[100svh]
+          w-full
           max-w-[1400px]
           items-center
           justify-center
           px-5
-          pb-[20vh]
-          pt-32
+          pb-[18vh]
+          pt-[150px]
           text-center
           sm:px-8
           lg:px-12
@@ -193,7 +171,8 @@ export default function Hero() {
         <div
           className="
             flex
-            max-w-[1000px]
+            w-full
+            max-w-[1050px]
             flex-col
             items-center
           "
@@ -211,10 +190,9 @@ export default function Hero() {
               rounded-full
               border
               border-white/15
-              bg-[#0b111a]/70
+              bg-black/30
               px-4
               py-2
-              shadow-[0_8px_30px_rgba(0,0,0,0.20)]
               backdrop-blur-xl
             "
           >
@@ -234,7 +212,7 @@ export default function Hero() {
                 font-semibold
                 uppercase
                 tracking-[0.2em]
-                !text-white/75
+                text-white/75
               "
             >
               Intelligent time management
@@ -242,30 +220,28 @@ export default function Hero() {
           </div>
 
           {/* =================================================
-              HEADLINE
+              MAIN HEADING
               ================================================= */}
 
           <h1
             className="
               relative
               z-30
+              m-0
               max-w-[1000px]
-              text-[clamp(48px,7.2vw,94px)]
+              text-[clamp(48px,7vw,94px)]
               font-semibold
               leading-[0.94]
               tracking-[-0.06em]
-              !text-white
-              drop-shadow-[0_8px_35px_rgba(0,0,0,0.45)]
+              text-white
+              drop-shadow-[0_8px_35px_rgba(0,0,0,0.55)]
             "
           >
-            Take control
-            <br />
+            <span className="block">
+              Take control
+            </span>
 
-            <span
-              className="
-                !text-white
-              "
-            >
+            <span className="block text-white">
               of your time.
             </span>
           </h1>
@@ -279,17 +255,19 @@ export default function Hero() {
               relative
               z-30
               mt-7
-              max-w-[690px]
-              !text-white/75
+              m-0
+              max-w-[700px]
               text-[15px]
+              font-normal
               leading-7
+              text-white/75
               sm:text-[17px]
               sm:leading-8
             "
           >
             TimePilot helps you plan your day, prioritize
-            what matters, and turn your available time
-            into focused progress.
+            what matters, and turn your available time into
+            focused progress.
           </p>
 
           {/* =================================================
@@ -309,12 +287,10 @@ export default function Hero() {
               sm:flex-row
             "
           >
-            {/* PRIMARY */}
-
             <Link
               href="/signup"
               className="
-                inline-flex
+                flex
                 h-[54px]
                 min-w-[180px]
                 items-center
@@ -325,38 +301,32 @@ export default function Hero() {
                 border-white
                 bg-white
                 px-7
-                !text-[#07101b]
                 text-[14px]
                 font-semibold
+                text-[#07101b]
                 shadow-[0_14px_45px_rgba(255,255,255,0.15)]
                 transition-all
                 duration-200
                 hover:-translate-y-0.5
-                hover:bg-[#F6F4EE]
-                hover:shadow-[0_18px_50px_rgba(255,255,255,0.20)]
+                hover:bg-[#f6f4ee]
               "
             >
-              <span className="!text-[#07101b]">
+              <span className="text-[#07101b]">
                 Get started
               </span>
 
               <span
                 aria-hidden="true"
-                className="
-                  !text-[#C49A61]
-                  text-[17px]
-                "
+                className="text-[#C49A61]"
               >
                 →
               </span>
             </Link>
 
-            {/* SECONDARY */}
-
             <Link
               href="#features"
               className="
-                inline-flex
+                flex
                 h-[54px]
                 min-w-[180px]
                 items-center
@@ -364,23 +334,19 @@ export default function Hero() {
                 rounded-[13px]
                 border
                 border-white/20
-                bg-white/[0.07]
+                bg-white/[0.08]
                 px-7
-                !text-white
                 text-[14px]
                 font-semibold
-                shadow-[0_12px_35px_rgba(0,0,0,0.12)]
+                text-white
                 backdrop-blur-xl
                 transition-all
                 duration-200
                 hover:-translate-y-0.5
-                hover:bg-white/[0.12]
-                hover:border-white/30
+                hover:bg-white/[0.14]
               "
             >
-              <span className="!text-white">
-                Explore TimePilot
-              </span>
+              Explore TimePilot
             </Link>
           </div>
 
@@ -401,80 +367,26 @@ export default function Hero() {
               gap-y-3
             "
           >
-            <div
-              className="
-                flex
-                items-center
-                gap-2
-                !text-white/60
-                text-[12px]
-              "
-            >
-              <span
-                className="
-                  h-1
-                  w-1
-                  rounded-full
-                  bg-[#C49A61]
-                "
-              />
-
-              <span className="!text-white/60">
-                AI-powered planning
-              </span>
+            <div className="flex items-center gap-2 text-[12px] text-white/60">
+              <span className="h-1 w-1 rounded-full bg-[#C49A61]" />
+              AI-powered planning
             </div>
 
-            <div
-              className="
-                flex
-                items-center
-                gap-2
-                !text-white/60
-                text-[12px]
-              "
-            >
-              <span
-                className="
-                  h-1
-                  w-1
-                  rounded-full
-                  bg-[#C49A61]
-                "
-              />
-
-              <span className="!text-white/60">
-                Focused schedules
-              </span>
+            <div className="flex items-center gap-2 text-[12px] text-white/60">
+              <span className="h-1 w-1 rounded-full bg-[#C49A61]" />
+              Focused schedules
             </div>
 
-            <div
-              className="
-                flex
-                items-center
-                gap-2
-                !text-white/60
-                text-[12px]
-              "
-            >
-              <span
-                className="
-                  h-1
-                  w-1
-                  rounded-full
-                  bg-[#C49A61]
-                "
-              />
-
-              <span className="!text-white/60">
-                One place for your day
-              </span>
+            <div className="flex items-center gap-2 text-[12px] text-white/60">
+              <span className="h-1 w-1 rounded-full bg-[#C49A61]" />
+              One place for your day
             </div>
           </div>
         </div>
       </div>
 
       {/* =====================================================
-          BOTTOM CINEMATIC FADE
+          BOTTOM FADE
           ===================================================== */}
 
       <div
@@ -482,31 +394,15 @@ export default function Hero() {
         className="
           pointer-events-none
           absolute
-          inset-x-0
           bottom-0
+          left-0
+          right-0
           z-[10]
-          h-[25%]
+          h-[22%]
           bg-gradient-to-t
           from-[#02050a]
-          via-[#02050a]/40
+          via-[#02050a]/30
           to-transparent
-        "
-      />
-
-      {/* =====================================================
-          MOBILE FADE
-          ===================================================== */}
-
-      <div
-        aria-hidden="true"
-        className="
-          pointer-events-none
-          absolute
-          inset-x-0
-          bottom-0
-          z-[11]
-          h-12
-          bg-[#02050a]/50
         "
       />
     </section>
