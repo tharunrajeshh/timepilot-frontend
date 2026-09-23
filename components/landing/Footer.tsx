@@ -3,6 +3,72 @@
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 
+interface FooterLink {
+  label: string;
+  href: string;
+}
+
+interface SocialLink {
+  label: string;
+  href: string;
+  icon: React.ReactNode;
+}
+
+const PRODUCT_LINKS: FooterLink[] = [
+  { label: "Features", href: "#features" },
+  { label: "AI planner", href: "#ai-planner" },
+  { label: "Calendar sync", href: "#calendar" },
+  { label: "Analytics", href: "#analytics" },
+  { label: "Pricing", href: "#pricing" },
+  { label: "What's new", href: "#changelog" },
+];
+
+const COMPANY_LINKS: FooterLink[] = [
+  { label: "About", href: "#about" },
+  { label: "Careers", href: "#careers" },
+  { label: "Blog", href: "#blog" },
+  { label: "Press", href: "#press" },
+];
+
+const RESOURCES_LINKS: FooterLink[] = [
+  { label: "Help center", href: "#help" },
+  { label: "Documentation", href: "#docs" },
+  { label: "Community", href: "#community" },
+  { label: "System status", href: "#status" },
+];
+
+const ACCOUNT_LINKS: FooterLink[] = [
+  { label: "Sign in", href: "/login" },
+  { label: "Create account", href: "/signup" },
+  { label: "Security", href: "#security" },
+  { label: "Contact sales", href: "#contact" },
+];
+
+const SOCIAL_LINKS: SocialLink[] = [
+  {
+    label: "Follow TimePilot on X",
+    href: "https://x.com/timepilotapp",
+    icon: <XIcon />,
+  },
+  {
+    label: "Follow TimePilot on LinkedIn",
+    href: "https://www.linkedin.com/company/timepilot",
+    icon: <LinkedInIcon />,
+  },
+  {
+    label: "View TimePilot on GitHub",
+    href: "https://github.com/timepilot",
+    icon: <GitHubIcon />,
+  },
+];
+
+const LEGAL_LINKS: FooterLink[] = [
+  { label: "Privacy policy", href: "#privacy" },
+  { label: "Terms of service", href: "#terms" },
+  { label: "Cookie settings", href: "#cookies" },
+  { label: "Contact", href: "#contact" },
+];
+
 export default function Footer() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "submitting" | "done">("idle");
@@ -11,7 +77,6 @@ export default function Footer() {
     e.preventDefault();
     if (!email.trim()) return;
     setStatus("submitting");
-    // Replace with a real call to your newsletter provider (e.g. /api/subscribe)
     setTimeout(() => {
       setStatus("done");
       setEmail("");
@@ -35,64 +100,42 @@ export default function Footer() {
             </Link>
 
             <p className="mt-5 max-w-xs text-sm leading-6 text-white/45">
-              A smarter way to plan your day, protect your focus and make
-              better use of your time.
+              A smarter way to plan your day, protect your focus and make better use of your time.
             </p>
 
             <div className="mt-6 flex items-center gap-2">
-              <SocialButton
-                label="Follow TimePilot on X"
-                href="https://x.com/timepilotapp"
-              >
-                <XIcon />
-              </SocialButton>
-              <SocialButton
-                label="Follow TimePilot on LinkedIn"
-                href="https://www.linkedin.com/company/timepilot"
-              >
-                <LinkedInIcon />
-              </SocialButton>
-              <SocialButton
-                label="View TimePilot on GitHub"
-                href="https://github.com/timepilot"
-              >
-                <GitHubIcon />
-              </SocialButton>
+              {SOCIAL_LINKS.map((link) => (
+                <SocialButton key={link.href} {...link} />
+              ))}
             </div>
           </div>
 
           {/* Product */}
           <FooterColumn title="Product">
-            <FooterLink href="#features">Features</FooterLink>
-            <FooterLink href="#ai-planner">AI planner</FooterLink>
-            <FooterLink href="#calendar">Calendar sync</FooterLink>
-            <FooterLink href="#analytics">Analytics</FooterLink>
-            <FooterLink href="#pricing">Pricing</FooterLink>
-            <FooterLink href="#changelog">What's new</FooterLink>
+            {PRODUCT_LINKS.map((link) => (
+              <FooterLink key={link.href} {...link} />
+            ))}
           </FooterColumn>
 
           {/* Company */}
           <FooterColumn title="Company">
-            <FooterLink href="#about">About</FooterLink>
-            <FooterLink href="#careers">Careers</FooterLink>
-            <FooterLink href="#blog">Blog</FooterLink>
-            <FooterLink href="#press">Press</FooterLink>
+            {COMPANY_LINKS.map((link) => (
+              <FooterLink key={link.href} {...link} />
+            ))}
           </FooterColumn>
 
           {/* Resources */}
           <FooterColumn title="Resources">
-            <FooterLink href="#help">Help center</FooterLink>
-            <FooterLink href="#docs">Documentation</FooterLink>
-            <FooterLink href="#community">Community</FooterLink>
-            <FooterLink href="#status">System status</FooterLink>
+            {RESOURCES_LINKS.map((link) => (
+              <FooterLink key={link.href} {...link} />
+            ))}
           </FooterColumn>
 
-          {/* Legal / account */}
+          {/* Account */}
           <FooterColumn title="Account">
-            <FooterLink href="/login">Sign in</FooterLink>
-            <FooterLink href="/signup">Create account</FooterLink>
-            <FooterLink href="#security">Security</FooterLink>
-            <FooterLink href="#contact">Contact sales</FooterLink>
+            {ACCOUNT_LINKS.map((link) => (
+              <FooterLink key={link.href} {...link} />
+            ))}
           </FooterColumn>
         </div>
 
@@ -108,10 +151,7 @@ export default function Footer() {
               </p>
             </div>
 
-            <form
-              onSubmit={handleSubscribe}
-              className="flex w-full max-w-sm items-center gap-2"
-            >
+            <form onSubmit={handleSubscribe} className="flex w-full max-w-sm items-center gap-2">
               <label htmlFor="footer-email" className="sr-only">
                 Email address
               </label>
@@ -144,38 +184,16 @@ export default function Footer() {
 
           <nav aria-label="Legal">
             <ul className="flex flex-wrap items-center gap-x-5 gap-y-2">
-              <li>
-                <Link
-                  href="#privacy"
-                  className="text-xs text-white/30 transition hover:text-white/60"
-                >
-                  Privacy policy
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="#terms"
-                  className="text-xs text-white/30 transition hover:text-white/60"
-                >
-                  Terms of service
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="#cookies"
-                  className="text-xs text-white/30 transition hover:text-white/60"
-                >
-                  Cookie settings
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="#contact"
-                  className="text-xs text-white/30 transition hover:text-white/60"
-                >
-                  Contact
-                </Link>
-              </li>
+              {LEGAL_LINKS.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="text-xs text-white/30 transition hover:text-white/60"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </nav>
         </div>
@@ -184,10 +202,7 @@ export default function Footer() {
   );
 }
 
-/* ─────────────────────────────────────────────
-   Footer Components
-───────────────────────────────────────────── */
-
+// Components
 function FooterColumn({
   title,
   children,
@@ -203,34 +218,20 @@ function FooterColumn({
   );
 }
 
-function FooterLink({
-  href,
-  children,
-}: {
-  href: string;
-  children: React.ReactNode;
-}) {
+function FooterLink({ href, label }: FooterLink) {
   return (
     <li>
       <Link
         href={href}
         className="text-sm text-white/40 transition hover:translate-x-0.5 hover:text-white/80"
       >
-        {children}
+        {label}
       </Link>
     </li>
   );
 }
 
-function SocialButton({
-  label,
-  href,
-  children,
-}: {
-  label: string;
-  href: string;
-  children: React.ReactNode;
-}) {
+function SocialButton({ label, href, icon }: SocialLink) {
   return (
     <a
       href={href}
@@ -239,15 +240,12 @@ function SocialButton({
       aria-label={label}
       className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.02] text-white/40 transition hover:border-white/[0.18] hover:bg-white/[0.06] hover:text-white/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#F5A623]/60"
     >
-      {children}
+      {icon}
     </a>
   );
 }
 
-/* ─────────────────────────────────────────────
-   Icons
-───────────────────────────────────────────── */
-
+// Icons
 function ClockIcon() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
