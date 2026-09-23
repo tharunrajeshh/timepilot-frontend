@@ -2,29 +2,38 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import TimePilotLogo from "@/components/ui/TimePilotLogo";
 
 type NavItem = {
   label: string;
   href: string;
+  color: string;
+  glow: string;
 };
 
 const navItems: NavItem[] = [
   {
     label: "Features",
     href: "#features",
+    color: "#8B5CF6",
+    glow: "rgba(139, 92, 246, 0.28)",
   },
   {
     label: "AI Planner",
     href: "#ai-planner",
+    color: "#3B82F6",
+    glow: "rgba(59, 130, 246, 0.28)",
   },
   {
     label: "Analytics",
     href: "#analytics",
+    color: "#10B981",
+    glow: "rgba(16, 185, 129, 0.28)",
   },
   {
     label: "How it works",
     href: "#how-it-works",
+    color: "#F59E0B",
+    glow: "rgba(245, 158, 11, 0.28)",
   },
 ];
 
@@ -64,12 +73,17 @@ export default function Navbar() {
 
     const observer = new IntersectionObserver(
       (entries) => {
+        /*
+         * Find the section that is currently closest
+         * to the top/center of the viewport.
+         */
+
         const visibleSections = entries
           .filter((entry) => entry.isIntersecting)
           .sort(
             (a, b) =>
               Math.abs(a.boundingClientRect.top) -
-              Math.abs(b.boundingClientRect.top),
+              Math.abs(b.boundingClientRect.top)
           );
 
         if (visibleSections.length > 0) {
@@ -82,9 +96,13 @@ export default function Navbar() {
         }
       },
       {
+        /*
+         * Navbar is around 70px high.
+         * This creates a comfortable activation zone.
+         */
         rootMargin: "-100px 0px -55% 0px",
         threshold: 0,
-      },
+      }
     );
 
     sections.forEach((section) => {
@@ -114,126 +132,450 @@ export default function Navbar() {
     setMenuOpen(false);
   };
 
-  /* =====================================================
-     MOBILE MENU BODY LOCK
-     ===================================================== */
-
-  useEffect(() => {
-    if (!menuOpen) {
-      document.body.style.overflow = "";
-      return;
-    }
-
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [menuOpen]);
-
-  /* =====================================================
-     ESCAPE KEY
-     ===================================================== */
-
-  useEffect(() => {
-    if (!menuOpen) return;
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setMenuOpen(false);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [menuOpen]);
-
   return (
-    <>
-      <header
+    <header
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+
+        zIndex: 9999,
+
+        padding: scrolled
+          ? "12px 16px"
+          : "18px 16px",
+
+        transition: "all 0.35s ease",
+      }}
+    >
+      <nav
         style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 9999,
+          position: "relative",
 
-          padding: scrolled
-            ? "12px 16px"
-            : "18px 16px",
+          width: "100%",
+          maxWidth: "1180px",
 
-          transition:
-            "padding 0.3s ease",
+          minHeight: "68px",
+
+          margin: "0 auto",
+
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+
+          padding: "0 10px 0 12px",
+
+          border:
+            "1px solid rgba(0, 0, 0, 0.08)",
+
+          borderRadius: "999px",
+
+          background:
+            "rgba(255, 255, 255, 0.72)",
+
+          backdropFilter:
+            "blur(28px) saturate(180%)",
+
+          WebkitBackdropFilter:
+            "blur(28px) saturate(180%)",
+
+          boxShadow: scrolled
+            ? "0 15px 45px rgba(0, 0, 0, 0.12)"
+            : "0 8px 30px rgba(0, 0, 0, 0.07)",
+
+          boxSizing: "border-box",
         }}
       >
-        <nav
-          aria-label="Main navigation"
+        {/* ================================================= */}
+        {/* LOGO */}
+        {/* ================================================= */}
+
+        <Link
+          href="/"
+          onClick={handleLogoClick}
           style={{
             position: "relative",
-
-            width: "100%",
-            maxWidth: "1180px",
-
-            minHeight: "68px",
-
-            margin: "0 auto",
+            zIndex: 2,
 
             display: "flex",
             alignItems: "center",
-            justifyContent: "space-between",
 
-            padding: "0 10px 0 16px",
+            gap: "11px",
 
-            border:
-              "1px solid rgba(13, 20, 32, 0.10)",
+            flexShrink: 0,
 
-            borderRadius: "20px",
+            color: "#000000",
 
-            background:
-              "rgba(255, 253, 248, 0.88)",
-
-            backdropFilter:
-              "blur(20px) saturate(150%)",
-
-            WebkitBackdropFilter:
-              "blur(20px) saturate(150%)",
-
-            boxShadow: scrolled
-              ? "0 16px 45px rgba(13, 20, 32, 0.10)"
-              : "0 8px 30px rgba(13, 20, 32, 0.06)",
-
-            boxSizing: "border-box",
+            textDecoration: "none",
           }}
         >
-          {/* ================================================= */}
-          {/* LOGO */}
-          {/* ================================================= */}
-
-          <div
-            onClick={handleLogoClick}
+          <span
             style={{
-              position: "relative",
-              zIndex: 2,
-              flexShrink: 0,
-              cursor: "pointer",
+              width: "40px",
+              height: "40px",
+
+              minWidth: "40px",
+
+              borderRadius: "50%",
+
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+
+              background: "#000000",
+
+              color: "#ffffff",
+
+              fontSize: "14px",
+
+              fontWeight: 700,
+
+              boxShadow:
+                "0 5px 18px rgba(0, 0, 0, 0.18)",
             }}
           >
-            <TimePilotLogo
-              variant="dark"
-              size="md"
+            T
+          </span>
+
+          <span
+            style={{
+              display: "block",
+
+              color: "#000000",
+
+              fontSize: "16px",
+
+              lineHeight: "1",
+
+              fontWeight: 650,
+
+              letterSpacing: "-0.03em",
+
+              whiteSpace: "nowrap",
+            }}
+          >
+            TimePilot
+          </span>
+        </Link>
+
+        {/* ================================================= */}
+        {/* DESKTOP NAV */}
+        {/* ================================================= */}
+
+        <div
+          className="tp-desktop-nav"
+          style={{
+            position: "absolute",
+
+            left: "50%",
+
+            transform:
+              "translateX(-50%)",
+
+            display: "flex",
+
+            alignItems: "center",
+
+            gap: "3px",
+
+            padding: "4px",
+
+            borderRadius: "999px",
+
+            background:
+              "rgba(255, 255, 255, 0.28)",
+          }}
+        >
+          {navItems.map((item) => {
+            const isActive =
+              active === item.href;
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() =>
+                  handleNavClick(item.href)
+                }
+                style={{
+                  display: "flex",
+
+                  alignItems: "center",
+
+                  justifyContent: "center",
+
+                  height: "38px",
+
+                  padding: "0 14px",
+
+                  borderRadius: "999px",
+
+                  color: isActive
+                    ? "#ffffff"
+                    : "rgba(0, 0, 0, 0.58)",
+
+                  background: isActive
+                    ? item.color
+                    : "transparent",
+
+                  boxShadow: isActive
+                    ? `0 7px 22px ${item.glow}`
+                    : "none",
+
+                  textDecoration: "none",
+
+                  fontSize: "13px",
+
+                  fontWeight: 550,
+
+                  whiteSpace: "nowrap",
+
+                  transition:
+                    "all 0.35s cubic-bezier(0.22, 1, 0.36, 1)",
+                }}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* ================================================= */}
+        {/* DESKTOP ACTIONS */}
+        {/* ================================================= */}
+
+        <div
+          className="tp-desktop-actions"
+          style={{
+            position: "relative",
+
+            zIndex: 2,
+
+            display: "flex",
+
+            alignItems: "center",
+
+            gap: "4px",
+
+            flexShrink: 0,
+          }}
+        >
+          <Link
+            href="/login"
+            style={{
+              display: "flex",
+
+              alignItems: "center",
+
+              justifyContent: "center",
+
+              height: "42px",
+
+              padding: "0 16px",
+
+              borderRadius: "999px",
+
+              color: "#000000",
+
+              textDecoration: "none",
+
+              fontSize: "14px",
+
+              fontWeight: 500,
+
+              whiteSpace: "nowrap",
+            }}
+          >
+            Log in
+          </Link>
+
+          <Link
+            href="/signup"
+            style={{
+              display: "flex",
+
+              alignItems: "center",
+
+              justifyContent: "center",
+
+              gap: "8px",
+
+              height: "42px",
+
+              minWidth: "126px",
+
+              padding: "0 18px",
+
+              borderRadius: "999px",
+
+              background: "#000000",
+
+              color: "#ffffff",
+
+              textDecoration: "none",
+
+              fontSize: "14px",
+
+              fontWeight: 600,
+
+              whiteSpace: "nowrap",
+
+              boxShadow:
+                "0 5px 18px rgba(0, 0, 0, 0.16)",
+            }}
+          >
+            Get started
+
+            <span
+              style={{
+                color: "#ffffff",
+              }}
+            >
+              →
+            </span>
+          </Link>
+        </div>
+
+        {/* ================================================= */}
+        {/* MOBILE BUTTON */}
+        {/* ================================================= */}
+
+        <button
+          className="tp-mobile-button"
+          type="button"
+          aria-label={
+            menuOpen
+              ? "Close menu"
+              : "Open menu"
+          }
+          aria-expanded={menuOpen}
+          onClick={() =>
+            setMenuOpen((value) => !value)
+          }
+          style={{
+            width: "42px",
+
+            height: "42px",
+
+            minWidth: "42px",
+
+            borderRadius: "50%",
+
+            border:
+              "1px solid rgba(0, 0, 0, 0.08)",
+
+            background:
+              "rgba(255, 255, 255, 0.72)",
+
+            color: "#000000",
+
+            alignItems: "center",
+
+            justifyContent: "center",
+
+            cursor: "pointer",
+          }}
+        >
+          <span
+            style={{
+              width: "17px",
+
+              height: "12px",
+
+              display: "flex",
+
+              flexDirection: "column",
+
+              justifyContent: "space-between",
+            }}
+          >
+            <span
+              style={{
+                height: "1.5px",
+
+                width: "100%",
+
+                background: "#000000",
+
+                transform: menuOpen
+                  ? "translateY(5px) rotate(45deg)"
+                  : "none",
+
+                transition: "0.25s",
+              }}
             />
-          </div>
 
-          {/* ================================================= */}
-          {/* DESKTOP NAV */}
-          {/* ================================================= */}
+            <span
+              style={{
+                height: "1.5px",
 
-          <div className="tp-desktop-nav">
+                width: "100%",
+
+                background: "#000000",
+
+                opacity: menuOpen ? 0 : 1,
+
+                transition: "0.25s",
+              }}
+            />
+
+            <span
+              style={{
+                height: "1.5px",
+
+                width: "100%",
+
+                background: "#000000",
+
+                transform: menuOpen
+                  ? "translateY(-5px) rotate(-45deg)"
+                  : "none",
+
+                transition: "0.25s",
+              }}
+            />
+          </span>
+        </button>
+
+        {/* ================================================= */}
+        {/* MOBILE MENU */}
+        {/* ================================================= */}
+
+        {menuOpen && (
+          <div
+            style={{
+              position: "absolute",
+
+              top: "76px",
+
+              left: 0,
+
+              right: 0,
+
+              padding: "16px",
+
+              border:
+                "1px solid rgba(0, 0, 0, 0.08)",
+
+              borderRadius: "28px",
+
+              background:
+                "rgba(255, 255, 255, 0.88)",
+
+              backdropFilter:
+                "blur(30px) saturate(180%)",
+
+              WebkitBackdropFilter:
+                "blur(30px) saturate(180%)",
+
+              boxShadow:
+                "0 20px 50px rgba(0, 0, 0, 0.12)",
+            }}
+          >
             {navItems.map((item) => {
-              const isActive = active === item.href;
+              const isActive =
+                active === item.href;
 
               return (
                 <Link
@@ -242,688 +584,151 @@ export default function Navbar() {
                   onClick={() =>
                     handleNavClick(item.href)
                   }
-                  className={
-                    isActive
-                      ? "tp-nav-link tp-nav-link-active"
-                      : "tp-nav-link"
-                  }
+                  style={{
+                    display: "block",
+
+                    marginBottom: "4px",
+
+                    padding: "14px 15px",
+
+                    borderRadius: "15px",
+
+                    color: isActive
+                      ? "#ffffff"
+                      : "rgba(0, 0, 0, 0.72)",
+
+                    background: isActive
+                      ? item.color
+                      : "transparent",
+
+                    textDecoration: "none",
+
+                    fontSize: "15px",
+
+                    fontWeight: 500,
+
+                    transition:
+                      "all 0.3s ease",
+                  }}
                 >
                   {item.label}
                 </Link>
               );
             })}
-          </div>
 
-          {/* ================================================= */}
-          {/* DESKTOP ACTIONS */}
-          {/* ================================================= */}
+            <div
+              style={{
+                display: "grid",
 
-          <div className="tp-desktop-actions">
-            <Link
-              href="/login"
-              className="tp-login-link"
+                gridTemplateColumns:
+                  "1fr 1fr",
+
+                gap: "8px",
+
+                marginTop: "14px",
+              }}
             >
-              Log in
-            </Link>
-
-            <Link
-              href="/signup"
-              className="tp-start-link"
-            >
-              Get started
-              <span aria-hidden="true">→</span>
-            </Link>
-          </div>
-
-          {/* ================================================= */}
-          {/* MOBILE BUTTON */}
-          {/* ================================================= */}
-
-          <button
-            className="tp-mobile-button"
-            type="button"
-            aria-label={
-              menuOpen
-                ? "Close navigation menu"
-                : "Open navigation menu"
-            }
-            aria-expanded={menuOpen}
-            aria-controls="mobile-navigation"
-            onClick={() =>
-              setMenuOpen((value) => !value)
-            }
-          >
-            <span className="tp-menu-icon">
-              <span
-                className={
-                  menuOpen
-                    ? "tp-menu-line tp-menu-line-top-open"
-                    : "tp-menu-line"
+              <Link
+                href="/login"
+                onClick={() =>
+                  setMenuOpen(false)
                 }
-              />
+                style={{
+                  height: "48px",
 
-              <span
-                className={
-                  menuOpen
-                    ? "tp-menu-line tp-menu-line-middle-open"
-                    : "tp-menu-line"
-                }
-              />
+                  display: "flex",
 
-              <span
-                className={
-                  menuOpen
-                    ? "tp-menu-line tp-menu-line-bottom-open"
-                    : "tp-menu-line"
-                }
-              />
-            </span>
-          </button>
+                  alignItems: "center",
 
-          {/* ================================================= */}
-          {/* MOBILE MENU */}
-          {/* ================================================= */}
+                  justifyContent: "center",
 
-          {menuOpen && (
-            <>
-              <button
-                type="button"
-                aria-label="Close navigation menu"
-                className="tp-mobile-overlay"
-                onClick={() => setMenuOpen(false)}
-              />
+                  borderRadius: "999px",
 
-              <div
-                id="mobile-navigation"
-                className="tp-mobile-menu"
+                  border:
+                    "1px solid rgba(0, 0, 0, 0.08)",
+
+                  color: "#000000",
+
+                  textDecoration: "none",
+
+                  fontSize: "14px",
+
+                  fontWeight: 500,
+                }}
               >
-                {/* Mobile navigation links */}
+                Log in
+              </Link>
 
-                <div className="tp-mobile-links">
-                  {navItems.map((item) => {
-                    const isActive =
-                      active === item.href;
+              <Link
+                href="/signup"
+                onClick={() =>
+                  setMenuOpen(false)
+                }
+                style={{
+                  height: "48px",
 
-                    return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        onClick={() =>
-                          handleNavClick(item.href)
-                        }
-                        className={
-                          isActive
-                            ? "tp-mobile-link tp-mobile-link-active"
-                            : "tp-mobile-link"
-                        }
-                      >
-                        <span>{item.label}</span>
+                  display: "flex",
 
-                        <span
-                          aria-hidden="true"
-                          className="tp-mobile-arrow"
-                        >
-                          →
-                        </span>
-                      </Link>
-                    );
-                  })}
-                </div>
+                  alignItems: "center",
 
-                {/* Mobile actions */}
+                  justifyContent: "center",
 
-                <div className="tp-mobile-actions">
-                  <Link
-                    href="/login"
-                    onClick={() =>
-                      setMenuOpen(false)
-                    }
-                    className="tp-mobile-login"
-                  >
-                    Log in
-                  </Link>
+                  gap: "7px",
 
-                  <Link
-                    href="/signup"
-                    onClick={() =>
-                      setMenuOpen(false)
-                    }
-                    className="tp-mobile-start"
-                  >
-                    Get started
-                    <span aria-hidden="true">
-                      →
-                    </span>
-                  </Link>
-                </div>
-              </div>
-            </>
-          )}
-        </nav>
-      </header>
+                  borderRadius: "999px",
 
-      {/* =====================================================
-          RESPONSIVE / NAVBAR STYLES
-          ===================================================== */}
+                  background: "#000000",
+
+                  color: "#ffffff",
+
+                  textDecoration: "none",
+
+                  fontSize: "14px",
+
+                  fontWeight: 600,
+                }}
+              >
+                Get started →
+              </Link>
+            </div>
+          </div>
+        )}
+      </nav>
+
+      {/* ================================================= */}
+      {/* RESPONSIVE */}
+      {/* ================================================= */}
 
       <style jsx>{`
-        /* -----------------------------------------------
-           DESKTOP NAV
-           ----------------------------------------------- */
-
-        .tp-desktop-nav {
-          position: absolute;
-
-          left: 50%;
-
-          transform: translateX(-50%);
-
-          display: flex;
-
-          align-items: center;
-
-          gap: 4px;
-
-          padding: 4px;
-
-          border: 1px solid
-            rgba(13, 20, 32, 0.06);
-
-          border-radius: 14px;
-
-          background:
-            rgba(13, 20, 32, 0.035);
-        }
-
-        .tp-nav-link {
-          display: flex;
-
-          align-items: center;
-          justify-content: center;
-
-          height: 38px;
-
-          padding: 0 14px;
-
-          border-radius: 10px;
-
-          color:
-            rgba(13, 20, 32, 0.62);
-
-          text-decoration: none;
-
-          font-size: 13px;
-
-          font-weight: 550;
-
-          white-space: nowrap;
-
-          transition:
-            color 0.2s ease,
-            background-color 0.2s ease,
-            transform 0.2s ease;
-        }
-
-        .tp-nav-link:hover {
-          color: var(--tp-ink);
-
-          background:
-            rgba(255, 255, 255, 0.72);
-        }
-
-        .tp-nav-link-active {
-          color: var(--tp-ink);
-
-          background:
-            rgba(255, 255, 255, 0.96);
-
-          box-shadow:
-            0 4px 14px
-              rgba(13, 20, 32, 0.07);
-        }
-
-        /* -----------------------------------------------
-           DESKTOP ACTIONS
-           ----------------------------------------------- */
-
-        .tp-desktop-actions {
-          position: relative;
-
-          z-index: 2;
-
-          display: flex;
-
-          align-items: center;
-
-          gap: 6px;
-
-          flex-shrink: 0;
-        }
-
-        .tp-login-link {
-          display: flex;
-
-          align-items: center;
-          justify-content: center;
-
-          height: 42px;
-
-          padding: 0 15px;
-
-          border-radius: 10px;
-
-          color: var(--tp-ink);
-
-          text-decoration: none;
-
-          font-size: 14px;
-
-          font-weight: 500;
-
-          transition:
-            background-color 0.2s ease,
-            transform 0.2s ease;
-        }
-
-        .tp-login-link:hover {
-          background:
-            rgba(13, 20, 32, 0.05);
-
-          transform: translateY(-1px);
-        }
-
-        .tp-start-link {
-          display: flex;
-
-          align-items: center;
-          justify-content: center;
-
-          gap: 8px;
-
-          height: 42px;
-
-          min-width: 126px;
-
-          padding: 0 18px;
-
-          border-radius: 11px;
-
-          background: var(--tp-night);
-
-          color: #ffffff;
-
-          text-decoration: none;
-
-          font-size: 14px;
-
-          font-weight: 600;
-
-          box-shadow:
-            0 8px 22px
-              rgba(10, 20, 34, 0.15);
-
-          transition:
-            background-color 0.2s ease,
-            transform 0.2s ease,
-            box-shadow 0.2s ease;
-        }
-
-        .tp-start-link:hover {
-          background: var(--tp-night-soft);
-
-          transform: translateY(-1px);
-
-          box-shadow:
-            0 12px 28px
-              rgba(10, 20, 34, 0.19);
-        }
-
-        /* -----------------------------------------------
-           MOBILE BUTTON
-           ----------------------------------------------- */
-
         .tp-mobile-button {
           display: none;
-
-          width: 44px;
-
-          height: 44px;
-
-          min-width: 44px;
-
-          align-items: center;
-
-          justify-content: center;
-
-          border: 1px solid
-            rgba(13, 20, 32, 0.10);
-
-          border-radius: 12px;
-
-          background:
-            rgba(255, 253, 248, 0.9);
-
-          color: var(--tp-ink);
-
-          cursor: pointer;
-
-          transition:
-            background-color 0.2s ease,
-            border-color 0.2s ease;
         }
-
-        .tp-mobile-button:hover {
-          background: #ffffff;
-
-          border-color:
-            rgba(13, 20, 32, 0.16);
-        }
-
-        .tp-menu-icon {
-          width: 18px;
-
-          height: 14px;
-
-          display: flex;
-
-          flex-direction: column;
-
-          justify-content: space-between;
-        }
-
-        .tp-menu-line {
-          width: 100%;
-
-          height: 1.5px;
-
-          border-radius: 999px;
-
-          background: var(--tp-ink);
-
-          transition:
-            transform 0.25s ease,
-            opacity 0.2s ease;
-        }
-
-        .tp-menu-line-top-open {
-          transform:
-            translateY(6px)
-            rotate(45deg);
-        }
-
-        .tp-menu-line-middle-open {
-          opacity: 0;
-        }
-
-        .tp-menu-line-bottom-open {
-          transform:
-            translateY(-6px)
-            rotate(-45deg);
-        }
-
-        /* -----------------------------------------------
-           MOBILE OVERLAY
-           ----------------------------------------------- */
-
-        .tp-mobile-overlay {
-          position: fixed;
-
-          inset: 0;
-
-          z-index: -1;
-
-          width: 100vw;
-
-          height: 100vh;
-
-          border: 0;
-
-          background:
-            rgba(10, 20, 34, 0.18);
-
-          backdrop-filter: blur(3px);
-
-          -webkit-backdrop-filter: blur(3px);
-
-          cursor: default;
-        }
-
-        /* -----------------------------------------------
-           MOBILE MENU
-           ----------------------------------------------- */
-
-        .tp-mobile-menu {
-          position: absolute;
-
-          top: calc(100% + 10px);
-
-          left: 0;
-
-          right: 0;
-
-          z-index: 20;
-
-          padding: 12px;
-
-          border: 1px solid
-            rgba(13, 20, 32, 0.10);
-
-          border-radius: 20px;
-
-          background:
-            rgba(255, 253, 248, 0.97);
-
-          backdrop-filter:
-            blur(22px)
-            saturate(150%);
-
-          -webkit-backdrop-filter:
-            blur(22px)
-            saturate(150%);
-
-          box-shadow:
-            0 24px 70px
-              rgba(13, 20, 32, 0.14);
-
-          animation:
-            tp-mobile-menu-in 0.22s
-            ease-out both;
-        }
-
-        .tp-mobile-links {
-          display: flex;
-
-          flex-direction: column;
-
-          gap: 3px;
-        }
-
-        .tp-mobile-link {
-          display: flex;
-
-          align-items: center;
-
-          justify-content: space-between;
-
-          min-height: 48px;
-
-          padding: 0 14px;
-
-          border-radius: 12px;
-
-          color:
-            rgba(13, 20, 32, 0.72);
-
-          text-decoration: none;
-
-          font-size: 15px;
-
-          font-weight: 500;
-
-          transition:
-            background-color 0.2s ease,
-            color 0.2s ease;
-        }
-
-        .tp-mobile-link:hover {
-          background:
-            rgba(13, 20, 32, 0.045);
-
-          color: var(--tp-ink);
-        }
-
-        .tp-mobile-link-active {
-          background: var(--tp-night);
-
-          color: #ffffff;
-        }
-
-        .tp-mobile-arrow {
-          color: var(--tp-gold);
-
-          font-size: 16px;
-
-          transition:
-            transform 0.2s ease;
-        }
-
-        .tp-mobile-link:hover
-          .tp-mobile-arrow {
-          transform: translateX(3px);
-        }
-
-        .tp-mobile-actions {
-          display: grid;
-
-          grid-template-columns: 1fr 1fr;
-
-          gap: 8px;
-
-          margin-top: 12px;
-
-          padding-top: 12px;
-
-          border-top: 1px solid
-            rgba(13, 20, 32, 0.08);
-        }
-
-        .tp-mobile-login,
-        .tp-mobile-start {
-          min-height: 48px;
-
-          display: flex;
-
-          align-items: center;
-
-          justify-content: center;
-
-          gap: 7px;
-
-          border-radius: 11px;
-
-          text-decoration: none;
-
-          font-size: 14px;
-
-          font-weight: 600;
-        }
-
-        .tp-mobile-login {
-          border: 1px solid
-            rgba(13, 20, 32, 0.12);
-
-          color: var(--tp-ink);
-
-          background:
-            rgba(255, 255, 255, 0.72);
-        }
-
-        .tp-mobile-start {
-          background: var(--tp-night);
-
-          color: #ffffff;
-
-          box-shadow:
-            0 8px 20px
-              rgba(10, 20, 34, 0.13);
-        }
-
-        /* -----------------------------------------------
-           ANIMATION
-           ----------------------------------------------- */
-
-        @keyframes tp-mobile-menu-in {
-          from {
-            opacity: 0;
-
-            transform:
-              translateY(-6px)
-              scale(0.985);
-          }
-
-          to {
-            opacity: 1;
-
-            transform:
-              translateY(0)
-              scale(1);
-          }
-        }
-
-        /* -----------------------------------------------
-           TABLET / MOBILE
-           ----------------------------------------------- */
 
         @media (max-width: 900px) {
-          .tp-desktop-nav,
+          .tp-desktop-nav {
+            display: none !important;
+          }
+
           .tp-desktop-actions {
             display: none !important;
           }
 
           .tp-mobile-button {
-            display: flex;
+            display: flex !important;
           }
         }
 
         @media (max-width: 480px) {
           header {
             padding-left: 8px !important;
-
             padding-right: 8px !important;
           }
 
           nav {
             min-height: 62px !important;
-
-            padding-left: 12px !important;
-
-            padding-right: 8px !important;
-
-            border-radius: 17px !important;
-          }
-
-          .tp-mobile-menu {
-            border-radius: 18px;
-          }
-        }
-
-        /* -----------------------------------------------
-           REDUCED MOTION
-           ----------------------------------------------- */
-
-        @media (prefers-reduced-motion: reduce) {
-          .tp-mobile-menu,
-          .tp-nav-link,
-          .tp-login-link,
-          .tp-start-link,
-          .tp-mobile-link,
-          .tp-menu-line {
-            animation: none !important;
-
-            transition: none !important;
           }
         }
       `}</style>
-    </>
+    </header>
   );
 }
