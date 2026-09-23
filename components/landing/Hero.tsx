@@ -8,7 +8,8 @@ export default function Hero() {
     <section
       id="hero"
       className="
-        relative isolate
+        relative
+        isolate
         min-h-[100svh]
         w-full
         overflow-hidden
@@ -17,18 +18,21 @@ export default function Hero() {
       "
     >
       {/* =====================================================
-          BACKGROUND
+          SPACE BACKGROUND
           ===================================================== */}
 
       <div className="absolute inset-0 z-0 bg-[#020711]" />
 
-      {/* Subtle space glow */}
+      {/* Subtle cinematic glow */}
+
       <div
         aria-hidden="true"
         className="
           pointer-events-none
-          absolute inset-0 z-[1]
-          bg-[radial-gradient(circle_at_50%_58%,rgba(25,80,145,0.22),transparent_48%)]
+          absolute
+          inset-0
+          z-[1]
+          bg-[radial-gradient(circle_at_50%_45%,rgba(25,80,145,0.22),transparent_48%)]
         "
       />
 
@@ -40,59 +44,13 @@ export default function Hero() {
         aria-hidden="true"
         className="
           pointer-events-none
-          absolute inset-0 z-[10]
+          absolute
+          inset-0
+          z-[10]
         "
       >
         <Starfield />
       </div>
-
-      {/* =====================================================
-          EARTH
-          ===================================================== */}
-
-      <img
-        src="/images/earth.png"
-        alt=""
-        aria-hidden="true"
-        draggable={false}
-        className="
-          pointer-events-none
-          absolute
-          left-1/2
-          bottom-[-43%]
-          z-[5]
-          w-[1550px]
-          max-w-none
-          -translate-x-1/2
-          select-none
-          object-contain
-          drop-shadow-[0_-30px_120px_rgba(30,130,255,0.45)]
-          sm:w-[1750px]
-          lg:w-[1950px]
-          xl:w-[2200px]
-        "
-      />
-
-      {/* =====================================================
-          EARTH ATMOSPHERE
-          ===================================================== */}
-
-      <div
-        aria-hidden="true"
-        className="
-          pointer-events-none
-          absolute
-          left-1/2
-          bottom-[4%]
-          z-[6]
-          h-[180px]
-          w-[1200px]
-          -translate-x-1/2
-          rounded-[50%]
-          bg-[radial-gradient(ellipse,rgba(45,150,255,0.24),transparent_70%)]
-          blur-3xl
-        "
-      />
 
       {/* =====================================================
           HERO CONTENT
@@ -100,14 +58,17 @@ export default function Hero() {
 
       <div
         className="
-          relative z-30
+          relative
+          z-30
           mx-auto
-          flex min-h-[100svh]
-          w-full max-w-[1400px]
-          items-center justify-center
+          flex
+          min-h-[100svh]
+          w-full
+          max-w-[1400px]
+          items-center
+          justify-center
           px-5
-          pb-[18vh]
-          pt-[130px]
+          pt-[120px]
           text-center
           sm:px-8
           lg:px-12
@@ -115,26 +76,37 @@ export default function Hero() {
       >
         <div
           className="
-            flex w-full max-w-[1050px]
-            flex-col items-center
+            flex
+            w-full
+            max-w-[1050px]
+            flex-col
+            items-center
           "
         >
-          {/* EYEBROW */}
+          {/* =================================================
+              EYEBROW
+              ================================================= */}
 
           <div
             className="
-              mb-7
-              inline-flex items-center gap-2.5
+              mb-8
+              inline-flex
+              items-center
+              gap-2.5
               rounded-full
-              border border-white/15
-              bg-black/40
-              px-4 py-2
+              border
+              border-white/15
+              bg-black/35
+              px-4
+              py-2
               backdrop-blur-xl
             "
           >
             <span
               className="
-                h-1.5 w-1.5 rounded-full
+                h-1.5
+                w-1.5
+                rounded-full
                 bg-[#C49A61]
                 shadow-[0_0_14px_rgba(196,154,97,0.9)]
               "
@@ -153,7 +125,9 @@ export default function Hero() {
             </span>
           </div>
 
-          {/* HEADING */}
+          {/* =================================================
+              HEADING
+              ================================================= */}
 
           <h1
             className="
@@ -179,7 +153,9 @@ export default function Hero() {
             </span>
           </h1>
 
-          {/* DESCRIPTION */}
+          {/* =================================================
+              DESCRIPTION
+              ================================================= */}
 
           <p
             className="
@@ -197,7 +173,9 @@ export default function Hero() {
             focused progress.
           </p>
 
-          {/* BUTTONS */}
+          {/* =================================================
+              BUTTONS
+              ================================================= */}
 
           <div
             className="
@@ -210,6 +188,8 @@ export default function Hero() {
               sm:flex-row
             "
           >
+            {/* Get Started */}
+
             <Link
               href="/signup"
               className="
@@ -226,7 +206,8 @@ export default function Hero() {
                 font-semibold
                 text-[#07101b]
                 shadow-[0_15px_45px_rgba(255,255,255,0.18)]
-                transition-all duration-200
+                transition-all
+                duration-200
                 hover:-translate-y-0.5
                 hover:bg-[#F6F4EE]
               "
@@ -240,6 +221,8 @@ export default function Hero() {
               </span>
             </Link>
 
+            {/* Explore */}
+
             <Link
               href="#features"
               className="
@@ -249,14 +232,16 @@ export default function Hero() {
                 items-center
                 justify-center
                 rounded-[13px]
-                border border-white/25
+                border
+                border-white/25
                 bg-black/30
                 px-7
                 text-[14px]
                 font-semibold
                 text-white
                 backdrop-blur-xl
-                transition-all duration-200
+                transition-all
+                duration-200
                 hover:-translate-y-0.5
                 hover:bg-white/10
               "
@@ -265,27 +250,56 @@ export default function Hero() {
             </Link>
           </div>
 
-          {/* BENEFITS */}
+          {/* =================================================
+              BENEFITS
+              ================================================= */}
 
           <div
             className="
               mt-9
-              flex flex-wrap
-              items-center justify-center
-              gap-x-8 gap-y-3
+              flex
+              flex-wrap
+              items-center
+              justify-center
+              gap-x-8
+              gap-y-3
             "
           >
-            <div className="flex items-center gap-2 text-[12px] text-white/65">
+            <div
+              className="
+                flex
+                items-center
+                gap-2
+                text-[12px]
+                text-white/65
+              "
+            >
               <span className="h-1 w-1 rounded-full bg-[#C49A61]" />
               AI-powered planning
             </div>
 
-            <div className="flex items-center gap-2 text-[12px] text-white/65">
+            <div
+              className="
+                flex
+                items-center
+                gap-2
+                text-[12px]
+                text-white/65
+              "
+            >
               <span className="h-1 w-1 rounded-full bg-[#C49A61]" />
               Focused schedules
             </div>
 
-            <div className="flex items-center gap-2 text-[12px] text-white/65">
+            <div
+              className="
+                flex
+                items-center
+                gap-2
+                text-[12px]
+                text-white/65
+              "
+            >
               <span className="h-1 w-1 rounded-full bg-[#C49A61]" />
               One place for your day
             </div>
@@ -294,8 +308,7 @@ export default function Hero() {
       </div>
 
       {/* =====================================================
-          NO SOLID BLACK DIVIDER
-          ONLY A VERY SOFT FADE
+          SOFT BOTTOM FADE
           ===================================================== */}
 
       <div
