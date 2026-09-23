@@ -37,13 +37,11 @@ export default function TimePilotLogo({
       className={`group inline-flex items-center ${s.gap}`}
       aria-label="TimePilot home"
     >
-      {/* Mark: rounded square + T + orbit arc */}
       <span
         className={`relative inline-flex shrink-0 items-center justify-center rounded-[10px] ${boxBg} ${letterColor} font-semibold transition-transform duration-300 group-hover:scale-[1.04]`}
         style={{ width: s.box, height: s.box, fontSize: s.letter }}
       >
         T
-        {/* Orbit arc — the tiny signature detail */}
         <svg
           className="pointer-events-none absolute -inset-[3px]"
           viewBox="0 0 40 40"

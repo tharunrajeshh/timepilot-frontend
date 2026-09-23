@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import AuthShell from "@/components/layout/AuthShell";
@@ -9,7 +9,7 @@ import OrbitalClockVisual from "@/components/auth/OrbitalClockVisual";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-export default function VerifyPage() {
+function VerifyContent() {
   const params = useSearchParams();
   const [email, setEmail] = useState("");
   const [resendIn, setResendIn] = useState(60);
@@ -39,7 +39,7 @@ export default function VerifyPage() {
       setResent(true);
       setResendIn(60);
     } catch {
-      /* silent — user can try again */
+      /* silent */
     } finally {
       setResending(false);
     }
@@ -67,11 +67,21 @@ export default function VerifyPage() {
         className="rounded-[20px] border border-[rgba(13,20,32,0.08)] bg-[#fffdf8] p-6 text-center sm:p-8"
         style={{ boxShadow: "0 24px 70px rgba(13,20,32,0.08)" }}
       >
-        {/* Mail icon */}
         <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-[14px] bg-[#f6f4ee]">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0d1420" strokeWidth="1.6">
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#0d1420"
+            strokeWidth="1.6"
+          >
             <rect x="3.5" y="5" width="17" height="14" rx="2" />
-            <path d="m4 7 8 6 8-6" strokeLinecap="round" strokeLinejoin="round" />
+            <path
+              d="m4 7 8 6 8-6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
         </div>
 
@@ -121,5 +131,13 @@ export default function VerifyPage() {
         Didn&apos;t receive it? Check your spam folder.
       </p>
     </AuthShell>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={<div className="min-h-[100svh] bg-[#f6f4ee]" />}>
+      <VerifyContent />
+    </Suspense>
   );
 }

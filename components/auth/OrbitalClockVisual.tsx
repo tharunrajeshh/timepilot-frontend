@@ -5,7 +5,6 @@ export default function OrbitalClockVisual() {
       className="h-[220px] w-[220px] xl:h-[280px] xl:w-[280px]"
       aria-hidden="true"
     >
-      {/* Outer orbit rings */}
       <circle
         cx="150"
         cy="150"
@@ -31,11 +30,9 @@ export default function OrbitalClockVisual() {
         strokeWidth="1"
       />
 
-      {/* Satellite dot on outer ring */}
       <circle cx="150" cy="10" r="3" fill="#c49a61" />
       <circle cx="10" cy="150" r="2" fill="rgba(196,154,97,0.5)" />
 
-      {/* Clock face */}
       <circle
         cx="150"
         cy="150"
@@ -45,34 +42,76 @@ export default function OrbitalClockVisual() {
         strokeWidth="1.5"
       />
 
-      {/* Tick marks */}
-      <line x1="150" y1="102" x2="150" y2="110" stroke="rgba(246,244,238,0.4)" strokeWidth="1.5" strokeLinecap="round" />
-      <line x1="150" y1="190" x2="150" y2="198" stroke="rgba(246,244,238,0.4)" strokeWidth="1.5" strokeLinecap="round" />
-      <line x1="102" y1="150" x2="110" y2="150" stroke="rgba(246,244,238,0.4)" strokeWidth="1.5" strokeLinecap="round" />
-      <line x1="190" y1="150" x2="198" y2="150" stroke="rgba(246,244,238,0.4)" strokeWidth="1.5" strokeLinecap="round" />
-
-      {/* Hour hand */}
       <line
-        x1="150" y1="150" x2="150" y2="118"
-        stroke="#f6f4ee" strokeWidth="2.5" strokeLinecap="round"
+        x1="150"
+        y1="102"
+        x2="150"
+        y2="110"
+        stroke="rgba(246,244,238,0.4)"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      <line
+        x1="150"
+        y1="190"
+        x2="150"
+        y2="198"
+        stroke="rgba(246,244,238,0.4)"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      <line
+        x1="102"
+        y1="150"
+        x2="110"
+        y2="150"
+        stroke="rgba(246,244,238,0.4)"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      <line
+        x1="190"
+        y1="150"
+        x2="198"
+        y2="150"
+        stroke="rgba(246,244,238,0.4)"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+
+      <line
+        x1="150"
+        y1="150"
+        x2="150"
+        y2="118"
+        stroke="#f6f4ee"
+        strokeWidth="2.5"
+        strokeLinecap="round"
         transform="rotate(-40 150 150)"
       />
 
-      {/* Minute hand */}
       <line
-        x1="150" y1="150" x2="150" y2="108"
-        stroke="#f6f4ee" strokeWidth="2" strokeLinecap="round"
+        x1="150"
+        y1="150"
+        x2="150"
+        y2="108"
+        stroke="#f6f4ee"
+        strokeWidth="2"
+        strokeLinecap="round"
         transform="rotate(80 150 150)"
       />
 
-      {/* Second hand */}
       <line
-        x1="150" y1="150" x2="150" y2="102"
-        stroke="#c49a61" strokeWidth="1.2" strokeLinecap="round"
+        x1="150"
+        y1="150"
+        x2="150"
+        y2="102"
+        stroke="#c49a61"
+        strokeWidth="1.2"
+        strokeLinecap="round"
         transform="rotate(200 150 150)"
       />
 
-      {/* Center pin */}
       <circle cx="150" cy="150" r="3" fill="#c49a61" />
     </svg>
   );

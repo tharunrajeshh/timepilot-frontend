@@ -12,10 +12,8 @@ const variants: Record<Variant, string> = {
     "bg-[#0a1422] text-[#f6f4ee] hover:bg-[#111f31] shadow-[0_8px_24px_rgba(13,20,32,0.16)]",
   secondary:
     "bg-[#fffdf8] text-[#0d1420] border border-[rgba(13,20,32,0.14)] hover:border-[rgba(13,20,32,0.28)] hover:bg-white",
-  ghost:
-    "bg-transparent text-[#0d1420] hover:bg-[rgba(13,20,32,0.05)]",
-  danger:
-    "bg-[#c75b5b] text-white hover:bg-[#b34f4f]",
+  ghost: "bg-transparent text-[#0d1420] hover:bg-[rgba(13,20,32,0.05)]",
+  danger: "bg-[#c75b5b] text-white hover:bg-[#b34f4f]",
 };
 
 const sizes: Record<Size, string> = {
@@ -62,8 +60,14 @@ export default function Button(props: ButtonAsButton | ButtonAsLink) {
     );
   }
 
-  const { variant: _v, size: _s, children: _c, className: _cn, fullWidth: _fw, ...rest } =
-    props as ButtonAsButton;
+  const {
+    variant: _v,
+    size: _s,
+    children: _c,
+    className: _cn,
+    fullWidth: _fw,
+    ...rest
+  } = props as ButtonAsButton;
 
   return (
     <button className={cls} {...rest}>

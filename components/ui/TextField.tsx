@@ -38,7 +38,7 @@ const TextField = forwardRef<HTMLInputElement, Props>(function TextField(
           id={inputId}
           className={`h-[50px] w-full rounded-[12px] border bg-white px-4 text-[14px] text-[#0d1420] outline-none transition-all duration-200 placeholder:text-[#707a89]/60 ${
             leading ? "pl-10" : ""
-          } ${trailing ? "pr-12" : ""} ${
+          } ${trailing ? "pr-16" : ""} ${
             error
               ? "border-[#c75b5b]/50 focus:border-[#c75b5b] focus:ring-4 focus:ring-[#c75b5b]/10"
               : "border-[rgba(13,20,32,0.14)] focus:border-[#c49a61] focus:ring-4 focus:ring-[#c49a61]/15"
