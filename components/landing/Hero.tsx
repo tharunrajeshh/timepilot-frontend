@@ -8,7 +8,8 @@ export default function Hero() {
     <section
       id="hero"
       className="
-        relative isolate
+        relative
+        isolate
         min-h-[100svh]
         w-full
         overflow-hidden
@@ -17,12 +18,20 @@ export default function Hero() {
       "
     >
       {/* =====================================================
-          BACKGROUND
+          SPACE BACKGROUND
           ===================================================== */}
 
-      <div className="absolute inset-0 z-0 bg-[#02050a]" />
+      <div
+        aria-hidden="true"
+        className="
+          absolute
+          inset-0
+          z-0
+          bg-[#02050a]
+        "
+      />
 
-      {/* Soft space glow */}
+      {/* Subtle blue space glow */}
       <div
         aria-hidden="true"
         className="
@@ -30,7 +39,7 @@ export default function Hero() {
           absolute
           inset-0
           z-[1]
-          bg-[radial-gradient(circle_at_50%_55%,rgba(20,65,120,0.28),transparent_48%)]
+          bg-[radial-gradient(circle_at_50%_65%,rgba(25,90,170,0.20),transparent_48%)]
         "
       />
 
@@ -44,7 +53,7 @@ export default function Hero() {
           pointer-events-none
           absolute
           inset-0
-          z-[5]
+          z-[20]
         "
       >
         <Starfield />
@@ -52,44 +61,32 @@ export default function Hero() {
 
       {/* =====================================================
           EARTH
+          NO CONTAINER
+          NO OVERFLOW-HIDDEN
           ===================================================== */}
 
-      <div
+      <img
+        src="/images/earth.png"
+        alt=""
         aria-hidden="true"
+        draggable={false}
         className="
           pointer-events-none
           absolute
-          inset-x-0
-          bottom-0
-          z-[4]
-          h-[48%]
-          overflow-visible
+          left-1/2
+          bottom-[-47%]
+          z-[8]
+          w-[1450px]
+          max-w-none
+          -translate-x-1/2
+          select-none
+          object-contain
+          drop-shadow-[0_-25px_110px_rgba(30,125,255,0.42)]
         "
-      >
-        <img
-          src="/images/earth.png"
-          alt=""
-          draggable={false}
-          className="
-            absolute
-            left-1/2
-            top-[-5%]
-            w-[1200px]
-            max-w-none
-            -translate-x-1/2
-            select-none
-            object-contain
-            drop-shadow-[0_-18px_90px_rgba(30,125,255,0.38)]
-            sm:w-[1400px]
-            md:w-[1600px]
-            lg:w-[1850px]
-            xl:w-[2050px]
-          "
-        />
-      </div>
+      />
 
       {/* =====================================================
-          EARTH GLOW
+          EARTH ATMOSPHERE
           ===================================================== */}
 
       <div
@@ -97,14 +94,14 @@ export default function Hero() {
         className="
           pointer-events-none
           absolute
-          bottom-[12%]
           left-1/2
-          z-[6]
+          bottom-[2%]
+          z-[9]
           h-[180px]
-          w-[1000px]
+          w-[1100px]
           -translate-x-1/2
           rounded-[50%]
-          bg-[radial-gradient(ellipse,rgba(45,145,255,0.22),transparent_70%)]
+          bg-[radial-gradient(ellipse,rgba(35,135,255,0.22)_0%,rgba(20,90,180,0.08)_38%,transparent_72%)]
           blur-3xl
         "
       />
@@ -116,7 +113,7 @@ export default function Hero() {
       <div
         className="
           relative
-          z-20
+          z-30
           mx-auto
           flex
           min-h-[100svh]
@@ -125,8 +122,8 @@ export default function Hero() {
           items-center
           justify-center
           px-5
-          pb-[20vh]
-          pt-[125px]
+          pb-[18vh]
+          pt-[135px]
           text-center
           sm:px-8
           lg:px-12
@@ -154,7 +151,7 @@ export default function Hero() {
               rounded-full
               border
               border-white/15
-              bg-black/35
+              bg-black/40
               px-4
               py-2
               backdrop-blur-xl
@@ -196,7 +193,7 @@ export default function Hero() {
               leading-[0.94]
               tracking-[-0.06em]
               text-white
-              drop-shadow-[0_8px_40px_rgba(0,0,0,0.65)]
+              drop-shadow-[0_8px_40px_rgba(0,0,0,0.7)]
             "
           >
             <span className="block">
@@ -272,10 +269,7 @@ export default function Hero() {
                 Get started
               </span>
 
-              <span
-                aria-hidden="true"
-                className="text-[#C49A61]"
-              >
+              <span className="text-[#C49A61]">
                 →
               </span>
             </Link>
@@ -341,10 +335,8 @@ export default function Hero() {
       </div>
 
       {/* =====================================================
-          BOTTOM BLEND
-          IMPORTANT:
-          This is transparent/gradient only.
-          No solid black section.
+          VERY SOFT BOTTOM FADE
+          NO BLACK BLOCK
           ===================================================== */}
 
       <div
@@ -354,11 +346,10 @@ export default function Hero() {
           absolute
           inset-x-0
           bottom-0
-          z-[10]
-          h-[16%]
+          z-[25]
+          h-[100px]
           bg-gradient-to-t
-          from-[#02050a]/55
-          via-transparent
+          from-[#02050a]/20
           to-transparent
         "
       />
