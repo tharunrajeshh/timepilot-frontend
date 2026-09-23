@@ -152,7 +152,7 @@ export default function LoginPage() {
   }, []);
 
   /* ============================================================
-     CARD SPOTLIGHT (follows cursor for a premium glass feel)
+     CARD SPOTLIGHT
   ============================================================ */
 
   useEffect(() => {
@@ -234,9 +234,6 @@ export default function LoginPage() {
 
   function handleGoogleLogin() {
     if (loading) return;
-    // Genuinely an external, full-page redirect (crosses to the API's
-    // OAuth domain, not an internal Next.js route) — useRouter can't do
-    // this, so window.location is correct despite the lint warning.
     // eslint-disable-next-line @next/next/no-location-assign-relative-destination
     window.location.href = `${API_URL}/auth/google`;
   }
@@ -372,14 +369,16 @@ export default function LoginPage() {
   return (
     <main
       ref={pageRef}
-      className="relative min-h-screen overflow-x-hidden bg-[#05060f] text-white"
+      className="relative min-h-screen w-full overflow-x-hidden bg-[#03060b] text-white"
     >
       {/* ========================================================
           SPACE BACKGROUND
+          - Fixed + -inset-px so no sub-pixel seam can appear
+          - overflow-hidden contains the aurora blobs
       ======================================================== */}
 
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_#100e28_0%,_#05060f_55%,_#020208_100%)]" />
+      <div className="pointer-events-none fixed -inset-px overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_#0c0a24_0%,_#03060b_55%,_#010106_100%)]" />
 
         {/* Slowly breathing aurora blobs */}
         <div className="absolute -left-40 top-10 h-[520px] w-[520px] animate-[pulse_9s_ease-in-out_infinite] rounded-full bg-[#ff9f4a]/[0.14] blur-[140px]" />
@@ -396,7 +395,7 @@ export default function LoginPage() {
           }}
         />
 
-        {/* Subtle film-grain noise for a less "flat" digital feel */}
+        {/* Subtle film-grain noise */}
         <svg className="absolute inset-0 h-full w-full opacity-[0.025]">
           <filter id="noiseFilter">
             <feTurbulence
@@ -409,8 +408,8 @@ export default function LoginPage() {
           <rect width="100%" height="100%" filter="url(#noiseFilter)" />
         </svg>
 
-        {/* Vignette to keep focus on the card/clock */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_40%,_rgba(2,2,8,0.55)_100%)]" />
+        {/* Vignette */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_40%,_rgba(1,1,6,0.55)_100%)]" />
       </div>
 
       {/* Animated canvas stars */}
@@ -464,7 +463,7 @@ export default function LoginPage() {
                 <div className="absolute inset-[28%] rounded-full border border-white/[0.06]" />
               </div>
 
-              {/* Orbit rings, now with a slow spin for extra life */}
+              {/* Orbit rings */}
               <div className="pointer-events-none absolute left-1/2 top-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 animate-[spin_60s_linear_infinite] rounded-full border border-white/[0.05] xl:h-[500px] xl:w-[500px]" />
               <div className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 animate-[spin_90s_linear_infinite_reverse] rounded-full border border-white/[0.03] xl:h-[600px] xl:w-[600px]" />
 
@@ -582,7 +581,7 @@ export default function LoginPage() {
                   className="pointer-events-none absolute inset-0 transition-opacity duration-300"
                 />
 
-                {/* animated gradient border sheen along the top edge */}
+                {/* animated gradient border sheen */}
                 <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
                 <div className="pointer-events-none absolute -inset-px rounded-[18px] opacity-0 transition-opacity duration-500 group-hover:opacity-100 sm:rounded-[22px]">
                   <div className="absolute inset-0 rounded-[18px] bg-gradient-to-br from-[#ff9f4a]/10 via-transparent to-[#5ec8d8]/10 sm:rounded-[22px]" />
