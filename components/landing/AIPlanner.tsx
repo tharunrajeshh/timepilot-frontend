@@ -282,13 +282,18 @@ function PlannerTask({ task, index }: { task: Task; index: number }) {
   const isFocus = task.type === "focus";
   const isBreak = task.type === "break";
 
-  const colorMap = {
-    focus: { line: "bg-blue-500", icon: "bg-blue-500/[0.12] text-blue-600", icon: <TargetIcon /> },
-    break: { line: "bg-black/20", icon: "bg-black/[0.06] text-black/40", icon: <CoffeeIcon /> },
-    meeting: { line: "bg-purple-500", icon: "bg-purple-500/[0.1] text-purple-600", icon: <UsersIcon /> },
+  const getTaskStyles = (type: Task["type"]) => {
+    switch (type) {
+      case "focus":
+        return { line: "bg-blue-500", iconBg: "bg-blue-500/[0.12] text-blue-600", icon: <TargetIcon /> };
+      case "break":
+        return { line: "bg-black/20", iconBg: "bg-black/[0.06] text-black/40", icon: <CoffeeIcon /> };
+      case "meeting":
+        return { line: "bg-purple-500", iconBg: "bg-purple-500/[0.1] text-purple-600", icon: <UsersIcon /> };
+    }
   };
 
-  const colors = colorMap[task.type];
+  const colors = getTaskStyles(task.type);
 
   return (
     <div
@@ -319,8 +324,8 @@ function PlannerTask({ task, index }: { task: Task; index: number }) {
           <span className="text-[9px] font-medium text-black/45">{task.duration}</span>
         </div>
       </div>
-      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${colors.icon}`}>
-        {task.type === "focus" ? <TargetIcon /> : task.type === "break" ? <CoffeeIcon /> : <UsersIcon />}
+      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${colors.iconBg}`}>
+        {colors.icon}
       </div>
     </div>
   );
