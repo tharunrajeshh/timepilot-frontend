@@ -1,97 +1,67 @@
-"use client";
-
 import Link from "next/link";
 
-type TimePilotLogoProps = {
-  variant?: "dark" | "light";
-  href?: string;
-  showText?: boolean;
-  size?: "sm" | "md" | "lg";
+type Variant = "light" | "dark";
+type Size = "sm" | "md" | "lg";
+
+const sizes: Record<Size, { box: number; letter: string; wordmark: string; gap: string }> = {
+  sm: { box: 28, letter: 12, wordmark: "text-[15px]", gap: "gap-2"   },
+  md: { box: 36, letter: 14, wordmark: "text-[17px]", gap: "gap-2.5" },
+  lg: { box: 44, letter: 17, wordmark: "text-[20px]", gap: "gap-3"   },
 };
 
 export default function TimePilotLogo({
   variant = "dark",
-  href = "/",
-  showText = true,
   size = "md",
-}: TimePilotLogoProps) {
-  const sizes = {
-    sm: {
-      mark: "h-8 w-8",
-      text: "text-[15px]",
-    },
-    md: {
-      mark: "h-10 w-10",
-      text: "text-[17px]",
-    },
-    lg: {
-      mark: "h-12 w-12",
-      text: "text-[20px]",
-    },
-  };
-
+  href = "/",
+  withWordmark = true,
+}: {
+  variant?: Variant;
+  size?: Size;
+  href?: string;
+  withWordmark?: boolean;
+}) {
+  const s = sizes[size];
   const isLight = variant === "light";
+
+  const boxBg = isLight ? "bg-[#f6f4ee]" : "bg-[#0a1422]";
+  const letterColor = isLight ? "text-[#0a1422]" : "text-[#f6f4ee]";
+  const wordColor = isLight ? "text-[#f6f4ee]" : "text-[#0d1420]";
+  const orbitColor = isLight ? "rgba(246,244,238,0.35)" : "rgba(196,154,97,0.5)";
 
   return (
     <Link
       href={href}
-      aria-label="TimePilot"
-      className="group inline-flex items-center gap-3"
+      className={`group inline-flex items-center ${s.gap}`}
+      aria-label="TimePilot home"
     >
+      {/* Mark: rounded square + T + orbit arc */}
       <span
-        className={[
-          "relative flex shrink-0 items-center justify-center",
-          "rounded-[13px] transition-transform duration-200",
-          "group-hover:-translate-y-0.5",
-          sizes[size].mark,
-          isLight
-            ? "bg-white text-[#0A1422]"
-            : "bg-[#0A1422] text-white",
-        ].join(" ")}
+        className={`relative inline-flex shrink-0 items-center justify-center rounded-[10px] ${boxBg} ${letterColor} font-semibold transition-transform duration-300 group-hover:scale-[1.04]`}
+        style={{ width: s.box, height: s.box, fontSize: s.letter }}
       >
-        {/* Orbit */}
-        <span
-          className={[
-            "absolute inset-[5px] rounded-full border",
-            isLight
-              ? "border-[#0A1422]/20"
-              : "border-white/20",
-          ].join(" ")}
-        />
-
-        {/* T */}
-        <span
-          className={[
-            "relative z-10 font-semibold tracking-[-0.06em]",
-            size === "sm"
-              ? "text-[16px]"
-              : size === "md"
-                ? "text-[19px]"
-                : "text-[22px]",
-          ].join(" ")}
+        T
+        {/* Orbit arc — the tiny signature detail */}
+        <svg
+          className="pointer-events-none absolute -inset-[3px]"
+          viewBox="0 0 40 40"
+          aria-hidden="true"
         >
-          T
-        </span>
-
-        {/* Orbit point */}
-        <span
-          className={[
-            "absolute right-[5px] top-[5px] h-1.5 w-1.5 rounded-full",
-            isLight
-              ? "bg-[#C49A61]"
-              : "bg-[#C49A61]",
-          ].join(" ")}
-        />
+          <circle
+            cx="20"
+            cy="20"
+            r="17"
+            fill="none"
+            stroke={orbitColor}
+            strokeWidth="1"
+            strokeDasharray="30 80"
+            strokeLinecap="round"
+            transform="rotate(-35 20 20)"
+          />
+        </svg>
       </span>
 
-      {showText && (
-        <span
-          className={[
-            "font-semibold tracking-[-0.025em]",
-            sizes[size].text,
-            isLight ? "text-white" : "text-[#0D1420]",
-          ].join(" ")}
-        >
+      {withWordmark && (
+        <span className={`${s.wordmark} font-medium tracking-[-0.02em] ${wordColor}`}>
           TimePilot
         </span>
       )}

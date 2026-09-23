@@ -2,439 +2,198 @@
 
 /* =========================================================
    TIMEPILOT — LUNAR WHITE DESIGN SYSTEM
+   Ivory base · Midnight navy surfaces · Champagne gold accent
    ========================================================= */
 
 :root {
-  /* ---------- Core surfaces ---------- */
-  --tp-bg: #f6f4ee;
-  --tp-surface: #fffdf8;
+  /* Surfaces */
+  --tp-bg:            #f6f4ee;
+  --tp-surface:       #fffdf8;
   --tp-surface-muted: #efeee9;
 
-  /* ---------- Typography ---------- */
-  --tp-ink: #0d1420;
-  --tp-ink-soft: #344052;
-  --tp-muted: #707a89;
-  --tp-line: rgba(13, 20, 32, 0.12);
+  /* Text */
+  --tp-ink:        #0d1420;
+  --tp-ink-soft:   #344052;
+  --tp-muted:      #707a89;
+  --tp-line:       rgba(13, 20, 32, 0.12);
+  --tp-line-soft:  rgba(13, 20, 32, 0.06);
 
-  /* ---------- Dark product surfaces ---------- */
-  --tp-night: #0a1422;
+  /* Dark surfaces */
+  --tp-night:      #0a1422;
   --tp-night-soft: #111f31;
 
-  /* ---------- Brand accents ---------- */
-  --tp-gold: #c49a61;
-  --tp-gold-soft: #ead9bd;
-  --tp-orbit-blue: #8aa3c4;
+  /* Accents */
+  --tp-gold:       #c49a61;
+  --tp-gold-soft:  #ead9bd;
+  --tp-orbit:      #8aa3c4;
 
-  /* ---------- Semantic status ---------- */
+  /* Status */
   --tp-success: #4f8b72;
-  --tp-danger: #c75b5b;
+  --tp-danger:  #c75b5b;
 
-  /* ---------- Radius ---------- */
-  --tp-radius-sm: 10px;
-  --tp-radius-md: 14px;
-  --tp-radius-lg: 20px;
-  --tp-radius-xl: 24px;
-  --tp-radius-2xl: 28px;
+  /* Radius scale (restrained) */
+  --tp-r-sm: 10px;
+  --tp-r-md: 14px;
+  --tp-r-lg: 20px;
+  --tp-r-xl: 24px;
+  --tp-r-2xl: 28px;
 
-  /* ---------- Shadows ---------- */
-  --tp-shadow-sm:
-    0 8px 24px rgba(13, 20, 32, 0.05);
-
-  --tp-shadow-md:
-    0 16px 45px rgba(13, 20, 32, 0.07);
-
-  --tp-shadow-lg:
-    0 24px 70px rgba(13, 20, 32, 0.08);
-
-  /* ---------- Glass ---------- */
-  --tp-glass:
-    rgba(255, 253, 248, 0.78);
-
-  --tp-glass-border:
-    rgba(13, 20, 32, 0.09);
+  /* One soft shadow, used everywhere */
+  --tp-shadow: 0 24px 70px rgba(13, 20, 32, 0.08);
+  --tp-shadow-soft: 0 10px 30px rgba(13, 20, 32, 0.05);
 }
 
-
-/* =========================================================
-   RESET
-   ========================================================= */
-
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
+*, *::before, *::after { box-sizing: border-box; }
 
 html {
   width: 100%;
-  min-width: 100%;
   max-width: 100%;
-
   overflow-x: hidden;
-
   scroll-behavior: smooth;
-
   background: var(--tp-bg);
-  color: var(--tp-ink);
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
   width: 100%;
-  min-width: 100%;
   max-width: 100%;
   min-height: 100vh;
-
+  min-height: 100svh;
   margin: 0;
   padding: 0;
-
   overflow-x: hidden;
-
   background: var(--tp-bg);
   color: var(--tp-ink);
-
-  font-family:
-    var(--font-geist-sans),
-    Arial,
-    Helvetica,
-    sans-serif;
-
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
   text-rendering: optimizeLegibility;
 }
 
+/* Focus ring — global, gold, consistent */
+:focus-visible {
+  outline: 2px solid var(--tp-gold);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+a { color: inherit; text-decoration: none; }
+button, input, textarea, select { font: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+
+img, svg, video, canvas { display: block; max-width: 100%; }
+
+::selection {
+  background: var(--tp-ink);
+  color: var(--tp-bg);
+}
+
+/* Scrollbar — subtle */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--tp-bg); }
+::-webkit-scrollbar-thumb {
+  background: rgba(13, 20, 32, 0.18);
+  border-radius: 999px;
+  border: 2px solid var(--tp-bg);
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(13, 20, 32, 0.3); }
+* { scrollbar-width: thin; scrollbar-color: rgba(13, 20, 32, 0.2) var(--tp-bg); }
 
 /* =========================================================
-   ELEMENTS
+   TYPOGRAPHY HELPERS
    ========================================================= */
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-button,
-input,
-textarea,
-select {
-  font: inherit;
-}
-
-button,
-a {
-  -webkit-tap-highlight-color: transparent;
-}
-
-button {
-  cursor: pointer;
-}
-
-button:disabled {
-  cursor: not-allowed;
-}
-
-img,
-svg,
-video,
-canvas {
-  display: block;
-  max-width: 100%;
-}
-
-img {
-  height: auto;
-}
-
-
-/* =========================================================
-   TYPOGRAPHY
-   ========================================================= */
-
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  margin: 0;
-
-  font-family:
-    var(--font-geist-sans),
-    Arial,
-    Helvetica,
-    sans-serif;
-
-  font-weight: 600;
-  line-height: 1.15;
-
+.tp-display {
+  font-weight: 500;
+  letter-spacing: -0.035em;
+  line-height: 1.02;
   color: var(--tp-ink);
 }
 
-h1 {
-  font-size: clamp(36px, 7vw, 72px);
+.tp-heading {
+  font-weight: 500;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+  color: var(--tp-ink);
 }
 
-h2 {
-  font-size: clamp(30px, 5vw, 52px);
-}
-
-h3 {
-  font-size: clamp(24px, 4vw, 36px);
-}
-
-p {
-  margin: 0;
-
-  font-family:
-    var(--font-geist-sans),
-    Arial,
-    Helvetica,
-    sans-serif;
-
+.tp-body {
+  font-size: 16px;
   line-height: 1.65;
+  color: var(--tp-ink-soft);
 }
 
+.tp-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--tp-muted);
+}
+
+.tp-serif {
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Times New Roman", serif;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
 
 /* =========================================================
-   CONTAINER
+   LAYOUT
    ========================================================= */
 
 .tp-container {
   width: 100%;
-  max-width: 1320px;
-
+  max-width: 1200px;
   margin-left: auto;
   margin-right: auto;
-
   padding-left: 24px;
   padding-right: 24px;
 }
 
-@media (min-width: 640px) {
-  .tp-container {
-    padding-left: 32px;
-    padding-right: 32px;
-  }
-}
+@media (min-width: 640px)  { .tp-container { padding-left: 32px; padding-right: 32px; } }
+@media (min-width: 1024px) { .tp-container { padding-left: 40px; padding-right: 40px; } }
 
+.tp-section {
+  padding-top: 96px;
+  padding-bottom: 96px;
+}
 @media (min-width: 1024px) {
-  .tp-container {
-    padding-left: 40px;
-    padding-right: 40px;
-  }
+  .tp-section { padding-top: 128px; padding-bottom: 128px; }
 }
-
-@media (min-width: 1440px) {
-  .tp-container {
-    padding-left: 48px;
-    padding-right: 48px;
-  }
-}
-
 
 /* =========================================================
-   GLASS
-   ========================================================= */
-
-.tp-glass {
-  background: var(--tp-glass);
-
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-
-  border: 1px solid var(--tp-glass-border);
-}
-
-.tp-glass-strong {
-  background: rgba(255, 253, 248, 0.92);
-
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-
-  border: 1px solid rgba(13, 20, 32, 0.1);
-}
-
-
-/* =========================================================
-   CARDS
+   SURFACES
    ========================================================= */
 
 .tp-card {
   background: var(--tp-surface);
-
   border: 1px solid var(--tp-line);
-
-  border-radius: var(--tp-radius-lg);
-
-  padding: 24px;
-
-  box-shadow: var(--tp-shadow-md);
-
-  transition:
-    transform 0.25s ease,
-    box-shadow 0.25s ease,
-    border-color 0.25s ease;
+  border-radius: var(--tp-r-lg);
+  box-shadow: var(--tp-shadow-soft);
 }
 
-.tp-card:hover {
-  transform: translateY(-2px);
-
-  border-color:
-    rgba(13, 20, 32, 0.16);
-
-  box-shadow: var(--tp-shadow-lg);
-}
-
-
-/* =========================================================
-   BUTTONS
-   ========================================================= */
-
-.tp-button {
-  display: inline-flex;
-
-  align-items: center;
-  justify-content: center;
-
-  min-height: 46px;
-
-  padding: 0 20px;
-
-  border-radius: var(--tp-radius-md);
-
-  border: 1px solid transparent;
-
-  font-size: 14px;
-  font-weight: 600;
-
-  transition:
-    transform 0.2s ease,
-    background-color 0.2s ease,
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
-
-  cursor: pointer;
-}
-
-.tp-button:hover {
-  transform: translateY(-1px);
-}
-
-.tp-button-primary {
+.tp-panel-dark {
   background: var(--tp-night);
-  color: #ffffff;
-
-  box-shadow:
-    0 8px 24px rgba(10, 20, 34, 0.16);
+  color: var(--tp-bg);
+  border-radius: var(--tp-r-xl);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.tp-button-primary:hover {
-  background: var(--tp-night-soft);
+.tp-divider {
+  height: 1px;
+  background: var(--tp-line);
 }
-
-.tp-button-secondary {
-  background: var(--tp-surface);
-
-  color: var(--tp-ink);
-
-  border-color:
-    rgba(13, 20, 32, 0.14);
-}
-
-.tp-button-secondary:hover {
-  background: var(--tp-surface-muted);
-}
-
 
 /* =========================================================
-   FOCUS / ACCESSIBILITY
-   ========================================================= */
-
-:focus-visible {
-  outline: 2px solid var(--tp-gold);
-  outline-offset: 3px;
-}
-
-
-/* =========================================================
-   SELECTION
-   ========================================================= */
-
-::selection {
-  background: var(--tp-night);
-  color: #ffffff;
-}
-
-::-moz-selection {
-  background: var(--tp-night);
-  color: #ffffff;
-}
-
-
-/* =========================================================
-   SCROLLBAR
-   ========================================================= */
-
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--tp-bg);
-}
-
-::-webkit-scrollbar-thumb {
-  background: #a5a29a;
-  border-radius: 999px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #817e76;
-}
-
-* {
-  scrollbar-width: thin;
-  scrollbar-color: #a5a29a var(--tp-bg);
-}
-
-
-/* =========================================================
-   MOTION
+   REDUCED MOTION
    ========================================================= */
 
 @media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-
-  *,
-  *::before,
-  *::after {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-}
-
-
-/* =========================================================
-   MOBILE
-   ========================================================= */
-
-@media (max-width: 639px) {
-  .tp-container {
-    padding-left: 20px;
-    padding-right: 20px;
-  }
-}
-
-
-/* =========================================================
-   MOBILE AUTH / VIEWPORT
-   ========================================================= */
-
-.tp-auth-page {
-  min-height: 100svh;
 }
