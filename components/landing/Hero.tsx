@@ -8,8 +8,7 @@ export default function Hero() {
     <section
       id="hero"
       className="
-        relative
-        isolate
+        relative isolate
         min-h-[100svh]
         w-full
         overflow-hidden
@@ -18,48 +17,12 @@ export default function Hero() {
       "
     >
       {/* =====================================================
-          SPACE BACKGROUND
+          BACKGROUND
           ===================================================== */}
 
-      <div
-        aria-hidden="true"
-        className="
-          absolute
-          inset-0
-          z-0
-          bg-[#02050a]
-        "
-      />
+      <div className="absolute inset-0 z-0 bg-[#02050a]" />
 
-      {/* Space image/video background */}
-
-      <video
-        className="
-          absolute
-          inset-0
-          z-0
-          h-full
-          w-full
-          object-cover
-          opacity-[0.45]
-        "
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload="metadata"
-        poster="/images/space-bg.jpg"
-      >
-        <source
-          src="/videos/space.mp4"
-          type="video/mp4"
-        />
-      </video>
-
-      {/* =====================================================
-          SPACE OVERLAY
-          ===================================================== */}
-
+      {/* Soft space glow */}
       <div
         aria-hidden="true"
         className="
@@ -67,7 +30,7 @@ export default function Hero() {
           absolute
           inset-0
           z-[1]
-          bg-[radial-gradient(circle_at_50%_70%,rgba(25,90,170,0.18),transparent_45%),linear-gradient(to_bottom,rgba(2,5,10,0.25),rgba(2,5,10,0.05)_55%,rgba(2,5,10,0.55))]
+          bg-[radial-gradient(circle_at_50%_55%,rgba(20,65,120,0.28),transparent_48%)]
         "
       />
 
@@ -99,7 +62,8 @@ export default function Hero() {
           inset-x-0
           bottom-0
           z-[4]
-          h-[58%]
+          h-[48%]
+          overflow-visible
         "
       >
         <img
@@ -109,23 +73,23 @@ export default function Hero() {
           className="
             absolute
             left-1/2
-            top-[12%]
-            w-[1100px]
+            top-[-5%]
+            w-[1200px]
             max-w-none
             -translate-x-1/2
             select-none
             object-contain
-            drop-shadow-[0_-18px_90px_rgba(35,130,255,0.35)]
-            sm:w-[1300px]
-            md:w-[1500px]
-            lg:w-[1750px]
-            xl:w-[1950px]
+            drop-shadow-[0_-18px_90px_rgba(30,125,255,0.38)]
+            sm:w-[1400px]
+            md:w-[1600px]
+            lg:w-[1850px]
+            xl:w-[2050px]
           "
         />
       </div>
 
       {/* =====================================================
-          EARTH ATMOSPHERE
+          EARTH GLOW
           ===================================================== */}
 
       <div
@@ -133,20 +97,20 @@ export default function Hero() {
         className="
           pointer-events-none
           absolute
-          bottom-[-10%]
+          bottom-[12%]
           left-1/2
           z-[6]
-          h-[400px]
-          w-[1100px]
+          h-[180px]
+          w-[1000px]
           -translate-x-1/2
           rounded-[50%]
-          bg-[radial-gradient(ellipse,rgba(40,150,255,0.18),transparent_68%)]
+          bg-[radial-gradient(ellipse,rgba(45,145,255,0.22),transparent_70%)]
           blur-3xl
         "
       />
 
       {/* =====================================================
-          HERO CONTENT
+          CONTENT
           ===================================================== */}
 
       <div
@@ -161,7 +125,7 @@ export default function Hero() {
           items-center
           justify-center
           px-5
-          pb-[18vh]
+          pb-[20vh]
           pt-[125px]
           text-center
           sm:px-8
@@ -225,8 +189,6 @@ export default function Hero() {
 
           <h1
             className="
-              relative
-              z-30
               m-0
               max-w-[1000px]
               text-[clamp(50px,7vw,94px)]
@@ -234,7 +196,7 @@ export default function Hero() {
               leading-[0.94]
               tracking-[-0.06em]
               text-white
-              drop-shadow-[0_8px_40px_rgba(0,0,0,0.6)]
+              drop-shadow-[0_8px_40px_rgba(0,0,0,0.65)]
             "
           >
             <span className="block">
@@ -255,8 +217,6 @@ export default function Hero() {
 
           <p
             className="
-              relative
-              z-30
               mt-7
               max-w-[700px]
               text-[15px]
@@ -277,8 +237,6 @@ export default function Hero() {
 
           <div
             className="
-              relative
-              z-30
               mt-9
               flex
               flex-col
@@ -303,7 +261,7 @@ export default function Hero() {
                 text-[14px]
                 font-semibold
                 text-[#07101b]
-                shadow-[0_15px_45px_rgba(255,255,255,0.16)]
+                shadow-[0_15px_45px_rgba(255,255,255,0.18)]
                 transition-all
                 duration-200
                 hover:-translate-y-0.5
@@ -333,7 +291,7 @@ export default function Hero() {
                 rounded-[13px]
                 border
                 border-white/25
-                bg-black/25
+                bg-black/30
                 px-7
                 text-[14px]
                 font-semibold
@@ -355,8 +313,6 @@ export default function Hero() {
 
           <div
             className="
-              relative
-              z-30
               mt-9
               flex
               flex-wrap
@@ -385,7 +341,10 @@ export default function Hero() {
       </div>
 
       {/* =====================================================
-          SOFT BOTTOM BLEND
+          BOTTOM BLEND
+          IMPORTANT:
+          This is transparent/gradient only.
+          No solid black section.
           ===================================================== */}
 
       <div
@@ -393,13 +352,13 @@ export default function Hero() {
         className="
           pointer-events-none
           absolute
+          inset-x-0
           bottom-0
-          left-0
-          right-0
           z-[10]
-          h-[18%]
+          h-[16%]
           bg-gradient-to-t
-          from-[#02050a]/60
+          from-[#02050a]/55
+          via-transparent
           to-transparent
         "
       />

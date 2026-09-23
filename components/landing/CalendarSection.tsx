@@ -2,20 +2,23 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-const days = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
-
 type EventType = "focus" | "meeting" | "break";
 
-type ScheduleEntry = {
+interface ScheduleEntry {
   time: string;
   title: string;
   duration: string;
   type: EventType;
-};
+}
 
-// Demo schedule, keyed by offset from today (0 = today, -1 = yesterday, etc.)
-// so the sample data always lines up with whatever "today" actually is.
-const scheduleByOffset: Record<number, ScheduleEntry[]> = {
+interface Cell {
+  day: number;
+  currentMonth: boolean;
+}
+
+const DAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
+
+const SCHEDULE_BY_OFFSET: Record<number, ScheduleEntry[]> = {
   "-2": [
     { time: "10:00", title: "Data review", duration: "1h 30m", type: "focus" },
     { time: "14:00", title: "Team sync", duration: "30m", type: "meeting" },
@@ -59,15 +62,11 @@ const scheduleByOffset: Record<number, ScheduleEntry[]> = {
   ],
 };
 
-type Cell = { day: number; currentMonth: boolean };
-
-// Builds a Monday-first month grid, padded with the trailing days of the
-// previous/next month so every row has 7 cells.
 function getMonthMatrix(year: number, month: number): Cell[][] {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const daysInPrevMonth = new Date(year, month, 0).getDate();
-  const firstWeekday = new Date(year, month, 1).getDay(); // 0 = Sun
-  const leadingBlanks = (firstWeekday + 6) % 7; // convert to Monday-first
+  const firstWeekday = new Date(year, month, 1).getDay();
+  const leadingBlanks = (firstWeekday + 6) % 7;
 
   const cells: Cell[] = [];
 
@@ -90,8 +89,6 @@ function getMonthMatrix(year: number, month: number): Cell[][] {
 }
 
 export default function CalendarSection() {
-  // `today` is set on mount (not during the initial render) so the server
-  // and client always agree on the first paint, then it stays live.
   const [today, setToday] = useState<Date | null>(null);
   const [viewYear, setViewYear] = useState<number | null>(null);
   const [viewMonth, setViewMonth] = useState<number | null>(null);
@@ -125,7 +122,7 @@ export default function CalendarSection() {
 
   const selectedSchedule =
     isRealCurrentMonth && selected !== null && today
-      ? scheduleByOffset[selected - today.getDate()] ?? []
+      ? SCHEDULE_BY_OFFSET[selected - today.getDate()] ?? []
       : [];
 
   const selectedDateLabel =
@@ -149,8 +146,6 @@ export default function CalendarSection() {
     const next = new Date(viewYear, viewMonth + offset, 1);
     setViewYear(next.getFullYear());
     setViewMonth(next.getMonth());
-    // Keep "today" selected when navigating back to the current month,
-    // otherwise land on the 1st of whichever month is being viewed.
     if (
       today &&
       next.getFullYear() === today.getFullYear() &&
@@ -163,10 +158,7 @@ export default function CalendarSection() {
   }
 
   return (
-    <section
-      id="calendar"
-      className="relative overflow-hidden bg-[#08090B] px-5 py-24 sm:px-8 lg:px-12 lg:py-32"
-    >
+    <section id="calendar" className="relative overflow-hidden bg-[#08090B] px-5 py-24 sm:px-8 lg:px-12 lg:py-32">
       {/* Ambient glow */}
       <div className="pointer-events-none absolute right-[-180px] top-[20%] h-[500px] w-[500px] rounded-full bg-[#F5A623]/[0.035] blur-[140px]" />
 
@@ -190,8 +182,7 @@ export default function CalendarSection() {
 
           <div className="lg:pb-1 lg:pl-16">
             <p className="max-w-xl text-base leading-7 text-white/60 sm:text-lg">
-              See your commitments, focus sessions and recovery time together.
-              Pick a day and know exactly what is waiting for you.
+              See your commitments, focus sessions and recovery time together. Pick a day and know exactly what is waiting for you.
             </p>
           </div>
         </div>
@@ -200,7 +191,7 @@ export default function CalendarSection() {
         <div className="mt-16 grid gap-5 lg:grid-cols-[1.25fr_0.75fr]">
           {/* Calendar */}
           <div className="rounded-[28px] border border-white/[0.12] bg-[#101114] p-5 shadow-[0_30px_100px_rgba(0,0,0,0.35)] sm:p-7 lg:p-8">
-            {/* Calendar top */}
+            {/* Header */}
             <div className="mb-8 flex items-center justify-between">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#F5A623]">
@@ -219,7 +210,7 @@ export default function CalendarSection() {
 
             {/* Weekdays */}
             <div className="mb-3 grid grid-cols-7">
-              {days.map((day) => (
+              {DAYS.map((day) => (
                 <div
                   key={day}
                   className="py-3 text-center text-[10px] font-bold tracking-[0.2em] text-white/55"
@@ -229,7 +220,7 @@ export default function CalendarSection() {
               ))}
             </div>
 
-            {/* Calendar days */}
+            {/* Days grid */}
             <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
               {weeks.flatMap((week, weekIndex) =>
                 week.map((cell, dayIndex) => {
@@ -248,7 +239,7 @@ export default function CalendarSection() {
                     isRealCurrentMonth && today ? day - today.getDate() : null;
                   const dayEvents =
                     currentMonth && offset !== null
-                      ? scheduleByOffset[offset] ?? []
+                      ? SCHEDULE_BY_OFFSET[offset] ?? []
                       : [];
 
                   return (
@@ -270,8 +261,8 @@ export default function CalendarSection() {
                         isSelected
                           ? "border-transparent text-black"
                           : currentMonth
-                            ? "border-white/[0.12] bg-white/[0.025] text-white/75 hover:border-white/[0.15] hover:bg-white/[0.05]"
-                            : "border-transparent text-white/15"
+                          ? "border-white/[0.12] bg-white/[0.025] text-white/75 hover:border-white/[0.15] hover:bg-white/[0.05]"
+                          : "border-transparent text-white/15"
                       }`}
                     >
                       <span
@@ -287,7 +278,7 @@ export default function CalendarSection() {
                         <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[#F5A623]" />
                       )}
 
-                      {/* Event indicator */}
+                      {/* Event indicators */}
                       {dayEvents.length > 0 && !isSelected && (
                         <div className="absolute bottom-2 flex gap-1">
                           {dayEvents.slice(0, 3).map((event, index) => (
@@ -297,8 +288,8 @@ export default function CalendarSection() {
                                 event.type === "focus"
                                   ? "bg-[#F5A623]"
                                   : event.type === "meeting"
-                                    ? "bg-[#EF4444]"
-                                    : "bg-white/30"
+                                  ? "bg-[#EF4444]"
+                                  : "bg-white/30"
                               }`}
                             />
                           ))}
@@ -318,7 +309,7 @@ export default function CalendarSection() {
             </div>
           </div>
 
-          {/* Schedule */}
+          {/* Schedule panel */}
           <div className="rounded-[28px] border border-white/[0.12] bg-[#101114] p-5 sm:p-7 lg:p-8">
             <div className="mb-8">
               <p className="text-xs font-bold uppercase tracking-[0.25em] text-white/40">
@@ -349,13 +340,7 @@ export default function CalendarSection() {
             {selectedSchedule.length > 0 ? (
               <div className="space-y-3">
                 {selectedSchedule.map((item, index) => (
-                  <ScheduleItem
-                    key={`${item.time}-${index}`}
-                    time={item.time}
-                    title={item.title}
-                    duration={item.duration}
-                    type={item.type}
-                  />
+                  <ScheduleItem key={`${item.time}-${index}`} {...item} />
                 ))}
               </div>
             ) : (
@@ -399,7 +384,7 @@ export default function CalendarSection() {
           </div>
         </div>
 
-        {/* Bottom stats */}
+        {/* Stats */}
         <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
           <CalendarStat value="11" label="Tasks planned" />
           <CalendarStat value="6h" label="Available time" />
@@ -411,21 +396,8 @@ export default function CalendarSection() {
   );
 }
 
-/* ─────────────────────────────────────────────
-   Schedule item
-───────────────────────────────────────────── */
-
-function ScheduleItem({
-  time,
-  title,
-  duration,
-  type,
-}: {
-  time: string;
-  title: string;
-  duration: string;
-  type: EventType;
-}) {
+// Components
+function ScheduleItem({ time, title, duration, type }: ScheduleEntry) {
   const typeConfig = {
     focus: {
       label: "Focus",
@@ -458,9 +430,7 @@ function ScheduleItem({
         <p className="text-[13px] font-semibold text-white/90">{title}</p>
 
         <div className="mt-2 flex items-center gap-2.5">
-          <span
-            className={`rounded-full px-2.5 py-1 text-[8px] font-bold uppercase tracking-wider ${config.badge}`}
-          >
+          <span className={`rounded-full px-2.5 py-1 text-[8px] font-bold uppercase tracking-wider ${config.badge}`}>
             {config.label}
           </span>
           <span className="text-[9px] text-white/40 font-medium">{duration}</span>
@@ -477,10 +447,6 @@ function ScheduleItem({
     </div>
   );
 }
-
-/* ─────────────────────────────────────────────
-   Supporting components
-───────────────────────────────────────────── */
 
 function CalendarButton({
   direction,
@@ -521,10 +487,7 @@ function CalendarStat({ value, label }: { value: string; label: string }) {
   );
 }
 
-/* ─────────────────────────────────────────────
-   Icons
-───────────────────────────────────────────── */
-
+// Icons
 function CalendarIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
