@@ -3,10 +3,13 @@ import Link from "next/link";
 type Variant = "light" | "dark";
 type Size = "sm" | "md" | "lg";
 
-const sizes: Record<Size, { box: number; letter: string; wordmark: string; gap: string }> = {
-  sm: { box: 28, letter: 12, wordmark: "text-[15px]", gap: "gap-2"   },
+const sizes: Record<
+  Size,
+  { box: number; letter: number; wordmark: string; gap: string }
+> = {
+  sm: { box: 28, letter: 12, wordmark: "text-[15px]", gap: "gap-2" },
   md: { box: 36, letter: 14, wordmark: "text-[17px]", gap: "gap-2.5" },
-  lg: { box: 44, letter: 17, wordmark: "text-[20px]", gap: "gap-3"   },
+  lg: { box: 44, letter: 17, wordmark: "text-[20px]", gap: "gap-3" },
 };
 
 export default function TimePilotLogo({
@@ -61,7 +64,9 @@ export default function TimePilotLogo({
       </span>
 
       {withWordmark && (
-        <span className={`${s.wordmark} font-medium tracking-[-0.02em] ${wordColor}`}>
+        <span
+          className={`${s.wordmark} font-medium tracking-[-0.02em] ${wordColor}`}
+        >
           TimePilot
         </span>
       )}
