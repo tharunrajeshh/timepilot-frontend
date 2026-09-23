@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { animate, createTimeline, stagger } from "animejs";
@@ -36,6 +37,7 @@ function useIsDesktop(breakpoint = 1024) {
 ============================================================ */
 
 export default function LoginPage() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -167,7 +169,7 @@ export default function LoginPage() {
       const rect = card.getBoundingClientRect();
       const x = ((e.clientX - rect.left) / rect.width) * 100;
       const y = ((e.clientY - rect.top) / rect.height) * 100;
-      glow.style.background = `radial-gradient(500px circle at ${x}% ${y}%, rgba(168,85,247,0.14), transparent 70%)`;
+      glow.style.background = `radial-gradient(500px circle at ${x}% ${y}%, rgba(255,159,74,0.14), transparent 70%)`;
     };
 
     const handleLeave = () => {
@@ -232,6 +234,10 @@ export default function LoginPage() {
 
   function handleGoogleLogin() {
     if (loading) return;
+    // Genuinely an external, full-page redirect (crosses to the API's
+    // OAuth domain, not an internal Next.js route) — useRouter can't do
+    // this, so window.location is correct despite the lint warning.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
     window.location.href = `${API_URL}/auth/google`;
   }
 
@@ -277,7 +283,13 @@ export default function LoginPage() {
       });
 
       const text = await response.text();
-      let data: any = {};
+      let data: {
+        detail?: string | Array<{ msg?: string } | string>;
+        access_token?: string;
+        user_id?: string;
+        name?: string;
+        email?: string;
+      } = {};
 
       if (text) {
         try {
@@ -290,7 +302,9 @@ export default function LoginPage() {
       if (!response.ok) {
         const detail = Array.isArray(data?.detail)
           ? data.detail
-              .map((item: any) => item?.msg ?? String(item))
+              .map((item) =>
+                typeof item === "string" ? item : item?.msg ?? String(item)
+              )
               .join(", ")
           : data?.detail;
 
@@ -340,7 +354,7 @@ export default function LoginPage() {
         });
       }
 
-      window.location.href = "/dashboard";
+      router.push("/dashboard");
     } catch (err) {
       console.error(err);
       showError(
@@ -368,13 +382,9 @@ export default function LoginPage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_#100e28_0%,_#05060f_55%,_#020208_100%)]" />
 
         {/* Slowly breathing aurora blobs */}
-        <div className="absolute -left-40 top-10 h-[520px] w-[520px] animate-[pulse_9s_ease-in-out_infinite] rounded-full bg-violet-600/25 blur-[140px]" />
+        <div className="absolute -left-40 top-10 h-[520px] w-[520px] animate-[pulse_9s_ease-in-out_infinite] rounded-full bg-[#ff9f4a]/[0.14] blur-[140px]" />
 
-        <div className="absolute -right-32 top-[15%] h-[460px] w-[460px] animate-[pulse_11s_ease-in-out_infinite] rounded-full bg-blue-600/20 blur-[130px]" />
-
-        <div className="absolute bottom-[-180px] left-1/2 h-[420px] w-[700px] -translate-x-1/2 animate-[pulse_13s_ease-in-out_infinite] rounded-full bg-emerald-500/10 blur-[150px]" />
-
-        <div className="absolute right-[8%] top-[55%] h-[300px] w-[300px] animate-[pulse_10s_ease-in-out_infinite] rounded-full bg-fuchsia-500/10 blur-[120px]" />
+        <div className="absolute -right-32 top-[15%] h-[460px] w-[460px] animate-[pulse_11s_ease-in-out_infinite] rounded-full bg-[#5ec8d8]/[0.12] blur-[130px]" />
 
         {/* Fine grid */}
         <div
@@ -412,7 +422,7 @@ export default function LoginPage() {
 
       <nav className="login-brand relative z-30 mx-auto flex w-full max-w-[1440px] items-center justify-between px-5 py-5 sm:px-8 sm:py-6 lg:px-12">
         <Link href="/" className="group flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-[11px] bg-white text-sm font-bold text-black shadow-[0_0_25px_rgba(124,58,237,0.5)] transition-transform duration-300 group-hover:scale-105 group-hover:shadow-[0_0_35px_rgba(168,85,247,0.7)]">
+          <span className="flex h-9 w-9 items-center justify-center rounded-[11px] bg-white text-sm font-bold text-black shadow-[0_0_25px_rgba(255,159,74,0.5)] transition-transform duration-300 group-hover:scale-105 group-hover:shadow-[0_0_35px_rgba(255,159,74,0.7)]">
             T
           </span>
           <span className="text-[17px] font-semibold tracking-[-0.04em] text-white sm:text-lg">
@@ -449,8 +459,8 @@ export default function LoginPage() {
             <div className="absolute inset-0 flex items-center justify-center">
               {/* Halo behind clock */}
               <div className="pointer-events-none absolute left-1/2 top-1/2 h-[560px] w-[560px] -translate-x-1/2 -translate-y-1/2">
-                <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle,_rgba(124,58,237,0.35)_0%,_rgba(124,58,237,0.08)_45%,_transparent_70%)] blur-2xl" />
-                <div className="absolute inset-[15%] rounded-full border border-violet-400/15" />
+                <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle,_rgba(255,159,74,0.3)_0%,_rgba(255,159,74,0.07)_45%,_transparent_70%)] blur-2xl" />
+                <div className="absolute inset-[15%] rounded-full border border-[#ff9f4a]/15" />
                 <div className="absolute inset-[28%] rounded-full border border-white/[0.06]" />
               </div>
 
@@ -464,8 +474,8 @@ export default function LoginPage() {
             {/* Focus Card */}
             <div className="trust-chip absolute left-[3%] top-[18%] rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3 shadow-[0_15px_50px_rgba(0,0,0,0.5)] backdrop-blur-2xl transition-transform duration-500 hover:-translate-y-1 xl:left-[6%]">
               <div className="flex items-center gap-3">
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-500/20">
-                  <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-violet-400 shadow-[0_0_12px_rgba(168,85,247,0.9)]" />
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#ff9f4a]/20">
+                  <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-[#ff9f4a] shadow-[0_0_12px_rgba(255,159,74,0.9)]" />
                 </span>
 
                 <div>
@@ -482,7 +492,7 @@ export default function LoginPage() {
             {/* Progress Card */}
             <div className="trust-chip absolute bottom-[20%] right-[3%] rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3 shadow-[0_15px_50px_rgba(0,0,0,0.5)] backdrop-blur-2xl transition-transform duration-500 hover:-translate-y-1 xl:right-[6%]">
               <div className="flex items-center gap-3">
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/20">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#5ec8d8]/20">
                   <svg
                     width="16"
                     height="16"
@@ -491,7 +501,7 @@ export default function LoginPage() {
                   >
                     <path
                       d="M5 12.5L9.5 17L19 7"
-                      stroke="#10B981"
+                      stroke="#5ec8d8"
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -512,11 +522,11 @@ export default function LoginPage() {
 
             {/* Message */}
             <div className="absolute bottom-[4%] left-1/2 w-full -translate-x-1/2 text-center">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/35 xl:text-xs">
+              <p className="text-xs text-white/35 xl:text-sm">
                 Your time is your most valuable asset
               </p>
 
-              <h2 className="mt-2.5 bg-gradient-to-b from-white to-white/70 bg-clip-text text-3xl font-semibold tracking-[-0.055em] text-transparent xl:text-4xl">
+              <h2 className="font-[family-name:var(--font-serif-display)] mt-2.5 bg-gradient-to-b from-white to-white/70 bg-clip-text text-3xl font-medium tracking-[-0.01em] text-transparent xl:text-4xl">
                 Make every hour count.
               </h2>
             </div>
@@ -527,7 +537,7 @@ export default function LoginPage() {
           ================================================== */}
 
           <div className="clock-area relative -mx-2 flex h-[245px] items-center justify-center sm:h-[300px] lg:hidden">
-            <div className="absolute left-1/2 top-1/2 h-[230px] w-[230px] -translate-x-1/2 -translate-y-1/2 animate-pulse rounded-full bg-violet-500/[0.15] blur-[70px] sm:h-[280px] sm:w-[280px]" />
+            <div className="absolute left-1/2 top-1/2 h-[230px] w-[230px] -translate-x-1/2 -translate-y-1/2 animate-pulse rounded-full bg-[#ff9f4a]/[0.13] blur-[70px] sm:h-[280px] sm:w-[280px]" />
 
             <div className="relative h-full w-full">
               {!isDesktop && <Clock3D />}
@@ -542,15 +552,15 @@ export default function LoginPage() {
             <div className="w-full max-w-[460px]">
               {/* Heading */}
               <div className="mb-6 text-center lg:text-left">
-                <p className="login-title mb-2.5 inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-violet-300/70 sm:text-xs">
-                  <span className="h-1 w-1 rounded-full bg-violet-400" />
+                <p className="login-title mb-2.5 inline-flex items-center gap-1.5 text-sm text-[#ff9f4a]/80">
+                  <span className="h-1 w-1 rounded-full bg-[#ff9f4a]" />
                   Welcome back
                 </p>
 
-                <h1 className="login-title text-[34px] font-semibold leading-[1.05] tracking-[-0.055em] text-white sm:text-5xl">
+                <h1 className="login-title font-[family-name:var(--font-serif-display)] text-[34px] font-medium leading-[1.05] tracking-[-0.01em] text-white sm:text-5xl">
                   Sign in to
                   <br />
-                  <span className="bg-gradient-to-r from-white/70 via-white/50 to-white/30 bg-clip-text text-transparent">
+                  <span className="italic font-normal bg-gradient-to-r from-white/70 via-white/50 to-white/30 bg-clip-text text-transparent">
                     your TimePilot.
                   </span>
                 </h1>
@@ -564,7 +574,7 @@ export default function LoginPage() {
               {/* Login Card */}
               <div
                 ref={cardRef}
-                className="group relative overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.05] p-5 shadow-[0_25px_80px_rgba(0,0,0,0.55)] backdrop-blur-3xl transition-colors duration-500 hover:border-violet-400/20 sm:rounded-[28px] sm:p-7"
+                className="group relative overflow-hidden rounded-[18px] border border-white/10 bg-white/[0.05] p-5 shadow-[0_25px_80px_rgba(0,0,0,0.55)] backdrop-blur-3xl transition-colors duration-500 hover:border-[#ff9f4a]/20 sm:rounded-[22px] sm:p-7"
               >
                 {/* cursor-follow spotlight */}
                 <div
@@ -574,8 +584,8 @@ export default function LoginPage() {
 
                 {/* animated gradient border sheen along the top edge */}
                 <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-                <div className="pointer-events-none absolute -inset-px rounded-[26px] opacity-0 transition-opacity duration-500 group-hover:opacity-100 sm:rounded-[28px]">
-                  <div className="absolute inset-0 rounded-[26px] bg-gradient-to-br from-violet-400/10 via-transparent to-blue-400/10 sm:rounded-[28px]" />
+                <div className="pointer-events-none absolute -inset-px rounded-[18px] opacity-0 transition-opacity duration-500 group-hover:opacity-100 sm:rounded-[22px]">
+                  <div className="absolute inset-0 rounded-[18px] bg-gradient-to-br from-[#ff9f4a]/10 via-transparent to-[#5ec8d8]/10 sm:rounded-[22px]" />
                 </div>
 
                 <div className="relative">
@@ -634,7 +644,7 @@ export default function LoginPage() {
                         placeholder="you@example.com"
                         required
                         autoComplete="email"
-                        className="h-[52px] w-full rounded-[15px] border border-white/10 bg-white/[0.03] px-4 text-sm text-white outline-none transition-all duration-200 placeholder:text-white/25 focus:border-violet-400/50 focus:bg-white/[0.06] focus:ring-4 focus:ring-violet-500/[0.12]"
+                        className="h-[52px] w-full rounded-[15px] border border-white/10 bg-white/[0.03] px-4 text-sm text-white outline-none transition-all duration-200 placeholder:text-white/25 focus:border-[#ff9f4a]/50 focus:bg-white/[0.06] focus:ring-4 focus:ring-[#ff9f4a]/[0.12]"
                       />
                     </div>
 
@@ -650,7 +660,7 @@ export default function LoginPage() {
 
                         <Link
                           href="/forgot-password"
-                          className="text-[11px] font-medium text-white/40 transition-colors hover:text-violet-300 sm:text-xs"
+                          className="text-[11px] font-medium text-white/40 transition-colors hover:text-[#ff9f4a] sm:text-xs"
                         >
                           Forgot password?
                         </Link>
@@ -668,7 +678,7 @@ export default function LoginPage() {
                           placeholder="Enter your password"
                           required
                           autoComplete="current-password"
-                          className="h-[52px] w-full rounded-[15px] border border-white/10 bg-white/[0.03] px-4 pr-[70px] text-sm text-white outline-none transition-all duration-200 placeholder:text-white/25 focus:border-violet-400/50 focus:bg-white/[0.06] focus:ring-4 focus:ring-violet-500/[0.12]"
+                          className="h-[52px] w-full rounded-[15px] border border-white/10 bg-white/[0.03] px-4 pr-[70px] text-sm text-white outline-none transition-all duration-200 placeholder:text-white/25 focus:border-[#ff9f4a]/50 focus:bg-white/[0.06] focus:ring-4 focus:ring-[#ff9f4a]/[0.12]"
                         />
 
                         <button
@@ -696,7 +706,7 @@ export default function LoginPage() {
                         onChange={(event) =>
                           setRememberMe(event.target.checked)
                         }
-                        className="h-4 w-4 rounded border-white/20 bg-white/5 accent-violet-500"
+                        className="h-4 w-4 rounded border-white/20 bg-white/5 accent-[#ff9f4a]"
                       />
                       <span>Remember me</span>
                     </label>
@@ -708,7 +718,7 @@ export default function LoginPage() {
                       disabled={loading}
                       onMouseEnter={handleButtonEnter}
                       onMouseLeave={handleButtonLeave}
-                      className="login-field group/submit relative mt-1 flex min-h-[54px] w-full items-center justify-center overflow-hidden rounded-[15px] bg-gradient-to-b from-violet-500 to-violet-600 px-5 text-sm font-semibold text-white shadow-[0_12px_40px_rgba(124,58,237,0.45)] transition-all duration-200 hover:from-violet-400 hover:to-violet-500 hover:shadow-[0_14px_46px_rgba(168,85,247,0.55)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
+                      className="login-field group/submit relative mt-1 flex min-h-[54px] w-full items-center justify-center overflow-hidden rounded-[15px] bg-gradient-to-b from-[#ff9f4a] to-[#e8862f] px-5 text-sm font-semibold !text-[#06090f] shadow-[0_12px_40px_rgba(255,159,74,0.4)] transition-all duration-200 hover:from-[#ffb26c] hover:to-[#ff9f4a] hover:shadow-[0_14px_46px_rgba(255,159,74,0.55)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {loading ? (
                         <span className="flex items-center gap-2">
@@ -745,7 +755,7 @@ export default function LoginPage() {
                     Don&apos;t have an account?{" "}
                     <Link
                       href="/signup"
-                      className="font-semibold text-white transition-colors hover:text-violet-300"
+                      className="font-semibold text-white transition-colors hover:text-[#ff9f4a]"
                     >
                       Create one
                     </Link>
@@ -788,8 +798,8 @@ export default function LoginPage() {
           BOTTOM STATUS
       ======================================================== */}
 
-      <div className="pointer-events-none fixed bottom-5 left-1/2 z-20 hidden -translate-x-1/2 items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-4 py-2 text-[10px] font-medium uppercase tracking-[0.2em] text-white/45 shadow-sm backdrop-blur-xl sm:flex">
-        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.9)]" />
+      <div className="pointer-events-none fixed bottom-5 left-1/2 z-20 hidden -translate-x-1/2 items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-4 py-2 text-xs font-medium text-white/45 shadow-sm backdrop-blur-xl sm:flex">
+        <span className="h-1.5 w-1.5 rounded-full bg-[#ff9f4a] shadow-[0_0_10px_rgba(255,159,74,0.9)]" />
         TimePilot is ready
       </div>
     </main>
