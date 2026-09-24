@@ -8,10 +8,16 @@ import {
   useMemo,
   useState,
 } from "react";
+
 import GlassCard from "./GlassCard";
 import TaskForm, { type TaskFormData } from "./TaskForm";
-import { type DashboardTask, type TaskStatus, toTaskPriority } from "./types";
+import {
+  type DashboardTask,
+  type TaskStatus,
+  toTaskPriority,
+} from "./types";
 
+export type { DashboardTask } from "./types";
 /* ================================================================
    TYPES
 ================================================================ */
