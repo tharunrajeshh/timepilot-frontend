@@ -677,7 +677,7 @@ export default function DashboardPage() {
     setActiveTaskId(null);
   }, [activeTask, updateTaskStatus]);
 
-  /* ================================================================ */
+   /* ================================================================ */
   /*  AI CHAT                                                         */
   /* ================================================================ */
 
@@ -689,10 +689,12 @@ export default function DashboardPage() {
         setMessages((current) => [
           ...current,
           {
+            id: crypto.randomUUID(),
             role: "assistant",
-            content: "You're sending messages too quickly. Please wait a moment.",
+            content:
+              "You're sending messages too quickly. Please wait a moment.",
           },
-        ]);
+        ].slice(-MAX_MESSAGES));
         return;
       }
 
@@ -704,7 +706,11 @@ export default function DashboardPage() {
       setMessages((current) =>
         [
           ...current,
-          { role: "user" as const, content: clean },
+          {
+            id: crypto.randomUUID(),
+            role: "user" as const,
+            content: clean,
+          },
         ].slice(-MAX_MESSAGES)
       );
 
@@ -720,14 +726,20 @@ export default function DashboardPage() {
         setMessages((current) =>
           [
             ...current,
-            { role: "assistant" as const, content: result.error },
+            {
+              id: crypto.randomUUID(),
+              role: "assistant" as const,
+              content: result.error,
+            },
           ].slice(-MAX_MESSAGES)
         );
+
         setAiLoading(false);
         return;
       }
 
       const payload = (result.data ?? {}) as Record<string, unknown>;
+
       const answer = sanitizeText(
         payload.response ?? payload.message ?? payload.answer,
         MAX_CHAT_LEN
@@ -737,18 +749,27 @@ export default function DashboardPage() {
         [
           ...current,
           {
+            id: crypto.randomUUID(),
             role: "assistant" as const,
             content: answer || "I couldn't generate a response.",
           },
         ].slice(-MAX_MESSAGES)
       );
 
-      if (payload.action === "create_task" && payload.task_created === true) {
+      if (
+        payload.action === "create_task" &&
+        payload.task_created === true
+      ) {
         await loadTasks();
+
         const created = payload.task as { title?: string } | undefined;
+
         setTaskNotice(
           created?.title
-            ? `Task created: ${sanitizeText(created.title, MAX_TITLE_LEN)}`
+            ? `Task created: ${sanitizeText(
+                created.title,
+                MAX_TITLE_LEN
+              )}`
             : "Task created by TimePilot AI."
         );
       }
@@ -757,7 +778,6 @@ export default function DashboardPage() {
     },
     [aiLoading, loadTasks, secureFetch]
   );
-
   /* ================================================================ */
   /*  AI DAY PLAN                                                     */
   /* ================================================================ */
