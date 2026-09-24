@@ -1,26 +1,17 @@
 /* ================================================================
-   PRIMITIVES — tighten what were loose `string`s
+   PRIMITIVES
 ================================================================ */
 
-/** Matches every backend and UI code path we support. */
 export type TaskStatus = "pending" | "in_progress" | "completed";
+export type TaskPriority = "low" | "medium" | "high" | "urgent";
 
-/** Whitelisted — anything else collapses to "medium" at the boundary. */
-export type TaskPriority = "low" | "medium" | "high";
-
-/** Schedule block kind emitted by the AI planner. */
-export type ScheduleEntryType =
-  | "task"
-  | "break"
-  | "buffer"
-  | "focus"
-  | string; // unknown kinds still pass through, but see normalize helpers
-
-/** Filter unions used by the task list. */
 export type StatusFilter = "all" | TaskStatus;
 export type PriorityFilter = "all" | TaskPriority;
 
-/** Dashboard sections. */
+/**
+ * Canonical section id. Matches what `DashboardSidebar` uses —
+ * previously duplicated there as `DashboardSection`.
+ */
 export type Section = "overview" | "tasks" | "schedule" | "assistant";
 
 /* ================================================================
@@ -42,16 +33,18 @@ export type Task = {
   readonly id: number;
   readonly title: string;
   readonly description: string | null;
-  readonly priority: string; // may be any server value; see `toTaskPriority`
+  /** May be any server value — always normalize with `toTaskPriority`. */
+  readonly priority: string;
   readonly estimated_minutes: number | null;
   readonly deadline: string | null; // ISO 8601
-  readonly status: string; // may be any server value; see `toTaskStatus`
+  /** May be any server value — always normalize with `toTaskStatus`. */
+  readonly status: string;
   readonly created_at: string; // ISO 8601
 };
 
 /**
  * UI-side task shape used by TaskPanel / Overview.
- * Kept here so components no longer define their own near-duplicate.
+ * The single source of truth — components must not redeclare it.
  */
 export type DashboardTask = {
   id: number | string;
@@ -71,20 +64,19 @@ export type DashboardTask = {
 
 /**
  * A single block in the AI-generated day plan.
- *
- * We accept both `start`/`end` (as the API emits) and `start_time`/
- * `end_time` (as older responses used) — `normalizeScheduleItem`
- * collapses them into the canonical `start`/`end` form.
+ * Kept as a closed union — a `| string` escape hatch makes the union
+ * meaningless and lets malformed data through silently.
  */
+export type ScheduleEntryType = "task" | "break" | "buffer" | "focus";
+
 export type ScheduleItem = {
   task_id: number | null;
   title: string;
   start: string; // ISO 8601
-  end: string; // ISO 8601
+  end: string;   // ISO 8601
   type: ScheduleEntryType;
 };
 
-/** A task the planner could not fit into the day, with the reason. */
 export type UnscheduledItem = {
   task_id: number;
   title: string;
@@ -105,7 +97,7 @@ export type LiveScheduleStatus = "completed" | "current" | "upcoming";
 
 export type LiveScheduleItem = ScheduleItem & {
   status: LiveScheduleStatus;
-  /** 0–100; 0 for upcoming, 100 for completed. */
+  /** 0–100. */
   progress: number;
 };
 
@@ -113,10 +105,17 @@ export type LiveScheduleItem = ScheduleItem & {
    CHAT
 ================================================================ */
 
-/** Canonical — matches what AIAssistant actually renders. */
+/**
+ * Canonical — must match `AIAssistant`'s exported type exactly.
+ * Previously diverged (no `id`/`createdAt`/`status`), which is a
+ * type error the moment you pass `types.ChatMessage[]` into the component.
+ */
 export type ChatMessage = {
+  id: string;
   role: "user" | "assistant";
   content: string;
+  createdAt?: number;
+  status?: "sending" | "sent" | "error";
 };
 
 /* ================================================================
@@ -126,13 +125,15 @@ export type ChatMessage = {
 export type NewTaskForm = {
   title: string;
   description: string;
-  priority: TaskPriority | string;
-  estimated_minutes: string; // form field is a string until submit
-  deadline: string; // YYYY-MM-DD from <input type="date">
+  priority: TaskPriority;
+  /** String until submit — matches what <input type="number"> emits. */
+  estimated_minutes: string;
+  /** ISO datetime string from <input type="datetime-local">, or "". */
+  deadline: string;
 };
 
 /* ================================================================
-   RUNTIME GUARDS — use at every API boundary
+   RUNTIME GUARDS
 ================================================================ */
 
 export function isTask(value: unknown): value is Task {
@@ -176,12 +177,13 @@ export function isDayPlan(value: unknown): value is DayPlan {
   return (
     typeof v.summary === "string" &&
     Array.isArray(v.schedule) &&
+    v.schedule.every(isScheduleItem) &&
     Array.isArray(v.unscheduled)
   );
 }
 
 /* ================================================================
-   NORMALIZERS — collapse server variance into canonical shapes
+   NORMALIZERS
 ================================================================ */
 
 const TASK_STATUSES = new Set<TaskStatus>([
@@ -190,16 +192,19 @@ const TASK_STATUSES = new Set<TaskStatus>([
   "completed",
 ]);
 
-/** Any unrecognized server value becomes "pending". */
 export function toTaskStatus(input: unknown): TaskStatus {
   return typeof input === "string" && TASK_STATUSES.has(input as TaskStatus)
     ? (input as TaskStatus)
     : "pending";
 }
 
-const TASK_PRIORITIES = new Set<TaskPriority>(["low", "medium", "high"]);
+const TASK_PRIORITIES = new Set<TaskPriority>([
+  "low",
+  "medium",
+  "high",
+  "urgent",
+]);
 
-/** Any unrecognized server value becomes "medium". */
 export function toTaskPriority(input: unknown): TaskPriority {
   return typeof input === "string" &&
     TASK_PRIORITIES.has(input as TaskPriority)
@@ -209,8 +214,7 @@ export function toTaskPriority(input: unknown): TaskPriority {
 
 /**
  * Convert an API `Task` into the UI-side `DashboardTask`.
- * Handles the `deadline` → `due_date` rename in one place so no
- * component ever needs to know both names.
+ * Handles the `deadline` → `due_date` rename in one place.
  */
 export function normalizeTask(raw: Task): DashboardTask {
   return {
@@ -226,8 +230,9 @@ export function normalizeTask(raw: Task): DashboardTask {
 }
 
 /**
- * Accept either the modern (`start`/`end`) or legacy (`start_time`/
- * `end_time`) field names, and return the canonical shape.
+ * Accept either the modern (`start`/`end`) or legacy (`start_time`/`end_time`)
+ * field names, and return the canonical shape. Returns `null` if the shape
+ * is unrecoverable — the caller decides whether to skip or surface.
  */
 export function normalizeScheduleItem(raw: unknown): ScheduleItem | null {
   if (!raw || typeof raw !== "object") return null;
@@ -249,11 +254,18 @@ export function normalizeScheduleItem(raw: unknown): ScheduleItem | null {
 
   if (!start || !end || typeof v.title !== "string") return null;
 
+  // Coerce unknown type strings into the closed union.
+  const type = typeof v.type === "string" ? v.type.toLowerCase() : "";
+  const safeType: ScheduleEntryType =
+    type === "break" || type === "buffer" || type === "focus"
+      ? type
+      : "task";
+
   return {
     task_id: typeof v.task_id === "number" ? v.task_id : null,
     title: v.title,
     start,
     end,
-    type: typeof v.type === "string" ? v.type : "task",
+    type: safeType,
   };
 }

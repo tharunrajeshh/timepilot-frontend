@@ -9,35 +9,17 @@ import {
   useState,
 } from "react";
 import GlassCard from "./GlassCard";
-import TaskForm from "./TaskForm";
+import TaskForm, { type TaskFormData } from "./TaskForm";
+import { type DashboardTask, type TaskStatus, toTaskPriority } from "./types";
 
 /* ================================================================
    TYPES
 ================================================================ */
 
-export type DashboardTask = {
-  id: number | string;
-  title: string;
-  description?: string;
-  status?: string;
-  priority?: string;
-  due_date?: string | null;
-  estimated_minutes?: number;
-  created_at?: string;
-  completed_at?: string | null;
-};
-
-type CreateTaskInput = {
-  title: string;
-  description: string;
-  priority: string;
-  due_date: string;
-  estimated_minutes: number;
-};
+type CreateTaskInput = TaskFormData;
 
 type TaskPanelProps = {
   tasks: DashboardTask[];
-  /** Receives the full task — matches DashboardPage.updateTaskStatus. */
   onCreateTask: (task: CreateTaskInput) => Promise<void> | void;
   onStatusChange: (
     task: DashboardTask,
@@ -46,8 +28,6 @@ type TaskPanelProps = {
   onDeleteTask: (taskId: number | string) => Promise<void> | void;
   loading?: boolean;
 };
-
-type TaskStatus = "pending" | "in_progress" | "completed";
 
 type FilterValue = "all" | TaskStatus;
 
@@ -58,10 +38,16 @@ type FilterValue = "all" | TaskStatus;
 const MAX_TITLE = 200;
 const MAX_DESC = 2000;
 
+/** Now includes "urgent" — previously fell back to Medium's styling. */
 const PRIORITY_CONFIG: Record<
   string,
   { label: string; className: string; dot: string }
 > = {
+  urgent: {
+    label: "Urgent",
+    className: "bg-red-500/10 text-red-700",
+    dot: "bg-red-500",
+  },
   high: {
     label: "High",
     className: "bg-purple-500/10 text-purple-700",
@@ -94,7 +80,6 @@ const FILTER_OPTIONS: ReadonlyArray<{ value: FilterValue; label: string }> = [
 
 function safeText(input: unknown, max: number): string {
   if (typeof input !== "string") return "";
-  // eslint-disable-next-line no-control-regex
   const cleaned = input.replace(/[\u0000-\u001F\u007F]/g, "");
   return cleaned.length > max ? cleaned.slice(0, max) : cleaned;
 }
@@ -104,8 +89,7 @@ function normalizeStatus(input: unknown): TaskStatus {
   return "pending";
 }
 
-/** Returns null when a task has no meaningful estimate. */
-function formatMinutes(minutes?: number): string | null {
+function formatMinutes(minutes?: number | null): string | null {
   if (
     typeof minutes !== "number" ||
     !Number.isFinite(minutes) ||
@@ -115,15 +99,19 @@ function formatMinutes(minutes?: number): string | null {
   }
 
   const safe = Math.min(Math.round(minutes), 24 * 60);
-
   if (safe < 60) return `${safe} min`;
 
   const h = Math.floor(safe / 60);
   const m = safe % 60;
-
   return m === 0 ? `${h}h` : `${h}h ${m}m`;
 }
 
+/**
+ * Human-friendly relative due date. Handles past, today, tomorrow,
+ * this week, and later distinctly. The previous version only detected
+ * "overdue" for tasks more than 24h past, and showed a raw date for
+ * anything within 24h.
+ */
 function formatDueDate(date?: string | null): string {
   if (!date) return "No due date";
 
@@ -132,23 +120,62 @@ function formatDueDate(date?: string | null): string {
     return safeText(date, 40);
   }
 
-  const now = Date.now();
+  const now = new Date();
   const target = parsed.getTime();
-  const dayMs = 24 * 60 * 60 * 1000;
+  const nowMs = now.getTime();
+  const diffMs = target - nowMs;
 
-  if (target < now - dayMs) {
-    const days = Math.floor((now - target) / dayMs);
-    return `${days}d overdue`;
+  const startOfToday = new Date(now);
+  startOfToday.setHours(0, 0, 0, 0);
+
+  const startOfTomorrow = new Date(startOfToday);
+  startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
+
+  const startOfDayAfterTomorrow = new Date(startOfTomorrow);
+  startOfDayAfterTomorrow.setDate(startOfDayAfterTomorrow.getDate() + 1);
+
+  const startOfNextWeek = new Date(startOfToday);
+  startOfNextWeek.setDate(startOfNextWeek.getDate() + 7);
+
+  const targetDayStart = new Date(parsed);
+  targetDayStart.setHours(0, 0, 0, 0);
+
+  // --- Overdue ---
+  if (targetDayStart.getTime() < startOfToday.getTime()) {
+    const daysPast = Math.floor(
+      (startOfToday.getTime() - targetDayStart.getTime()) / 86_400_000
+    );
+    if (daysPast === 1) return "Overdue — yesterday";
+    if (daysPast < 7) return `Overdue — ${daysPast}d ago`;
+    return `Overdue — ${parsed.toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+    })}`;
   }
 
-  const today = new Date();
-  const sameDay =
-    parsed.getDate() === today.getDate() &&
-    parsed.getMonth() === today.getMonth() &&
-    parsed.getFullYear() === today.getFullYear();
+  // --- Today ---
+  if (targetDayStart.getTime() === startOfToday.getTime()) {
+    const hoursUntil = Math.floor(diffMs / 3_600_000);
+    if (diffMs < 0) return `Due today — ${Math.abs(hoursUntil)}h ago`;
+    if (hoursUntil < 1) return "Due within the hour";
+    if (hoursUntil < 24) return `Due today — in ${hoursUntil}h`;
+    return "Due today";
+  }
 
-  if (sameDay) return "Due today";
+  // --- Tomorrow ---
+  if (targetDayStart.getTime() === startOfTomorrow.getTime()) {
+    return "Due tomorrow";
+  }
 
+  // --- This week ---
+  if (target < startOfNextWeek.getTime()) {
+    const days = Math.round(
+      (targetDayStart.getTime() - startOfToday.getTime()) / 86_400_000
+    );
+    return `Due in ${days} days`;
+  }
+
+  // --- Later ---
   return parsed.toLocaleDateString("en-IN", {
     day: "numeric",
     month: "short",
@@ -157,7 +184,7 @@ function formatDueDate(date?: string | null): string {
 }
 
 /* ================================================================
-   ROW (memoized — parent ticks every second)
+   ROW
 ================================================================ */
 
 type TaskRowProps = {
@@ -185,9 +212,10 @@ const TaskRow = memo(function TaskRow({
 
   const title = safeText(task.title, MAX_TITLE) || "Untitled task";
   const description = safeText(task.description, MAX_DESC);
-  const priority = PRIORITY_CONFIG[task.priority ?? ""] ?? FALLBACK_PRIORITY;
+  const priority = PRIORITY_CONFIG[toTaskPriority(task.priority)] ?? FALLBACK_PRIORITY;
   const minutesLabel = formatMinutes(task.estimated_minutes);
   const dueLabel = formatDueDate(task.due_date);
+  const isOverdue = dueLabel.startsWith("Overdue");
 
   const handleToggle = useCallback(
     () => onToggleComplete(task),
@@ -207,15 +235,9 @@ const TaskRow = memo(function TaskRow({
   );
 
   return (
-    <li
-      className="
-        group p-5 transition-colors
-        hover:bg-black/[0.015]
-        md:p-6
-      "
-    >
+    <li className="group p-5 transition-colors hover:bg-black/[0.015] md:p-6">
       <div className="flex gap-4">
-        {/* ---------- Status checkbox ---------- */}
+        {/* Status checkbox */}
         <button
           type="button"
           onClick={handleToggle}
@@ -227,7 +249,7 @@ const TaskRow = memo(function TaskRow({
           }
           className={`
             mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center
-            rounded-full border-2 transition
+            rounded-full border-2 transition-colors
             focus-visible:outline-none
             focus-visible:ring-2 focus-visible:ring-purple-500/40
             focus-visible:ring-offset-2
@@ -241,12 +263,7 @@ const TaskRow = memo(function TaskRow({
           `}
         >
           {completed && (
-            <svg
-              viewBox="0 0 20 20"
-              fill="none"
-              className="h-3.5 w-3.5"
-              aria-hidden="true"
-            >
+            <svg viewBox="0 0 20 20" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
               <path
                 d="M5 10.5 8.2 13.5 15 6.5"
                 stroke="currentColor"
@@ -257,22 +274,18 @@ const TaskRow = memo(function TaskRow({
             </svg>
           )}
           {inProgress && !completed && (
-            <span
-              className="h-2 w-2 rounded-full bg-blue-500"
-              aria-hidden="true"
-            />
+            <span className="h-2 w-2 rounded-full bg-blue-500" aria-hidden="true" />
           )}
         </button>
 
-        {/* ---------- Content ---------- */}
+        {/* Content */}
         <div className="min-w-0 flex-1">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0">
               <h4
-                className={`
-                  text-sm font-semibold
-                  ${completed ? "text-black/35 line-through" : "text-black"}
-                `}
+                className={`text-sm font-semibold ${
+                  completed ? "text-black/35 line-through" : "text-black"
+                }`}
                 title={title}
               >
                 {title}
@@ -300,18 +313,24 @@ const TaskRow = memo(function TaskRow({
                 </span>
 
                 {minutesLabel && (
-                  <span className="rounded-full bg-black/[0.04] px-2.5 py-1 text-[11px] font-medium text-black/45">
+                  <span className="rounded-full bg-black/[0.04] px-2.5 py-1 text-[11px] font-medium tabular-nums text-black/45">
                     {minutesLabel}
                   </span>
                 )}
 
-                <span className="rounded-full bg-black/[0.04] px-2.5 py-1 text-[11px] font-medium text-black/45">
+                <span
+                  className={`rounded-full px-2.5 py-1 text-[11px] font-medium tabular-nums ${
+                    isOverdue
+                      ? "bg-red-500/[0.08] text-red-700"
+                      : "bg-black/[0.04] text-black/45"
+                  }`}
+                >
                   {dueLabel}
                 </span>
               </div>
             </div>
 
-            {/* ---------- Actions ---------- */}
+            {/* Actions */}
             <div className="flex shrink-0 flex-wrap items-center gap-2">
               {confirming ? (
                 <>
@@ -325,7 +344,7 @@ const TaskRow = memo(function TaskRow({
                     className="
                       rounded-lg bg-red-600 px-3 py-2
                       text-xs font-semibold text-white
-                      transition hover:bg-red-700
+                      transition-colors hover:bg-red-700
                       focus-visible:outline-none
                       focus-visible:ring-2 focus-visible:ring-red-500/40
                     "
@@ -339,7 +358,7 @@ const TaskRow = memo(function TaskRow({
                     className="
                       rounded-lg border border-black/[0.08] bg-white
                       px-3 py-2 text-xs font-semibold text-black/60
-                      transition hover:bg-black/[0.03]
+                      transition-colors hover:bg-black/[0.03]
                       focus-visible:outline-none
                       focus-visible:ring-2 focus-visible:ring-black/20
                     "
@@ -356,7 +375,7 @@ const TaskRow = memo(function TaskRow({
                       className="
                         rounded-lg border border-black/[0.08] bg-white
                         px-3 py-2 text-xs font-semibold text-black/60
-                        transition hover:bg-black/[0.03]
+                        transition-colors hover:bg-black/[0.03]
                         focus-visible:outline-none
                         focus-visible:ring-2 focus-visible:ring-black/20
                       "
@@ -370,7 +389,7 @@ const TaskRow = memo(function TaskRow({
                     onClick={handleDelete}
                     className="
                       rounded-lg px-3 py-2 text-xs font-semibold text-black/30
-                      transition
+                      transition-colors
                       hover:bg-red-500/[0.06] hover:text-red-600
                       focus-visible:outline-none
                       focus-visible:ring-2 focus-visible:ring-red-500/30
@@ -405,42 +424,24 @@ function TaskPanel({
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterValue>("all");
-  const [confirmingId, setConfirmingId] = useState<number | string | null>(
-    null
-  );
+  const [confirmingId, setConfirmingId] = useState<number | string | null>(null);
 
-  /** Deferring the search lets React keep the input responsive on large
-   *  task lists — filtering runs at a lower priority. */
+  // Deferring search keeps the input responsive on large lists.
   const deferredSearch = useDeferredValue(search);
-
-  /* ---------- filtering ---------- */
 
   const filteredTasks = useMemo(() => {
     const q = deferredSearch.trim().toLowerCase();
 
     return tasks.filter((task) => {
       const status = normalizeStatus(task.status);
-
-      const matchesFilter =
-        filter === "all" || status === filter;
-
-      if (!matchesFilter) return false;
-
+      if (filter !== "all" && status !== filter) return false;
       if (!q) return true;
 
-      const titleMatch = safeText(task.title, MAX_TITLE)
-        .toLowerCase()
-        .includes(q);
-
-      const descMatch = safeText(task.description, MAX_DESC)
-        .toLowerCase()
-        .includes(q);
-
+      const titleMatch = safeText(task.title, MAX_TITLE).toLowerCase().includes(q);
+      const descMatch = safeText(task.description, MAX_DESC).toLowerCase().includes(q);
       return titleMatch || descMatch;
     });
   }, [tasks, deferredSearch, filter]);
-
-  /* ---------- callbacks ---------- */
 
   const handleCreate = useCallback(
     async (input: CreateTaskInput) => {
@@ -453,9 +454,7 @@ function TaskPanel({
   const handleToggleComplete = useCallback(
     (task: DashboardTask) => {
       const next: TaskStatus =
-        normalizeStatus(task.status) === "completed"
-          ? "pending"
-          : "completed";
+        normalizeStatus(task.status) === "completed" ? "pending" : "completed";
       void onStatusChange(task, next);
     },
     [onStatusChange]
@@ -464,9 +463,7 @@ function TaskPanel({
   const handleToggleProgress = useCallback(
     (task: DashboardTask) => {
       const next: TaskStatus =
-        normalizeStatus(task.status) === "in_progress"
-          ? "pending"
-          : "in_progress";
+        normalizeStatus(task.status) === "in_progress" ? "pending" : "in_progress";
       void onStatusChange(task, next);
     },
     [onStatusChange]
@@ -476,9 +473,7 @@ function TaskPanel({
     setConfirmingId(id);
   }, []);
 
-  const handleCancelDelete = useCallback(() => {
-    setConfirmingId(null);
-  }, []);
+  const handleCancelDelete = useCallback(() => setConfirmingId(null), []);
 
   const handleConfirmDelete = useCallback(
     (id: number | string) => {
@@ -488,27 +483,18 @@ function TaskPanel({
     [onDeleteTask]
   );
 
-  /* ---------- derived ---------- */
-
   const hasTasks = tasks.length > 0;
   const total = tasks.length;
   const shown = filteredTasks.length;
 
-  /* ---------- render ---------- */
-
   return (
     <div className="space-y-5">
-      {/* =========================================================
-          HEADER
-      ========================================================= */}
+      {/* Header */}
       <GlassCard padding="lg">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <div className="mb-2 flex items-center gap-2">
-              <span
-                className="h-2 w-2 rounded-full bg-purple-500"
-                aria-hidden="true"
-              />
+              <span className="h-2 w-2 rounded-full bg-purple-500" aria-hidden="true" />
               <span className="text-xs font-bold uppercase tracking-[0.2em] text-black/40">
                 Task management
               </span>
@@ -517,10 +503,8 @@ function TaskPanel({
             <h2 className="text-2xl font-semibold tracking-[-0.03em] text-black sm:text-3xl">
               Keep your work moving.
             </h2>
-
             <p className="mt-2 max-w-xl text-sm leading-6 text-black/45">
-              Capture tasks, prioritize what matters, and keep your workload
-              under control.
+              Capture tasks, prioritize what matters, and keep your workload under control.
             </p>
           </div>
 
@@ -531,8 +515,7 @@ function TaskPanel({
             aria-controls="task-form-region"
             className="
               inline-flex h-12 items-center justify-center gap-2
-              rounded-xl bg-black px-5
-              text-sm font-semibold text-white
+              rounded-xl bg-black px-5 text-sm font-semibold text-white
               shadow-[0_10px_30px_rgba(0,0,0,0.14)]
               transition
               hover:-translate-y-0.5
@@ -549,9 +532,7 @@ function TaskPanel({
         </div>
       </GlassCard>
 
-      {/* =========================================================
-          FORM
-      ========================================================= */}
+      {/* Form */}
       <div id="task-form-region">
         {showForm && (
           <GlassCard padding="lg">
@@ -573,45 +554,26 @@ function TaskPanel({
         )}
       </div>
 
-      {/* =========================================================
-          LIST
-      ========================================================= */}
+      {/* List */}
       <GlassCard padding="none">
-        {/* ---------- Toolbar ---------- */}
         <div className="border-b border-black/[0.06] p-5 md:p-6">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-black">
-                Your tasks
-              </h3>
-              <p
-                className="mt-1 text-sm text-black/40"
-                aria-live="polite"
-              >
+              <h3 className="text-lg font-semibold text-black">Your tasks</h3>
+              <p className="mt-1 text-sm text-black/40" aria-live="polite">
                 {shown} of {total} task{total === 1 ? "" : "s"} shown
               </p>
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
-              {/* Search */}
               <div className="relative">
-                <label htmlFor={searchId} className="sr-only">
-                  Search tasks
-                </label>
+                <label htmlFor={searchId} className="sr-only">Search tasks</label>
 
                 <span
                   className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-black/30"
                   aria-hidden="true"
                 >
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                  >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
                     <circle cx="11" cy="11" r="6" />
                     <path d="m16 16 4 4" />
                   </svg>
@@ -627,8 +589,7 @@ function TaskPanel({
                   className="
                     h-11 w-full rounded-xl
                     border border-black/[0.08] bg-black/[0.025]
-                    pl-9 pr-3
-                    text-sm text-black outline-none
+                    pl-9 pr-3 text-sm text-black outline-none
                     placeholder:text-black/30
                     transition
                     focus:border-purple-500/40 focus:bg-white
@@ -638,27 +599,18 @@ function TaskPanel({
                 />
               </div>
 
-              {/* Filter */}
               <div>
-                <label htmlFor={filterId} className="sr-only">
-                  Filter tasks
-                </label>
+                <label htmlFor={filterId} className="sr-only">Filter tasks</label>
 
                 <select
                   id={filterId}
                   value={filter}
-                  onChange={(e) =>
-                    setFilter(e.target.value as FilterValue)
-                  }
+                  onChange={(e) => setFilter(e.target.value as FilterValue)}
                   className="
-                    h-11 rounded-xl
-                    border border-black/[0.08] bg-white
-                    px-3
-                    text-sm font-medium text-black/70
-                    outline-none
-                    transition
-                    focus:border-blue-500/40
-                    focus:ring-4 focus:ring-blue-500/[0.08]
+                    h-11 rounded-xl border border-black/[0.08] bg-white
+                    px-3 text-sm font-medium text-black/70
+                    outline-none transition
+                    focus:border-blue-500/40 focus:ring-4 focus:ring-blue-500/[0.08]
                   "
                 >
                   {FILTER_OPTIONS.map((opt) => (
@@ -672,7 +624,6 @@ function TaskPanel({
           </div>
         </div>
 
-        {/* ---------- Body ---------- */}
         {shown === 0 ? (
           <EmptyState
             hasTasks={hasTasks}
@@ -685,10 +636,7 @@ function TaskPanel({
             }}
           />
         ) : (
-          <ul
-            className="divide-y divide-black/[0.06]"
-            aria-label="Task list"
-          >
+          <ul className="divide-y divide-black/[0.06]" aria-label="Task list">
             {filteredTasks.map((task) => (
               <TaskRow
                 key={task.id}
@@ -752,14 +700,13 @@ function EmptyState({
       <h3 className="mt-5 text-lg font-semibold text-black">
         {filtered ? "No matching tasks" : "No tasks yet"}
       </h3>
-
       <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-black/40">
         {filtered
           ? "Try a different search term or reset the filter."
           : "Create your first task and start planning your day."}
       </p>
 
-      {!filtered && (
+      {!filtered ? (
         <button
           type="button"
           onClick={onCreate}
@@ -774,16 +721,14 @@ function EmptyState({
         >
           Create your first task
         </button>
-      )}
-
-      {filtered && (
+      ) : (
         <button
           type="button"
           onClick={onResetFilters}
           className="
             mt-5 rounded-xl border border-black/[0.08] bg-white
             px-5 py-3 text-sm font-semibold text-black/70
-            transition hover:bg-black/[0.03]
+            transition-colors hover:bg-black/[0.03]
             focus-visible:outline-none
             focus-visible:ring-2 focus-visible:ring-black/20
           "
