@@ -17,6 +17,12 @@ type FocusTimerProps = {
   initialMinutes?: number;
   taskTitle?: string;
   onComplete?: () => void;
+  /** Preset durations in minutes. */
+  presets?: readonly number[];
+  /** Play a short chime on completion via Web Audio. */
+  sound?: boolean;
+  /** Survive a page refresh via sessionStorage. */
+  persist?: boolean;
 };
 
 /* ================================================================
@@ -28,7 +34,9 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 const MAX_TITLE_LEN = 120;
 const MIN_MINUTES = 1;
 const MAX_MINUTES = 180;
-const TICK_MS = 250;
+const DEFAULT_PRESETS: readonly number[] = [15, 25, 50, 90];
+const EXTEND_MINUTES = 5;
+const STORAGE_KEY = "timepilot:focus-timer";
 
 /* ================================================================
    HELPERS
@@ -36,7 +44,6 @@ const TICK_MS = 250;
 
 function safeText(input: unknown, max: number): string {
   if (typeof input !== "string") return "";
-  // eslint-disable-next-line no-control-regex
   const cleaned = input.replace(/[\u0000-\u001F\u007F]/g, "");
   return cleaned.length > max ? cleaned.slice(0, max) : cleaned;
 }
@@ -54,6 +61,41 @@ function formatTime(seconds: number): string {
   return `${mins}:${secs}`;
 }
 
+/** Short two-tone chime via Web Audio — no dependency, ~15 lines. */
+function playChime(): void {
+  try {
+    const Ctx =
+      window.AudioContext ??
+      (window as unknown as { webkitAudioContext?: typeof AudioContext })
+        .webkitAudioContext;
+    if (!Ctx) return;
+
+    const ctx = new Ctx();
+    const now = ctx.currentTime;
+
+    const play = (freq: number, start: number, dur: number) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq, now + start);
+      gain.gain.setValueAtTime(0.0001, now + start);
+      gain.gain.exponentialRampToValueAtTime(0.18, now + start + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + start + dur);
+      osc.start(now + start);
+      osc.stop(now + start + dur + 0.05);
+    };
+
+    play(880, 0, 0.45);  // A5
+    play(1174.66, 0.18, 0.55); // D6
+
+    window.setTimeout(() => void ctx.close(), 1200);
+  } catch {
+    /* Audio unavailable or blocked — silently ignore. */
+  }
+}
+
 /* ================================================================
    COMPONENT
 ================================================================ */
@@ -62,22 +104,26 @@ export default function FocusTimer({
   initialMinutes = 25,
   taskTitle = "Focus session",
   onComplete,
+  presets = DEFAULT_PRESETS,
+  sound = true,
+  persist = true,
 }: FocusTimerProps) {
-  const minutes = clampMinutes(initialMinutes);
-  const initialSeconds = minutes * 60;
+  const [presetMinutes, setPresetMinutes] = useState(() =>
+    clampMinutes(initialMinutes)
+  );
+  const durationSeconds = presetMinutes * 60;
 
-  const [secondsLeft, setSecondsLeft] = useState(initialSeconds);
+  const [secondsLeft, setSecondsLeft] = useState(durationSeconds);
   const [running, setRunning] = useState(false);
 
-  /* Deadline timestamp is the source of truth while running.
-     `null` means the timer is paused or idle. */
+  /* Deadline timestamp is the single source of truth while running. */
   const endAtRef = useRef<number | null>(null);
   const completedRef = useRef(false);
   const aliveRef = useRef(true);
   const onCompleteRef = useRef(onComplete);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const titleBackupRef = useRef<string | null>(null);
 
-  /* Keep the latest callback without restarting the countdown effect. */
+  /* Keep the latest callback without restarting the countdown. */
   useEffect(() => {
     onCompleteRef.current = onComplete;
   }, [onComplete]);
@@ -90,53 +136,124 @@ export default function FocusTimer({
     };
   }, []);
 
-  /* Reset when the caller changes the duration. */
+  /* ----------------------------------------------------------
+     RESTORE from sessionStorage (declared AFTER the reset
+     effect below so it wins on mount)
+  ---------------------------------------------------------- */
+
   useEffect(() => {
+    if (!persist) return;
+    try {
+      const raw = sessionStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as {
+        endAt?: number;
+        presetMinutes?: number;
+      };
+      if (
+        typeof parsed?.endAt === "number" &&
+        parsed.endAt > Date.now() &&
+        typeof parsed?.presetMinutes === "number"
+      ) {
+        const remaining = Math.ceil((parsed.endAt - Date.now()) / 1000);
+        if (remaining > 0) {
+          endAtRef.current = parsed.endAt;
+          completedRef.current = false;
+          setPresetMinutes(clampMinutes(parsed.presetMinutes));
+          setSecondsLeft(remaining);
+          setRunning(true);
+        }
+      }
+    } catch {
+      /* Corrupt storage — ignore. */
+    }
+  }, [persist]);
+
+  /* ----------------------------------------------------------
+     RESET when the caller changes the duration
+  ---------------------------------------------------------- */
+
+  useEffect(() => {
+    const next = clampMinutes(initialMinutes);
     setRunning(false);
     endAtRef.current = null;
     completedRef.current = false;
-    setSecondsLeft(initialSeconds);
-  }, [initialSeconds]);
+    setPresetMinutes(next);
+    setSecondsLeft(next * 60);
+  }, [initialMinutes]);
 
   /* ----------------------------------------------------------
-     COUNTDOWN — timestamp based, throttle-immune
+     PERSIST whenever a session starts or stops
+  ---------------------------------------------------------- */
+
+  useEffect(() => {
+    if (!persist) return;
+    try {
+      if (running && endAtRef.current !== null) {
+        sessionStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({
+            endAt: endAtRef.current,
+            presetMinutes,
+          })
+        );
+      } else {
+        sessionStorage.removeItem(STORAGE_KEY);
+      }
+    } catch {
+      /* Storage full or blocked — ignore. */
+    }
+  }, [running, presetMinutes, persist]);
+
+  /* ----------------------------------------------------------
+     COUNTDOWN — rAF loop, one setState per second change,
+     perfectly smooth via a 1s CSS transition on the arc
   ---------------------------------------------------------- */
 
   useEffect(() => {
     if (!running) return;
     if (endAtRef.current === null) return;
 
-    const tick = () => {
+    let raf: number;
+    let lastSecond = -1;
+
+    const loop = () => {
       const end = endAtRef.current;
       if (end === null) return;
 
-      const msLeft = end - Date.now();
-      const next = Math.max(0, Math.round(msLeft / 1000));
+      const msLeft = Math.max(0, end - Date.now());
+      const sec = Math.ceil(msLeft / 1000);
 
-      setSecondsLeft(next);
+      if (sec !== lastSecond) {
+        lastSecond = sec;
+        setSecondsLeft(sec);
 
-      if (next <= 0 && !completedRef.current) {
-        completedRef.current = true;
-        endAtRef.current = null;
-        setRunning(false);
+        if (sec <= 0 && !completedRef.current) {
+          completedRef.current = true;
+          endAtRef.current = null;
+          setRunning(false);
 
-        if (aliveRef.current) {
+          if (aliveRef.current && sound) playChime();
+
           try {
             onCompleteRef.current?.();
           } catch {
             /* A throwing callback must never crash the timer. */
           }
+          return; // stop the loop
         }
       }
+
+      raf = requestAnimationFrame(loop);
     };
 
-    tick();
-    const id = window.setInterval(tick, TICK_MS);
-    return () => window.clearInterval(id);
-  }, [running]);
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [running, sound]);
 
   /* ----------------------------------------------------------
-     TAB TITLE
+     TAB TITLE — writes only when the string differs,
+     restores the original exactly once per run/pause cycle
   ---------------------------------------------------------- */
 
   const safeTitle = useMemo(
@@ -145,15 +262,27 @@ export default function FocusTimer({
   );
 
   useEffect(() => {
-    if (!running) return;
-
-    const previous = document.title;
-    document.title = `${formatTime(secondsLeft)} · ${safeTitle}`;
-
-    return () => {
-      document.title = previous;
-    };
+    if (running) {
+      if (titleBackupRef.current === null) {
+        titleBackupRef.current = document.title;
+      }
+      const label = `${formatTime(secondsLeft)} · ${safeTitle}`;
+      if (document.title !== label) document.title = label;
+    } else if (titleBackupRef.current !== null) {
+      document.title = titleBackupRef.current;
+      titleBackupRef.current = null;
+    }
   }, [running, secondsLeft, safeTitle]);
+
+  // Final safety net on unmount.
+  useEffect(() => {
+    return () => {
+      if (titleBackupRef.current !== null) {
+        document.title = titleBackupRef.current;
+        titleBackupRef.current = null;
+      }
+    };
+  }, []);
 
   /* ----------------------------------------------------------
      CONTROLS
@@ -163,16 +292,15 @@ export default function FocusTimer({
     endAtRef.current = null;
     completedRef.current = false;
     setRunning(false);
-    setSecondsLeft(initialSeconds);
-  }, [initialSeconds]);
+    setSecondsLeft(durationSeconds);
+  }, [durationSeconds]);
 
   const handleToggle = useCallback(() => {
     if (running) {
-      // Pause — freeze the remaining time so we can resume precisely.
       if (endAtRef.current !== null) {
         const remainingMs = Math.max(0, endAtRef.current - Date.now());
         endAtRef.current = null;
-        setSecondsLeft(Math.round(remainingMs / 1000));
+        setSecondsLeft(Math.ceil(remainingMs / 1000));
       }
       setRunning(false);
       return;
@@ -185,53 +313,55 @@ export default function FocusTimer({
     setRunning(true);
   }, [running, secondsLeft]);
 
-  /* When the session is finished, the primary button restarts it. */
-  const handlePrimary = useCallback(() => {
-    if (secondsLeft <= 0) {
-      endAtRef.current = Date.now() + initialSeconds * 1000;
+  const extend = useCallback(() => {
+    if (!running) return;
+    const end = endAtRef.current;
+    if (end === null) return;
+    endAtRef.current = end + EXTEND_MINUTES * 60 * 1000;
+    completedRef.current = false;
+  }, [running]);
+
+  const selectPreset = useCallback(
+    (minutes: number) => {
+      const next = clampMinutes(minutes);
+      endAtRef.current = null;
       completedRef.current = false;
-      setSecondsLeft(initialSeconds);
-      setRunning(true);
-      return;
-    }
-    handleToggle();
-  }, [secondsLeft, initialSeconds, handleToggle]);
+      setRunning(false);
+      setPresetMinutes(next);
+      setSecondsLeft(next * 60);
+    },
+    []
+  );
 
   /* ----------------------------------------------------------
-     KEYBOARD SHORTCUTS
-     Space → start / pause · R → reset · Esc → pause
+     KEYBOARD — global, robustly guarded
   ---------------------------------------------------------- */
 
   useEffect(() => {
-    const node = containerRef.current;
-    if (!node) return;
+    const isFormElement = (el: Element | null) =>
+      el instanceof HTMLInputElement ||
+      el instanceof HTMLTextAreaElement ||
+      el instanceof HTMLSelectElement ||
+      (el instanceof HTMLElement && el.isContentEditable) ||
+      // Don't hijack keys inside modals or menus.
+      (el instanceof Element && el.closest("[role='dialog'], [role='menu']") !== null);
 
     const onKey = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (
-        target &&
-        (target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          target.isContentEditable)
-      ) {
-        return;
-      }
+      if (isFormElement(event.target as Element | null)) return;
 
-      if (event.key === " " || event.key === "Spacebar") {
-        event.preventDefault();
-        handlePrimary();
-      } else if (event.key.toLowerCase() === "r") {
-        event.preventDefault();
-        reset();
-      } else if (event.key === "Escape" && running) {
+      // Space on a button activates the button — don't intercept.
+      if (event.code === "Space" && !(event.target instanceof HTMLButtonElement)) {
         event.preventDefault();
         handleToggle();
+      } else if (event.code === "KeyR") {
+        event.preventDefault();
+        reset();
       }
     };
 
-    node.addEventListener("keydown", onKey);
-    return () => node.removeEventListener("keydown", onKey);
-  }, [handlePrimary, handleToggle, reset, running]);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [handleToggle, reset]);
 
   /* ----------------------------------------------------------
      DERIVED
@@ -240,39 +370,28 @@ export default function FocusTimer({
   const done = secondsLeft <= 0;
 
   const progress = useMemo(() => {
-    if (initialSeconds <= 0) return 0;
-    const elapsed = initialSeconds - secondsLeft;
-    return Math.min(100, Math.max(0, (elapsed / initialSeconds) * 100));
-  }, [initialSeconds, secondsLeft]);
+    if (durationSeconds <= 0) return 0;
+    const elapsed = durationSeconds - secondsLeft;
+    return Math.min(100, Math.max(0, (elapsed / durationSeconds) * 100));
+  }, [durationSeconds, secondsLeft]);
 
   const dashOffset = CIRCUMFERENCE * (1 - progress / 100);
 
-  const statusLabel = running
-    ? "Active"
-    : done
-    ? "Complete"
-    : "Ready";
-
+  const statusLabel = running ? "Active" : done ? "Complete" : "Ready";
   const statusText = running
     ? "Stay focused"
     : done
     ? "Session complete"
     : "Ready when you are";
 
-  /* Announce only once per whole minute — a per-second live region
-     would be a nightmare for screen reader users. */
+  const primaryLabel = done ? "Restart" : running ? "Pause" : "Start focus";
+
   const minutesLeft = Math.ceil(secondsLeft / 60);
   const srText = running
     ? `${minutesLeft} minute${minutesLeft === 1 ? "" : "s"} remaining`
     : done
     ? "Focus session complete"
-    : `Focus timer ready — ${minutes} minute session`;
-
-  const primaryLabel = done
-    ? "Restart"
-    : running
-    ? "Pause"
-    : "Start focus";
+    : `Focus timer ready — ${presetMinutes} minute session`;
 
   /* ----------------------------------------------------------
      RENDER
@@ -283,16 +402,9 @@ export default function FocusTimer({
       <div className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-purple-500/[0.08] blur-3xl" />
 
       <div
-        ref={containerRef}
-        tabIndex={0}
         role="group"
         aria-label={`Focus timer — ${safeTitle}`}
-        className="
-          relative rounded-2xl
-          focus:outline-none
-          focus-visible:ring-2 focus-visible:ring-purple-500/40
-          focus-visible:ring-offset-2 focus-visible:ring-offset-white
-        "
+        className="relative rounded-2xl"
       >
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
@@ -304,7 +416,6 @@ export default function FocusTimer({
                 }`}
                 aria-hidden="true"
               />
-
               <span className="text-xs font-bold uppercase tracking-[0.18em] text-black/35">
                 Focus
               </span>
@@ -335,8 +446,37 @@ export default function FocusTimer({
           </span>
         </div>
 
+        {/* Presets */}
+        <div className="mt-4 flex flex-wrap gap-1.5">
+          {presets.map((p) => {
+            const mins = clampMinutes(p);
+            const active = mins === presetMinutes && !running;
+            return (
+              <button
+                key={mins}
+                type="button"
+                onClick={() => selectPreset(mins)}
+                disabled={running}
+                aria-pressed={active}
+                className={`
+                  rounded-lg px-2.5 py-1 text-[11px] font-semibold
+                  transition-colors
+                  disabled:cursor-not-allowed disabled:opacity-40
+                  ${
+                    active
+                      ? "bg-purple-500/12 text-purple-700 ring-1 ring-purple-500/30"
+                      : "bg-black/[0.04] text-black/50 hover:bg-black/[0.07] hover:text-black/70"
+                  }
+                `}
+              >
+                {mins}m
+              </button>
+            );
+          })}
+        </div>
+
         {/* Dial */}
-        <div className="mt-8 flex flex-col items-center">
+        <div className="mt-6 flex flex-col items-center">
           <div className="relative flex h-52 w-52 items-center justify-center">
             <svg
               viewBox="0 0 220 220"
@@ -352,7 +492,6 @@ export default function FocusTimer({
                 stroke="rgba(0,0,0,0.06)"
                 strokeWidth="7"
               />
-
               <circle
                 cx="110"
                 cy="110"
@@ -363,28 +502,24 @@ export default function FocusTimer({
                 strokeLinecap="round"
                 strokeDasharray={CIRCUMFERENCE}
                 strokeDashoffset={dashOffset}
-                className="transition-[stroke-dashoffset] duration-200 ease-linear"
+                // 1s linear transition + 1 setState/sec = perfectly smooth arc
+                className="transition-[stroke-dashoffset] duration-1000 ease-linear"
               />
             </svg>
 
             <div className="text-center">
               <div
-                className="
-                  text-5xl font-semibold tracking-[-0.06em]
-                  text-black tabular-nums
-                "
+                className="text-5xl font-semibold tracking-[-0.06em] text-black tabular-nums"
                 aria-hidden="true"
               >
                 {formatTime(secondsLeft)}
               </div>
-
               <div className="mt-2 text-xs font-medium text-black/35">
                 {statusText}
               </div>
             </div>
           </div>
 
-          {/* Accessible countdown — fires only on whole-minute changes */}
           <span
             className="sr-only"
             role="timer"
@@ -398,7 +533,7 @@ export default function FocusTimer({
           <div className="mt-7 flex items-center gap-3">
             <button
               type="button"
-              onClick={handlePrimary}
+              onClick={handleToggle}
               className="
                 min-w-32 rounded-xl bg-black
                 px-5 py-3 text-sm font-semibold text-white
@@ -431,6 +566,22 @@ export default function FocusTimer({
             >
               Reset
             </button>
+
+            {running && (
+              <button
+                type="button"
+                onClick={extend}
+                className="
+                  rounded-xl border border-purple-500/20 bg-purple-500/[0.06]
+                  px-3.5 py-3 text-xs font-semibold text-purple-700
+                  transition hover:bg-purple-500/[0.12]
+                  focus-visible:outline-none
+                  focus-visible:ring-2 focus-visible:ring-purple-500/40
+                "
+              >
+                +{EXTEND_MINUTES}m
+              </button>
+            )}
           </div>
 
           <p className="mt-4 text-[10px] text-black/30">

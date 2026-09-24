@@ -20,17 +20,11 @@ export default function Home() {
       </div>
 
       <ProductPreview />
-
       <Features />
-
       <CalendarSection />
-
       <AIPlanner />
-
       <Analytics />
-
       <CTA />
-
       <Footer />
     </main>
   );
