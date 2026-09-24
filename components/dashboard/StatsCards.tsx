@@ -14,6 +14,12 @@ type StatsCardsProps = {
   totalHours: number;
   progress: number;
   dueSoon: number;
+  /**
+   * Window in hours used for the "Due soon" figure. Must match the
+   * computation in page.tsx — the previous hardcoded "7 days" copy
+   * contradicted the 24h window the page actually used.
+   */
+  dueSoonWindowHours?: number;
 };
 
 type StatTone = "emerald" | "purple" | "blue" | "amber";
@@ -25,7 +31,6 @@ type Stat = {
   detail: string;
   accent: string;
   progress?: number;
-  /** Human-readable summary for screen readers. */
   ariaLabel: string;
 };
 
@@ -47,27 +52,31 @@ const MAX_HOURS = 10_000;
    HELPERS
 ================================================================ */
 
-/** Clamp to a displayable non-negative integer. */
 function clampCount(input: unknown): number {
   const n = Number(input);
   if (!Number.isFinite(n) || n <= 0) return 0;
   return Math.min(Math.floor(n), MAX_COUNT);
 }
 
-/** Clamp to a valid 0–100 percentage. */
 function clampPercent(input: unknown): number {
   const n = Number(input);
   if (!Number.isFinite(n)) return 0;
   return Math.min(100, Math.max(0, n));
 }
 
-/** Clamp hours and render with at most one decimal place. */
 function formatHours(input: unknown): string {
   const n = Number(input);
   if (!Number.isFinite(n) || n <= 0) return "0h";
   const capped = Math.min(n, MAX_HOURS);
   const rounded = Math.round(capped * 10) / 10;
   return `${rounded}h`;
+}
+
+function humanizeWindow(hours: number): string {
+  if (hours <= 24) return "Within 24 hours";
+  if (hours <= 48) return "Within 2 days";
+  if (hours % 24 === 0) return `Within ${hours / 24} days`;
+  return `Within ${hours} hours`;
 }
 
 /* ================================================================
@@ -79,57 +88,48 @@ const StatCard = memo(function StatCard({ stat }: { stat: Stat }) {
     typeof stat.progress === "number" && Number.isFinite(stat.progress);
 
   return (
-    <GlassCard hover padding="md">
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <p className="text-xs font-medium text-black/40">
-            {stat.label}
-          </p>
+    // The whole card is one semantic group with a single accessible name.
+    // Everything visual is aria-hidden so screen readers announce the
+    // summary exactly once — previously the visible text *and* the sr-only
+    // block were both read.
+    <GlassCard
+      hover
+      padding="md"
+      role="group"
+      aria-label={stat.ariaLabel}
+    >
+      <div aria-hidden="true">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-xs font-medium text-black/40">{stat.label}</p>
 
-          <p
-            className="mt-2 text-3xl font-semibold tracking-tight text-black tabular-nums"
-            title={stat.value}
-          >
-            {stat.value}
-          </p>
+            <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight text-black">
+              {stat.value}
+            </p>
 
-          <p className="mt-1 text-xs text-black/35">
-            {stat.detail}
-          </p>
-        </div>
-
-        <span
-          className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full"
-          style={{ backgroundColor: stat.accent }}
-          aria-hidden="true"
-        />
-      </div>
-
-      {hasProgress && (
-        <div className="mt-5">
-          <div
-            className="h-1.5 overflow-hidden rounded-full bg-black/[0.06]"
-            role="progressbar"
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={stat.progress}
-            aria-label={`${stat.label}: ${stat.ariaLabel}`}
-          >
-            <div
-              className="h-full rounded-full transition-all duration-700"
-              style={{
-                width: `${stat.progress}%`,
-                backgroundColor: stat.accent,
-              }}
-            />
+            <p className="mt-1 text-xs text-black/35">{stat.detail}</p>
           </div>
-        </div>
-      )}
 
-      {/* Screen-reader summary of the whole card. */}
-      <span className="sr-only">
-        {stat.label}. {stat.value}. {stat.detail}.
-      </span>
+          <span
+            className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full"
+            style={{ backgroundColor: stat.accent }}
+          />
+        </div>
+
+        {hasProgress && (
+          <div className="mt-5">
+            <div className="h-1.5 overflow-hidden rounded-full bg-black/[0.06]">
+              <div
+                className="h-full rounded-full transition-[width] duration-700 motion-safe:transition-[width]"
+                style={{
+                  width: `${stat.progress}%`,
+                  backgroundColor: stat.accent,
+                }}
+              />
+            </div>
+          </div>
+        )}
+      </div>
     </GlassCard>
   );
 });
@@ -145,6 +145,7 @@ function StatsCards({
   totalHours,
   progress,
   dueSoon,
+  dueSoonWindowHours = 24,
 }: StatsCardsProps) {
   const stats = useMemo<Stat[]>(() => {
     const c = clampCount(completed);
@@ -152,6 +153,7 @@ function StatsCards({
     const ip = clampCount(inProgress);
     const ds = clampCount(dueSoon);
     const pct = clampPercent(progress);
+    const hours = formatHours(totalHours);
 
     return [
       {
@@ -161,7 +163,7 @@ function StatsCards({
         detail: `${pct}% of all tasks`,
         accent: ACCENTS.emerald,
         progress: pct,
-        ariaLabel: `${c} tasks completed, ${pct} percent of all tasks`,
+        ariaLabel: `Completed: ${c} tasks, ${pct} percent of all tasks`,
       },
       {
         key: "open",
@@ -169,37 +171,33 @@ function StatsCards({
         value: String(p),
         detail: `${ip} currently active`,
         accent: ACCENTS.purple,
-        ariaLabel: `${p} open tasks, ${ip} currently active`,
+        ariaLabel: `Open tasks: ${p} open, ${ip} currently active`,
       },
       {
         key: "time",
         label: "Planned time",
-        value: formatHours(totalHours),
+        value: hours,
         detail: "Across your tasks",
         accent: ACCENTS.blue,
-        ariaLabel: `${formatHours(totalHours)} planned across your tasks`,
+        ariaLabel: `Planned time: ${hours} across your tasks`,
       },
       {
         key: "due",
         label: "Due soon",
         value: String(ds),
-        detail: "Within 7 days",
+        detail: humanizeWindow(dueSoonWindowHours),
         accent: ACCENTS.amber,
-        ariaLabel: `${ds} tasks due within 7 days`,
+        ariaLabel: `Due soon: ${ds} tasks ${humanizeWindow(dueSoonWindowHours).toLowerCase()}`,
       },
     ];
-  }, [completed, pending, inProgress, totalHours, progress, dueSoon]);
+  }, [completed, pending, inProgress, totalHours, progress, dueSoon, dueSoonWindowHours]);
 
   return (
-    <div
-      className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
-      role="group"
-      aria-label="Workspace statistics"
-    >
+    <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Workspace statistics">
       {stats.map((stat) => (
         <StatCard key={stat.key} stat={stat} />
       ))}
-    </div>
+    </section>
   );
 }
 

@@ -1,6 +1,11 @@
 "use client";
 
+import { memo, useCallback, useMemo } from "react";
 import GlassCard from "./GlassCard";
+
+/* ================================================================
+   TYPES
+================================================================ */
 
 export type ScheduleItem = {
   id?: string | number;
@@ -17,63 +22,67 @@ export type ScheduleItem = {
 type SchedulePanelProps = {
   schedule: ScheduleItem[];
   currentTime: Date;
-
   /**
-   * Used by the main dashboard page.
+   * Unified focus handler. `onStartTask` is kept as an alias for callers
+   * that used the Overview prop name — both are accepted, `onFocus` wins
+   * if both are provided.
    */
   onFocus?: (item: ScheduleItem) => void;
-
-  /**
-   * Used by Overview.
-   */
   onStartTask?: (item: ScheduleItem) => void;
-
   loading?: boolean;
 };
 
-function parseDateTime(value?: string): Date | null {
-  if (!value) {
-    return null;
-  }
+type ResolvedItem = {
+  item: ScheduleItem;
+  key: string | number;
+  title: string;
+  startLabel: string;
+  endLabel: string | null;
+  durationMinutes: number | null;
+  statusLabel: "NOW" | "UP NEXT" | "DONE";
+  active: boolean;
+  dotClass: string;
+  lineClass: string;
+  badgeClass: string;
+};
 
-  const date = new Date(value);
+/* ================================================================
+   CONSTANTS
+================================================================ */
 
-  if (Number.isNaN(date.getTime())) {
-    return null;
-  }
+const MAX_TITLE_LEN = 200;
 
-  return date;
+/* ================================================================
+   HELPERS
+================================================================ */
+
+function safeText(input: unknown, max: number): string {
+  if (typeof input !== "string") return "";
+  const cleaned = input.replace(/[\u0000-\u001F\u007F]/g, "");
+  return cleaned.length > max ? cleaned.slice(0, max) : cleaned;
 }
 
-function formatTime(value?: string) {
+function parseDateTime(value?: string): Date | null {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function formatTime(value?: string): string {
   const date = parseDateTime(value);
-
-  if (!date) {
-    return value || "--";
-  }
-
-  return date.toLocaleTimeString([], {
+  if (!date) return value || "--";
+  return date.toLocaleTimeString("en-IN", {
     hour: "numeric",
     minute: "2-digit",
   });
 }
 
-function formatDuration(minutes?: number) {
-  if (!minutes || minutes <= 0) {
-    return "";
-  }
-
-  if (minutes < 60) {
-    return `${minutes} min`;
-  }
-
+function formatDuration(minutes?: number | null): string {
+  if (!minutes || minutes <= 0) return "";
+  if (minutes < 60) return `${minutes} min`;
   const hours = Math.floor(minutes / 60);
   const remaining = minutes % 60;
-
-  if (remaining === 0) {
-    return `${hours}h`;
-  }
-
+  if (remaining === 0) return `${hours}h`;
   return `${hours}h ${remaining}m`;
 }
 
@@ -82,108 +91,134 @@ function getStart(item: ScheduleItem): Date | null {
 }
 
 function getEnd(item: ScheduleItem): Date | null {
-  const explicitEnd = parseDateTime(
-    item.end_time || item.end
-  );
-
-  if (explicitEnd) {
-    return explicitEnd;
-  }
+  const explicit = parseDateTime(item.end_time || item.end);
+  if (explicit) return explicit;
 
   const start = getStart(item);
-
   if (start && item.duration_minutes) {
-    return new Date(
-      start.getTime() +
-        item.duration_minutes * 60 * 1000
-    );
+    return new Date(start.getTime() + item.duration_minutes * 60 * 1000);
   }
-
   return null;
 }
 
-function isActive(
-  item: ScheduleItem,
-  currentTime: Date
-) {
+function resolveDuration(item: ScheduleItem): number | null {
+  if (typeof item.duration_minutes === "number" && item.duration_minutes > 0) {
+    return Math.round(item.duration_minutes);
+  }
   const start = getStart(item);
   const end = getEnd(item);
-
-  if (!start || !end) {
-    return false;
-  }
-
-  return (
-    currentTime >= start &&
-    currentTime <= end
-  );
+  if (!start || !end) return null;
+  return Math.max(0, Math.round((end.getTime() - start.getTime()) / 60_000));
 }
 
-function getStatusLabel(
-  item: ScheduleItem,
-  currentTime: Date
-) {
-  if (isActive(item, currentTime)) {
-    return "NOW";
-  }
-
-  const start = getStart(item);
-
-  if (start && start > currentTime) {
-    return "UP NEXT";
-  }
-
-  return "DONE";
-}
-
-function getAccent(
-  item: ScheduleItem,
-  currentTime: Date
-) {
-  if (isActive(item, currentTime)) {
+function accentFor(active: boolean, type: string): {
+  dotClass: string;
+  lineClass: string;
+  badgeClass: string;
+} {
+  if (active) {
     return {
-      dot: "bg-emerald-500",
-      line: "bg-emerald-500",
-      badge:
-        "bg-emerald-500/10 text-emerald-600",
+      dotClass: "bg-emerald-500 shadow-[0_0_0_5px_rgba(16,185,129,0.10)]",
+      lineClass: "bg-emerald-500",
+      badgeClass: "bg-emerald-500/10 text-emerald-600",
     };
   }
-
-  const type = (
-    item.type || ""
-  ).toLowerCase();
-
-  if (
-    type.includes("focus") ||
-    type.includes("deep")
-  ) {
+  const t = type.toLowerCase();
+  if (t.includes("focus") || t.includes("deep")) {
     return {
-      dot: "bg-purple-500",
-      line: "bg-purple-500",
-      badge:
-        "bg-purple-500/10 text-purple-600",
+      dotClass: "bg-purple-500",
+      lineClass: "bg-purple-500",
+      badgeClass: "bg-purple-500/10 text-purple-600",
     };
   }
-
-  if (
-    type.includes("meeting") ||
-    type.includes("call")
-  ) {
+  if (t.includes("meeting") || t.includes("call")) {
     return {
-      dot: "bg-blue-500",
-      line: "bg-blue-500",
-      badge:
-        "bg-blue-500/10 text-blue-600",
+      dotClass: "bg-blue-500",
+      lineClass: "bg-blue-500",
+      badgeClass: "bg-blue-500/10 text-blue-600",
     };
   }
-
   return {
-    dot: "bg-black/25",
-    line: "bg-black/15",
-    badge:
-      "bg-black/[0.04] text-black/45",
+    dotClass: "bg-black/25",
+    lineClass: "bg-black/15",
+    badgeClass: "bg-black/[0.04] text-black/45",
   };
 }
+
+/**
+ * One pass over the array: parse, sort, and precompute display strings.
+ * The previous version re-sorted and re-parsed everything on every render,
+ * which included the 1-second clock tick from page.tsx.
+ */
+function resolveSchedule(
+  schedule: ScheduleItem[],
+  now: number
+): ResolvedItem[] {
+  const resolved = schedule.map((item, index): ResolvedItem => {
+    const start = getStart(item);
+    const end = getEnd(item);
+    const active =
+      start !== null &&
+      end !== null &&
+      now >= start.getTime() &&
+      now <= end.getTime();
+
+    const statusLabel: ResolvedItem["statusLabel"] = active
+      ? "NOW"
+      : start !== null && start.getTime() > now
+      ? "UP NEXT"
+      : "DONE";
+
+    const accent = accentFor(active, item.type ?? "");
+    const startRaw = item.start_time || item.start;
+
+    return {
+      item,
+      // Fallback key uses the index — stable per array position, fine for
+      // read-only lists. If you ever support inline editing, add a real `id`.
+      key: item.id ?? `${item.title}-${index}`,
+      title: safeText(item.title, MAX_TITLE_LEN) || "Untitled",
+      startLabel: formatTime(startRaw),
+      endLabel: item.end_time || item.end ? formatTime(item.end_time || item.end) : null,
+      durationMinutes: resolveDuration(item),
+      statusLabel,
+      active,
+      dotClass: accent.dotClass,
+      lineClass: accent.lineClass,
+      badgeClass: accent.badgeClass,
+    };
+  });
+
+  return resolved.sort((a, b) => {
+    const aStart = getStart(a.item)?.getTime() ?? Number.MAX_SAFE_INTEGER;
+    const bStart = getStart(b.item)?.getTime() ?? Number.MAX_SAFE_INTEGER;
+    return aStart - bStart;
+  });
+}
+
+/* ================================================================
+   SKELETON
+================================================================ */
+
+const Skeleton = memo(function Skeleton() {
+  return (
+    <div className="space-y-4" aria-hidden="true">
+      {[0, 1, 2, 3].map((i) => (
+        <div key={i} className="flex animate-pulse gap-4">
+          <div className="h-4 w-14 rounded bg-black/[0.05]" />
+          <div className="flex-1">
+            <div className="h-4 w-2/3 rounded bg-black/[0.05]" />
+            <div className="mt-2 h-3 w-1/3 rounded bg-black/[0.04]" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+});
+
+/* ================================================================
+   MAIN
+================================================================ */
 
 export default function SchedulePanel({
   schedule,
@@ -192,84 +227,61 @@ export default function SchedulePanel({
   onStartTask,
   loading = false,
 }: SchedulePanelProps) {
-  const sortedSchedule = [...schedule].sort(
-    (a, b) => {
-      const aStart =
-        getStart(a)?.getTime() ??
-        Number.MAX_SAFE_INTEGER;
-
-      const bStart =
-        getStart(b)?.getTime() ??
-        Number.MAX_SAFE_INTEGER;
-
-      return aStart - bStart;
-    }
+  const handleFocus = useCallback(
+    (item: ScheduleItem) => {
+      if (onFocus) return onFocus(item);
+      if (onStartTask) return onStartTask(item);
+    },
+    [onFocus, onStartTask]
   );
 
-  const handleFocus = (item: ScheduleItem) => {
-    if (onFocus) {
-      onFocus(item);
-      return;
-    }
+  const canFocus = Boolean(onFocus) || Boolean(onStartTask);
 
-    if (onStartTask) {
-      onStartTask(item);
-    }
-  };
+  // Minute resolution — the sort order and NOW/UP NEXT labels don't need
+  // to change every second even though the parent clock ticks that often.
+  const nowMinute = useMemo(
+    () => Math.floor(currentTime.getTime() / 60_000) * 60_000,
+    [currentTime]
+  );
 
-  const canFocus =
-    Boolean(onFocus) ||
-    Boolean(onStartTask);
+  const items = useMemo(
+    () => resolveSchedule(schedule, nowMinute),
+    [schedule, nowMinute]
+  );
+
+  const count = items.length;
 
   return (
-    <GlassCard
-      padding="none"
-      className="h-full min-h-[420px]"
-    >
+    <GlassCard padding="none" className="h-full min-h-[420px]">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-black/[0.06] px-5 py-5">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/30">
             Today
           </p>
-
           <h2 className="mt-1 text-base font-semibold tracking-[-0.025em] text-black">
             Your schedule
           </h2>
         </div>
 
-        <div className="flex h-9 items-center rounded-xl bg-blue-500/[0.08] px-3 text-[10px] font-semibold text-blue-600">
-          {sortedSchedule.length}{" "}
-          {sortedSchedule.length === 1
-            ? "item"
-            : "items"}
+        <div
+          className="flex h-9 items-center rounded-xl bg-blue-500/[0.08] px-3 text-[10px] font-semibold text-blue-600"
+          aria-label={`${count} scheduled ${count === 1 ? "item" : "items"}`}
+        >
+          {count} {count === 1 ? "item" : "items"}
         </div>
       </div>
 
       {/* Content */}
-      <div className="p-5">
+      <div className="p-5" aria-busy={loading}>
         {loading ? (
-          <div className="space-y-4">
-            {[1, 2, 3, 4].map(
-              (item) => (
-                <div
-                  key={item}
-                  className="flex animate-pulse gap-4"
-                >
-                  <div className="h-4 w-14 rounded bg-black/[0.05]" />
-
-                  <div className="flex-1">
-                    <div className="h-4 w-2/3 rounded bg-black/[0.05]" />
-
-                    <div className="mt-2 h-3 w-1/3 rounded bg-black/[0.04]" />
-                  </div>
-                </div>
-              )
-            )}
-          </div>
-        ) : sortedSchedule.length === 0 ? (
+          <Skeleton />
+        ) : count === 0 ? (
           <div className="flex min-h-[300px] flex-col items-center justify-center text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-500/[0.08] text-blue-600">
+            <div
+              className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-500/[0.08] text-blue-600"
+              aria-hidden="true"
+            >
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
@@ -277,13 +289,7 @@ export default function SchedulePanel({
                 strokeWidth="1.6"
                 className="h-5 w-5"
               >
-                <rect
-                  x="3.5"
-                  y="5"
-                  width="17"
-                  height="16"
-                  rx="2.5"
-                />
+                <rect x="3.5" y="5" width="17" height="16" rx="2.5" />
                 <path d="M7.5 3v4" />
                 <path d="M16.5 3v4" />
                 <path d="M3.5 10h17" />
@@ -293,211 +299,138 @@ export default function SchedulePanel({
             <p className="mt-4 text-sm font-medium text-black">
               Nothing scheduled
             </p>
-
             <p className="mt-1 max-w-[240px] text-xs leading-5 text-black/35">
-              Your day is open. Add tasks or let
-              TimePilot AI plan your day.
+              Your day is open. Add tasks or let TimePilot AI plan your day.
             </p>
           </div>
         ) : (
-          <div className="space-y-1">
-            {sortedSchedule.map(
-              (item, index) => {
-                const active = isActive(
-                  item,
-                  currentTime
-                );
-
-                const status =
-                  getStatusLabel(
-                    item,
-                    currentTime
-                  );
-
-                const accent =
-                  getAccent(
-                    item,
-                    currentTime
-                  );
-
-                const start =
-                  item.start_time ||
-                  item.start;
-
-                const end =
-                  item.end_time ||
-                  item.end;
-
-                const duration =
-                  item.duration_minutes ||
-                  (() => {
-                    const startDate =
-                      getStart(item);
-
-                    const endDate =
-                      getEnd(item);
-
-                    if (
-                      !startDate ||
-                      !endDate
-                    ) {
-                      return undefined;
-                    }
-
-                    return Math.max(
-                      0,
-                      Math.round(
-                        (endDate.getTime() -
-                          startDate.getTime()) /
-                          60000
-                      )
-                    );
-                  })();
-
-                return (
-                  <div
-                    key={
-                      item.id ??
-                      `${item.title}-${index}`
-                    }
-                    className={`
-                      group relative flex gap-4 rounded-[18px] p-3
-                      transition-all duration-200
-                      ${
-                        active
-                          ? "bg-emerald-500/[0.06]"
-                          : "hover:bg-black/[0.025]"
-                      }
-                    `}
+          <ol className="space-y-1">
+            {items.map((row, index) => (
+              <li
+                key={row.key}
+                className={`
+                  group relative flex gap-4 rounded-[18px] p-3
+                  transition-colors duration-200
+                  ${row.active ? "bg-emerald-500/[0.06]" : "hover:bg-black/[0.025]"}
+                `}
+              >
+                {/* Time column */}
+                <div className="w-[64px] shrink-0 pt-1">
+                  <p
+                    className={`text-[10px] font-semibold tabular-nums ${
+                      row.active ? "text-emerald-600" : "text-black/40"
+                    }`}
                   >
-                    {/* Time */}
-                    <div className="w-[64px] shrink-0 pt-1">
-                      <p
-                        className={`text-[10px] font-semibold ${
-                          active
-                            ? "text-emerald-600"
-                            : "text-black/40"
-                        }`}
-                      >
-                        {formatTime(start)}
-                      </p>
+                    {row.startLabel}
+                  </p>
 
-                      {end ? (
-                        <p className="mt-1 text-[9px] text-black/25">
-                          {formatTime(end)}
-                        </p>
-                      ) : null}
-                    </div>
+                  {row.endLabel && (
+                    <p className="mt-1 text-[9px] tabular-nums text-black/25">
+                      {row.endLabel}
+                    </p>
+                  )}
+                </div>
 
-                    {/* Timeline */}
-                    <div className="relative flex min-w-0 flex-1 gap-3">
-                      <div className="flex flex-col items-center">
-                        <span
-                          className={`
-                            mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full
-                            ${accent.dot}
-                            ${
-                              active
-                                ? "shadow-[0_0_0_5px_rgba(16,185,129,0.08)]"
-                                : ""
-                            }
-                          `}
-                        />
-
-                        {index <
-                        sortedSchedule.length -
-                          1 ? (
-                          <span
-                            className={`mt-2 h-full min-h-[34px] w-px ${accent.line} opacity-20`}
-                          />
-                        ) : null}
-                      </div>
-
-                      {/* Event */}
-                      <div className="min-w-0 flex-1 pb-3">
-                        <div className="flex flex-wrap items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <p
-                              className={`truncate text-[12px] font-semibold ${
-                                active
-                                  ? "text-black"
-                                  : "text-black/75"
-                              }`}
-                            >
-                              {item.title}
-                            </p>
-
-                            <div className="mt-1 flex items-center gap-2">
-                              {duration ? (
-                                <span className="text-[9px] text-black/30">
-                                  {formatDuration(
-                                    duration
-                                  )}
-                                </span>
-                              ) : null}
-
-                              {item.type ? (
-                                <span className="text-[9px] capitalize text-black/25">
-                                  {item.type}
-                                </span>
-                              ) : null}
-                            </div>
-                          </div>
-
-                          <span
-                            className={`shrink-0 rounded-full px-2 py-1 text-[8px] font-bold tracking-[0.08em] ${accent.badge}`}
-                          >
-                            {status}
-                          </span>
-                        </div>
-
-                        {/* Focus button */}
-                        {active &&
-                        canFocus ? (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleFocus(item)
-                            }
-                            className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 px-2.5 py-1.5 text-[9px] font-semibold text-white shadow-sm transition hover:bg-emerald-600"
-                          >
-                            <span>
-                              Focus now
-                            </span>
-
-                            <svg
-                              viewBox="0 0 16 16"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="1.6"
-                              className="h-3 w-3"
-                            >
-                              <path d="M3 8h9" />
-                              <path d="m9 5 3 3-3 3" />
-                            </svg>
-                          </button>
-                        ) : null}
-
-                        {!active &&
-                        status === "UP NEXT" &&
-                        canFocus ? (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleFocus(item)
-                            }
-                            className="mt-3 text-[9px] font-semibold text-blue-600 opacity-0 transition group-hover:opacity-100"
-                          >
-                            Focus this →
-                          </button>
-                        ) : null}
-                      </div>
-                    </div>
+                {/* Timeline + event */}
+                <div className="relative flex min-w-0 flex-1 gap-3">
+                  <div className="flex flex-col items-center" aria-hidden="true">
+                    <span
+                      className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${row.dotClass}`}
+                    />
+                    {index < items.length - 1 && (
+                      <span
+                        className={`mt-2 h-full min-h-[34px] w-px opacity-20 ${row.lineClass}`}
+                      />
+                    )}
                   </div>
-                );
-              }
-            )}
-          </div>
+
+                  <div className="min-w-0 flex-1 pb-3">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p
+                          className={`truncate text-[12px] font-semibold ${
+                            row.active ? "text-black" : "text-black/75"
+                          }`}
+                          title={row.title}
+                        >
+                          {row.title}
+                        </p>
+
+                        <div className="mt-1 flex items-center gap-2">
+                          {row.durationMinutes ? (
+                            <span className="text-[9px] tabular-nums text-black/30">
+                              {formatDuration(row.durationMinutes)}
+                            </span>
+                          ) : null}
+
+                          {row.item.type ? (
+                            <span className="text-[9px] capitalize text-black/25">
+                              {safeText(row.item.type, 40)}
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      <span
+                        className={`shrink-0 rounded-full px-2 py-1 text-[8px] font-bold tracking-[0.08em] ${row.badgeClass}`}
+                      >
+                        {row.statusLabel}
+                      </span>
+                    </div>
+
+                    {row.active && canFocus && (
+                      <button
+                        type="button"
+                        onClick={() => handleFocus(row.item)}
+                        className="
+                          mt-3 inline-flex items-center gap-1.5
+                          rounded-lg bg-emerald-500 px-2.5 py-1.5
+                          text-[9px] font-semibold text-white shadow-sm
+                          transition-colors hover:bg-emerald-600
+                          focus-visible:outline-none
+                          focus-visible:ring-2 focus-visible:ring-emerald-500/50
+                        "
+                      >
+                        Focus now
+                        <svg
+                          viewBox="0 0 16 16"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.6"
+                          className="h-3 w-3"
+                          aria-hidden="true"
+                        >
+                          <path d="M3 8h9" />
+                          <path d="m9 5 3 3-3 3" />
+                        </svg>
+                      </button>
+                    )}
+
+                    {/* Previously `opacity-0 group-hover:opacity-100` — invisible
+                        on touch. Now shows at 60% and lifts on hover/focus. */}
+                    {!row.active && row.statusLabel === "UP NEXT" && canFocus && (
+                      <button
+                        type="button"
+                        onClick={() => handleFocus(row.item)}
+                        className="
+                          mt-3 inline-flex items-center gap-1
+                          text-[9px] font-semibold text-blue-600
+                          opacity-60 transition-opacity
+                          hover:opacity-100
+                          focus-visible:opacity-100
+                          focus-visible:outline-none
+                          focus-visible:ring-2 focus-visible:ring-blue-500/40
+                        "
+                      >
+                        Focus this
+                        <span aria-hidden="true">→</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ol>
         )}
       </div>
     </GlassCard>

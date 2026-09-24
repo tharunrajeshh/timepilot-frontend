@@ -20,12 +20,16 @@ type OverviewProps = {
   totalHours: number;
   progress: number;
   dueSoon: number;
+  dueSoonWindowHours?: number;
   currentTime?: Date;
   firstName?: string;
   activeTask?: DashboardTask | null;
   onStartTask?: (task: DashboardTask) => void;
   onScheduleFocus?: (item: ScheduleItem) => void;
   onCompleteFocus?: () => void;
+  /** Navigate to the Tasks section — powers the "See all" affordances. */
+  onOpenTasks?: () => void;
+  onOpenSchedule?: () => void;
 };
 
 /* ================================================================
@@ -37,13 +41,15 @@ const MAX_TITLE_LEN = 200;
 const MAX_VISIBLE_OPEN = 4;
 const MAX_VISIBLE_DONE = 8;
 
+const ACTIVE_DOT = "#8B5CF6";
+const DONE_DOT = "#10B981";
+
 /* ================================================================
    HELPERS
 ================================================================ */
 
 function safeText(input: unknown, max: number): string {
   if (typeof input !== "string") return "";
-  // eslint-disable-next-line no-control-regex
   const cleaned = input.replace(/[\u0000-\u001F\u007F]/g, "");
   return cleaned.length > max ? cleaned.slice(0, max) : cleaned;
 }
@@ -65,6 +71,18 @@ function greetingFor(date: Date): string {
   if (hour < 12) return "Good morning";
   if (hour < 17) return "Good afternoon";
   return "Good evening";
+}
+
+/**
+ * Bucket key for the greeting: "morning", "afternoon", "evening".
+ * Memoizing on this string is cleaner than eslint-disabling a dependency
+ * on `Math.floor(currentTime.getHours() / 6)`.
+ */
+function greetingBucket(date: Date): "morning" | "afternoon" | "evening" {
+  const hour = date.getHours();
+  if (hour < 12) return "morning";
+  if (hour < 17) return "afternoon";
+  return "evening";
 }
 
 function formatDate(date: Date): string {
@@ -132,6 +150,37 @@ const SectionHeading = memo(function SectionHeading({
 });
 
 /* ================================================================
+   SEE ALL LINK
+================================================================ */
+
+const SeeAll = memo(function SeeAll({
+  onClick,
+  label,
+}: {
+  onClick?: () => void;
+  label: string;
+}) {
+  if (!onClick) return null;
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="
+        rounded-full px-3 py-1.5
+        text-xs font-medium text-black/50
+        transition-colors
+        hover:bg-black/[0.04] hover:text-black
+        focus-visible:outline-none
+        focus-visible:ring-2 focus-visible:ring-black/20
+      "
+    >
+      {label}
+    </button>
+  );
+});
+
+/* ================================================================
    HERO CLOCK
 ================================================================ */
 
@@ -141,16 +190,15 @@ const HeroClock = memo(function HeroClock({ date }: { date: Date }) {
   return (
     <div className="hidden lg:flex">
       <div className="flex h-32 w-32 flex-col items-center justify-center rounded-full border border-black/[0.07] bg-black/[0.025]">
-        <span className="text-xs font-medium text-black/35">
-          Current time
-        </span>
+        <span className="text-xs font-medium text-black/35">Current time</span>
 
-        <span
-          className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-black tabular-nums"
+        <time
+          dateTime={date.toISOString()}
+          className="mt-2 text-2xl font-semibold tabular-nums tracking-[-0.04em] text-black"
           aria-hidden="true"
         >
           {time}
-        </span>
+        </time>
 
         <span className="sr-only">Local time is {time}</span>
 
@@ -173,22 +221,17 @@ const OpenTaskRow = memo(function OpenTaskRow({
   task: DashboardTask;
   onStart?: (task: DashboardTask) => void;
 }) {
-  const title =
-    safeText(task.title, MAX_TITLE_LEN) || "Untitled task";
+  const title = safeText(task.title, MAX_TITLE_LEN) || "Untitled task";
   const isActive = task.status === "in_progress";
   const minutes =
-    typeof task.estimated_minutes === "number" &&
-    task.estimated_minutes > 0
+    typeof task.estimated_minutes === "number" && task.estimated_minutes > 0
       ? Math.round(task.estimated_minutes)
       : null;
 
-  const handleStart = useCallback(
-    () => onStart?.(task),
-    [onStart, task]
-  );
+  const handleStart = useCallback(() => onStart?.(task), [onStart, task]);
 
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-black/[0.05] bg-black/[0.02] p-3.5 transition hover:bg-black/[0.035]">
+    <div className="flex items-center gap-3 rounded-2xl border border-black/[0.05] bg-black/[0.02] p-3.5 transition-colors hover:bg-black/[0.035]">
       <button
         type="button"
         onClick={handleStart}
@@ -197,29 +240,20 @@ const OpenTaskRow = memo(function OpenTaskRow({
         className="
           flex h-9 w-9 shrink-0 items-center justify-center
           rounded-xl bg-white text-black/60 shadow-sm
-          transition
+          transition-colors duration-150
           hover:bg-purple-500/10 hover:text-purple-600
           focus-visible:outline-none
           focus-visible:ring-2 focus-visible:ring-purple-500/40
           disabled:cursor-not-allowed disabled:opacity-40
         "
       >
-        <svg
-          width="12"
-          height="12"
-          viewBox="0 0 12 12"
-          fill="currentColor"
-          aria-hidden="true"
-        >
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
           <path d="M3 1.5v9l7-4.5-7-4.5Z" />
         </svg>
       </button>
 
       <div className="min-w-0 flex-1">
-        <p
-          className="truncate text-sm font-semibold text-black"
-          title={title}
-        >
+        <p className="truncate text-sm font-semibold text-black" title={title}>
           {title}
         </p>
 
@@ -230,19 +264,14 @@ const OpenTaskRow = memo(function OpenTaskRow({
             }`}
             aria-hidden="true"
           />
-
           <span className="text-[11px] text-black/35">
             {isActive ? "In progress" : "Pending"}
           </span>
 
           {minutes !== null && (
             <>
-              <span className="text-black/15" aria-hidden="true">
-                ·
-              </span>
-              <span className="text-[11px] text-black/35">
-                {minutes} min
-              </span>
+              <span className="text-black/15" aria-hidden="true">·</span>
+              <span className="text-[11px] text-black/35">{minutes} min</span>
             </>
           )}
         </div>
@@ -255,11 +284,7 @@ const OpenTaskRow = memo(function OpenTaskRow({
    COMPLETED CHIP
 ================================================================ */
 
-const CompletedChip = memo(function CompletedChip({
-  title,
-}: {
-  title: string;
-}) {
+const CompletedChip = memo(function CompletedChip({ title }: { title: string }) {
   const safe = safeText(title, MAX_TITLE_LEN) || "Untitled task";
 
   return (
@@ -305,31 +330,33 @@ export default function Overview({
   totalHours,
   progress,
   dueSoon,
+  dueSoonWindowHours,
   currentTime = new Date(),
   firstName = "there",
   activeTask,
   onStartTask,
   onScheduleFocus,
   onCompleteFocus,
+  onOpenTasks,
+  onOpenSchedule,
 }: OverviewProps) {
-  /* ---------- derived, memoized ---------- */
+  /* ---------- derived ---------- */
 
   const safeFirstName = useMemo(() => {
     const clean = safeText(firstName, MAX_NAME_LEN).trim();
     return clean || "there";
   }, [firstName]);
 
-  // Only changes at 12:00 and 17:00 — not every second.
+  // Recompute only when the greeting bucket actually changes.
   const greeting = useMemo(
     () => greetingFor(currentTime),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [Math.floor(currentTime.getHours() / 6)]
+    // greetingBucket is a stable string; depending on it satisfies the
+    // exhaustive-deps rule without needing an eslint-disable.
+    [greetingBucket(currentTime)]
   );
 
-  // Only changes at midnight — not every second.
   const dateLabel = useMemo(
     () => formatDate(currentTime),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [currentTime.toDateString()]
   );
 
@@ -344,16 +371,18 @@ export default function Overview({
   }, [totalHours]);
 
   const upcomingTasks = useMemo(
-    () =>
-      tasks
-        .filter((t) => t.status !== "completed")
-        .slice(0, MAX_VISIBLE_OPEN),
+    () => tasks.filter((t) => t.status !== "completed"),
     [tasks]
   );
 
   const completedTasks = useMemo(
     () => tasks.filter((t) => t.status === "completed"),
     [tasks]
+  );
+
+  const visibleOpen = useMemo(
+    () => upcomingTasks.slice(0, MAX_VISIBLE_OPEN),
+    [upcomingTasks]
   );
 
   const visibleCompleted = useMemo(
@@ -373,6 +402,8 @@ export default function Overview({
   }, [activeTask?.title]);
 
   const openCount = safePending + safeInProgress;
+  const hasMoreOpen = upcomingTasks.length > visibleOpen.length;
+  const hasMoreCompleted = completedTasks.length > visibleCompleted.length;
 
   /* ---------- render ---------- */
 
@@ -410,13 +441,12 @@ export default function Overview({
               id="overview-hero-heading"
               className="max-w-3xl text-3xl font-semibold tracking-[-0.045em] text-black sm:text-4xl lg:text-5xl"
             >
-              {greeting},{" "}
-              <span className="text-black/45">{safeFirstName}.</span>
+              {greeting}, <span className="text-black/45">{safeFirstName}.</span>
             </h1>
 
             <p className="mt-4 max-w-2xl text-sm leading-7 text-black/45 sm:text-base">
-              Stay focused, keep your priorities clear, and let TimePilot
-              handle the structure around your work.
+              Stay focused, keep your priorities clear, and let TimePilot handle
+              the structure around your work.
             </p>
 
             <div className="mt-7 flex flex-wrap items-center gap-3">
@@ -427,7 +457,7 @@ export default function Overview({
               )}
 
               <div
-                className="rounded-full bg-purple-500/[0.08] px-4 py-2 text-xs font-semibold text-purple-700 tabular-nums"
+                className="rounded-full bg-purple-500/[0.08] px-4 py-2 text-xs font-semibold tabular-nums text-purple-700"
                 role="status"
                 aria-live="polite"
               >
@@ -450,6 +480,7 @@ export default function Overview({
         totalHours={safeTotalHours}
         progress={safeProgress}
         dueSoon={safeDueSoon}
+        dueSoonWindowHours={dueSoonWindowHours}
       />
 
       {/* ====================================================
@@ -473,24 +504,28 @@ export default function Overview({
           OPEN TASKS + PROGRESS
       ==================================================== */}
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* ---------- Open tasks ---------- */}
         <GlassCard padding="lg">
           <SectionHeading
-            dotColor="#8B5CF6"
+            dotColor={ACTIVE_DOT}
             eyebrow="Up next"
             title="Open tasks"
             action={
-              <span
-                className="rounded-full bg-purple-500/10 px-3 py-1.5 text-xs font-bold text-purple-700 tabular-nums"
-                aria-label={`${openCount} open task${openCount === 1 ? "" : "s"}`}
-              >
-                {openCount}
-              </span>
+              <div className="flex items-center gap-1">
+                <span
+                  className="rounded-full bg-purple-500/10 px-3 py-1.5 text-xs font-bold tabular-nums text-purple-700"
+                  aria-label={`${openCount} open task${openCount === 1 ? "" : "s"}`}
+                >
+                  {openCount}
+                </span>
+                {hasMoreOpen && (
+                  <SeeAll onClick={onOpenTasks} label="See all" />
+                )}
+              </div>
             }
           />
 
           <div className="mt-6 space-y-2">
-            {upcomingTasks.length === 0 ? (
+            {visibleOpen.length === 0 ? (
               <div className="rounded-2xl bg-emerald-500/[0.06] p-5">
                 <div className="flex items-center gap-3">
                   <span
@@ -522,26 +557,21 @@ export default function Overview({
                 </div>
               </div>
             ) : (
-              upcomingTasks.map((task) => (
-                <OpenTaskRow
-                  key={task.id}
-                  task={task}
-                  onStart={onStartTask}
-                />
+              visibleOpen.map((task) => (
+                <OpenTaskRow key={task.id} task={task} onStart={onStartTask} />
               ))
             )}
           </div>
         </GlassCard>
 
-        {/* ---------- Progress ---------- */}
         <GlassCard padding="lg">
           <SectionHeading
-            dotColor="#10B981"
+            dotColor={DONE_DOT}
             eyebrow="Progress"
             title="Today's momentum"
             action={
               <div className="text-right">
-                <span className="text-2xl font-semibold tracking-tight text-black tabular-nums">
+                <span className="text-2xl font-semibold tabular-nums tracking-tight text-black">
                   {safeProgress}%
                 </span>
                 <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-black/30">
@@ -561,7 +591,7 @@ export default function Overview({
               aria-label="Task completion"
             >
               <div
-                className="h-full rounded-full bg-emerald-500 transition-all duration-700"
+                className="h-full rounded-full bg-emerald-500 motion-safe:transition-[width] motion-safe:duration-700"
                 style={{ width: `${safeProgress}%` }}
               />
             </div>
@@ -574,7 +604,7 @@ export default function Overview({
 
           <div className="mt-7 grid grid-cols-3 gap-3">
             <div className="rounded-2xl bg-black/[0.025] p-4">
-              <p className="text-2xl font-semibold text-black tabular-nums">
+              <p className="text-2xl font-semibold tabular-nums text-black">
                 {safeCompleted}
               </p>
               <p className="mt-1 text-[10px] font-bold uppercase tracking-wide text-black/30">
@@ -583,7 +613,7 @@ export default function Overview({
             </div>
 
             <div className="rounded-2xl bg-black/[0.025] p-4">
-              <p className="text-2xl font-semibold text-black tabular-nums">
+              <p className="text-2xl font-semibold tabular-nums text-black">
                 {safeInProgress}
               </p>
               <p className="mt-1 text-[10px] font-bold uppercase tracking-wide text-black/30">
@@ -592,7 +622,7 @@ export default function Overview({
             </div>
 
             <div className="rounded-2xl bg-black/[0.025] p-4">
-              <p className="text-2xl font-semibold text-black tabular-nums">
+              <p className="text-2xl font-semibold tabular-nums text-black">
                 {safeDueSoon}
               </p>
               <p className="mt-1 text-[10px] font-bold uppercase tracking-wide text-black/30">
@@ -609,14 +639,19 @@ export default function Overview({
       {completedTasks.length > 0 && (
         <GlassCard padding="lg">
           <SectionHeading
-            dotColor="#10B981"
+            dotColor={DONE_DOT}
             eyebrow="Completed"
             title="Nice work today."
             action={
-              <span className="text-sm font-medium text-black/35">
-                {completedTasks.length} task
-                {completedTasks.length === 1 ? "" : "s"} finished
-              </span>
+              <div className="flex items-center gap-1">
+                <span className="text-sm font-medium text-black/35">
+                  {completedTasks.length} task
+                  {completedTasks.length === 1 ? "" : "s"} finished
+                </span>
+                {hasMoreCompleted && (
+                  <SeeAll onClick={onOpenTasks} label="See all" />
+                )}
+              </div>
             }
           />
 
