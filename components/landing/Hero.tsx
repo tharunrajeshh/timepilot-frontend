@@ -1,67 +1,53 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import Link from "next/link";
 
 const stars = [
-  { left: "4%", top: "18%", delay: "0s", duration: "4.5s", size: 3 },
-  { left: "9%", top: "32%", delay: "1.2s", duration: "5.2s", size: 2 },
-  { left: "14%", top: "11%", delay: "2s", duration: "4.8s", size: 3 },
-  { left: "19%", top: "26%", delay: "0.5s", duration: "5.8s", size: 2 },
-  { left: "24%", top: "42%", delay: "1.8s", duration: "4.2s", size: 3 },
-  { left: "29%", top: "16%", delay: "3s", duration: "5.5s", size: 2 },
-  { left: "34%", top: "30%", delay: "0.8s", duration: "4.7s", size: 3 },
-  { left: "39%", top: "12%", delay: "2.5s", duration: "5.1s", size: 2 },
-  { left: "44%", top: "36%", delay: "1s", duration: "4.4s", size: 3 },
-  { left: "49%", top: "20%", delay: "3.2s", duration: "5.7s", size: 2 },
-  { left: "54%", top: "9%", delay: "1.5s", duration: "4.9s", size: 3 },
-  { left: "59%", top: "31%", delay: "0.3s", duration: "5.3s", size: 2 },
-  { left: "64%", top: "15%", delay: "2.2s", duration: "4.6s", size: 3 },
-  { left: "69%", top: "38%", delay: "1.1s", duration: "5.9s", size: 2 },
-  { left: "74%", top: "21%", delay: "2.8s", duration: "4.3s", size: 3 },
-  { left: "79%", top: "10%", delay: "0.7s", duration: "5.4s", size: 2 },
-  { left: "84%", top: "29%", delay: "1.9s", duration: "4.8s", size: 3 },
-  { left: "89%", top: "17%", delay: "3.1s", duration: "5.6s", size: 2 },
-  { left: "94%", top: "34%", delay: "0.9s", duration: "4.5s", size: 3 },
-  { left: "7%", top: "51%", delay: "2.7s", duration: "5.2s", size: 2 },
-  { left: "16%", top: "58%", delay: "1.4s", duration: "4.9s", size: 3 },
-  { left: "27%", top: "54%", delay: "3.4s", duration: "5.5s", size: 2 },
-  { left: "38%", top: "61%", delay: "0.6s", duration: "4.6s", size: 3 },
-  { left: "63%", top: "57%", delay: "2.1s", duration: "5.3s", size: 2 },
-  { left: "73%", top: "52%", delay: "1.7s", duration: "4.7s", size: 3 },
-  { left: "86%", top: "60%", delay: "2.9s", duration: "5.8s", size: 2 },
-  { left: "96%", top: "49%", delay: "0.4s", duration: "4.4s", size: 3 },
+  { left: "4%", top: "12%", delay: "0s", duration: "4s" },
+  { left: "9%", top: "25%", delay: "1s", duration: "5s" },
+  { left: "14%", top: "8%", delay: "2s", duration: "4.5s" },
+  { left: "19%", top: "20%", delay: "0.5s", duration: "5.5s" },
+  { left: "25%", top: "32%", delay: "1.5s", duration: "4.2s" },
+  { left: "31%", top: "14%", delay: "2.5s", duration: "5s" },
+  { left: "37%", top: "27%", delay: "0.8s", duration: "4.7s" },
+  { left: "43%", top: "10%", delay: "1.8s", duration: "5.3s" },
+  { left: "49%", top: "30%", delay: "3s", duration: "4.4s" },
+  { left: "55%", top: "16%", delay: "0.2s", duration: "5.6s" },
+  { left: "61%", top: "7%", delay: "1.3s", duration: "4.8s" },
+  { left: "67%", top: "24%", delay: "2.3s", duration: "5.2s" },
+  { left: "73%", top: "12%", delay: "0.7s", duration: "4.3s" },
+  { left: "79%", top: "30%", delay: "1.7s", duration: "5.4s" },
+  { left: "85%", top: "17%", delay: "2.7s", duration: "4.6s" },
+  { left: "91%", top: "8%", delay: "0.4s", duration: "5.1s" },
+  { left: "96%", top: "27%", delay: "2s", duration: "4.5s" },
+
+  { left: "7%", top: "45%", delay: "1.1s", duration: "5s" },
+  { left: "16%", top: "55%", delay: "2.1s", duration: "4.5s" },
+  { left: "27%", top: "48%", delay: "0.9s", duration: "5.5s" },
+  { left: "38%", top: "58%", delay: "2.8s", duration: "4.8s" },
+  { left: "62%", top: "52%", delay: "1.4s", duration: "5.2s" },
+  { left: "72%", top: "45%", delay: "2.5s", duration: "4.6s" },
+  { left: "84%", top: "56%", delay: "0.6s", duration: "5.4s" },
+  { left: "94%", top: "48%", delay: "1.9s", duration: "4.3s" },
 ];
 
 export default function Hero() {
   return (
     <section
       id="hero"
-      className="
-        relative
-        isolate
-        min-h-[100svh]
-        w-full
-        overflow-hidden
-        bg-[#02050a]
-        text-white
-      "
+      className="relative isolate min-h-[100svh] w-full overflow-hidden bg-[#02050a] text-white"
     >
       {/* =====================================================
-          SPACE BACKGROUND
+          BACKGROUND
           ===================================================== */}
 
       <div
         aria-hidden="true"
-        className="
-          pointer-events-none
-          absolute
-          inset-0
-          z-0
-          bg-[#02050a]
-        "
+        className="absolute inset-0 z-0 bg-[#02050a]"
       />
 
-      {/* Deep blue atmospheric glow */}
+      {/* Blue space glow */}
       <div
         aria-hidden="true"
         className="
@@ -69,130 +55,39 @@ export default function Hero() {
           absolute
           inset-0
           z-[1]
-          bg-[radial-gradient(ellipse_at_50%_72%,rgba(15,70,135,0.34),transparent_55%)]
+          bg-[radial-gradient(ellipse_at_50%_70%,rgba(20,80,150,0.28),transparent_55%)]
         "
       />
 
       {/* =====================================================
-          STARS
-          NO CANVAS
-          NO STARFIELD COMPONENT
-          NO BLACK RECTANGLE
+          FALLING STARS
           ===================================================== */}
 
       <div
         aria-hidden="true"
-        className="
-          pointer-events-none
-          absolute
-          inset-0
-          z-[5]
-          overflow-hidden
-        "
+        className="pointer-events-none absolute inset-0 z-[5]"
       >
         {stars.map((star, index) => (
           <span
             key={index}
-            className="
-              absolute
-              rounded-full
-              bg-white
-              opacity-80
-              shadow-[0_0_7px_2px_rgba(255,255,255,0.55)]
-            "
-            style={{
-              left: star.left,
-              top: star.top,
-              width: `${star.size}px`,
-              height: `${star.size}px`,
-              animation: `tpStarFall ${star.duration} linear ${star.delay} infinite`,
-            }}
+            className="tp-falling-star"
+            style={
+              {
+                left: star.left,
+                top: star.top,
+                width: index % 3 === 0 ? "3px" : "2px",
+                height: index % 3 === 0 ? "3px" : "2px",
+                animationDelay: star.delay,
+                animationDuration: star.duration,
+                "--tp-drift": `${(index % 2 === 0 ? 1 : -1) * 25}px`,
+              } as CSSProperties
+            }
           />
         ))}
       </div>
 
       {/* =====================================================
-          SHOOTING STARS
-          ===================================================== */}
-
-      <div
-        aria-hidden="true"
-        className="
-          pointer-events-none
-          absolute
-          inset-0
-          z-[6]
-          overflow-hidden
-        "
-      >
-        <span
-          className="
-            absolute
-            left-[16%]
-            top-[12%]
-            h-[2px]
-            w-[130px]
-            rotate-[58deg]
-            rounded-full
-            bg-gradient-to-r
-            from-transparent
-            via-white
-            to-transparent
-            opacity-70
-            blur-[0.5px]
-          "
-          style={{
-            animation:
-              "tpShootingStar 6s ease-in-out 1s infinite",
-          }}
-        />
-
-        <span
-          className="
-            absolute
-            left-[76%]
-            top-[16%]
-            h-[2px]
-            w-[110px]
-            rotate-[62deg]
-            rounded-full
-            bg-gradient-to-r
-            from-transparent
-            via-white
-            to-transparent
-            opacity-60
-          "
-          style={{
-            animation:
-              "tpShootingStar 7s ease-in-out 3s infinite",
-          }}
-        />
-
-        <span
-          className="
-            absolute
-            left-[55%]
-            top-[8%]
-            h-[1px]
-            w-[95px]
-            rotate-[60deg]
-            rounded-full
-            bg-gradient-to-r
-            from-transparent
-            via-white
-            to-transparent
-            opacity-50
-          "
-          style={{
-            animation:
-              "tpShootingStar 8s ease-in-out 4s infinite",
-          }}
-        />
-      </div>
-
-      {/* =====================================================
           EARTH
-          DIRECTLY INSIDE HERO
           ===================================================== */}
 
       <img
@@ -204,38 +99,35 @@ export default function Hero() {
           pointer-events-none
           absolute
           left-1/2
-          bottom-[-42%]
+          bottom-[-38%]
           z-[8]
-          w-[1500px]
+          w-[1350px]
           max-w-none
           -translate-x-1/2
           select-none
           object-contain
-          drop-shadow-[0_-22px_100px_rgba(30,125,255,0.42)]
-          sm:w-[1650px]
-          md:w-[1800px]
-          lg:w-[2000px]
-          xl:w-[2200px]
+          drop-shadow-[0_-25px_110px_rgba(30,125,255,0.42)]
+          sm:w-[1500px]
+          md:w-[1700px]
+          lg:w-[1900px]
+          xl:w-[2100px]
         "
       />
 
-      {/* =====================================================
-          EARTH ATMOSPHERE
-          ===================================================== */}
-
+      {/* Earth atmosphere */}
       <div
         aria-hidden="true"
         className="
           pointer-events-none
           absolute
+          bottom-[-5%]
           left-1/2
-          bottom-[3%]
           z-[9]
-          h-[180px]
-          w-[1000px]
+          h-[220px]
+          w-[1100px]
           -translate-x-1/2
           rounded-[50%]
-          bg-[radial-gradient(ellipse,rgba(40,145,255,0.22),transparent_70%)]
+          bg-[radial-gradient(ellipse,rgba(35,140,255,0.20),transparent_70%)]
           blur-3xl
         "
       />
@@ -256,23 +148,16 @@ export default function Hero() {
           items-center
           justify-center
           px-5
-          pb-[20vh]
+          pb-[18vh]
           pt-[135px]
           text-center
           sm:px-8
           lg:px-12
         "
       >
-        <div
-          className="
-            flex
-            w-full
-            max-w-[1050px]
-            flex-col
-            items-center
-          "
-        >
-          {/* EYEBROW */}
+        <div className="flex w-full max-w-[1050px] flex-col items-center">
+
+          {/* Eyebrow */}
 
           <div
             className="
@@ -299,22 +184,12 @@ export default function Hero() {
               "
             />
 
-            <span
-              className="
-                text-[10px]
-                font-semibold
-                uppercase
-                tracking-[0.2em]
-                text-white/80
-              "
-            >
+            <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/80">
               Intelligent time management
             </span>
           </div>
 
-          {/* =================================================
-              HEADING
-              ================================================= */}
+          {/* Heading */}
 
           <h1
             className="
@@ -340,9 +215,7 @@ export default function Hero() {
             </span>
           </h1>
 
-          {/* =================================================
-              DESCRIPTION
-              ================================================= */}
+          {/* Description */}
 
           <p
             className="
@@ -360,9 +233,7 @@ export default function Hero() {
             focused progress.
           </p>
 
-          {/* =================================================
-              BUTTONS
-              ================================================= */}
+          {/* Buttons */}
 
           <div
             className="
@@ -433,9 +304,7 @@ export default function Hero() {
             </Link>
           </div>
 
-          {/* =================================================
-              BENEFITS
-              ================================================= */}
+          {/* Benefits */}
 
           <div
             className="
@@ -465,53 +334,6 @@ export default function Hero() {
           </div>
         </div>
       </div>
-
-      {/* =====================================================
-          ANIMATION STYLES
-          ===================================================== */}
-
-      <style jsx>{`
-        @keyframes tpStarFall {
-          0% {
-            transform: translate3d(0, -30px, 0);
-            opacity: 0;
-          }
-
-          10% {
-            opacity: 0.9;
-          }
-
-          80% {
-            opacity: 0.9;
-          }
-
-          100% {
-            transform: translate3d(12px, 75vh, 0);
-            opacity: 0;
-          }
-        }
-
-        @keyframes tpShootingStar {
-          0% {
-            transform: translate3d(0, 0, 0) rotate(60deg);
-            opacity: 0;
-          }
-
-          8% {
-            opacity: 0.8;
-          }
-
-          20% {
-            transform: translate3d(180px, 260px, 0) rotate(60deg);
-            opacity: 0;
-          }
-
-          100% {
-            transform: translate3d(180px, 260px, 0) rotate(60deg);
-            opacity: 0;
-          }
-        }
-      `}</style>
     </section>
   );
 }
