@@ -22,6 +22,7 @@ import SchedulePanel, {
 } from "@/components/dashboard/SchedulePanel";
 import AIAssistant, {
   type ChatMessage,
+  type ContextTask,
 } from "@/components/dashboard/AIAssistant";
 import GlassCard from "@/components/dashboard/GlassCard";
 
@@ -29,13 +30,15 @@ import GlassCard from "@/components/dashboard/GlassCard";
 /*  CONFIG                                                             */
 /* ================================================================== */
 
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/+$/, "");
+const API_URL = (
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+).replace(/\/+$/, "");
 
 const USER_KEY = "timepilot_user";
-const TOKEN_KEY = "timepilot_token";         // fallback only — prefer cookies
+const TOKEN_KEY = "timepilot_token"; // fallback only — prefer cookies
 const CSRF_KEY = "timepilot_csrf";
 
-const SESSION_TIMEOUT_MS = 30 * 60 * 1000;   // 30 min inactivity
+const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 min inactivity
 const REQUEST_TIMEOUT_MS = 20 * 1000;
 const MAX_TITLE_LEN = 200;
 const MAX_DESC_LEN = 2000;
@@ -71,7 +74,6 @@ type ApiError = { detail?: string; message?: string };
 /** Strip control chars, collapse whitespace, enforce max length. */
 function sanitizeText(input: unknown, max: number): string {
   if (typeof input !== "string") return "";
-  // eslint-disable-next-line no-control-regex
   const cleaned = input.replace(/[\u0000-\u001F\u007F]/g, "").trim();
   return cleaned.length > max ? cleaned.slice(0, max) : cleaned;
 }
@@ -83,7 +85,7 @@ function sanitizePriority(input: unknown): string {
   return ALLOWED_PRIORITIES.has(value) ? value : "medium";
 }
 
-/** ISO date validation. Returns null if not a valid future-or-equal date. */
+/** ISO date validation. Returns null if not a valid date. */
 function sanitizeDate(input: unknown): string | null {
   if (typeof input !== "string" || !input.trim()) return null;
   const d = new Date(input);
@@ -99,7 +101,9 @@ function sanitizeMinutes(input: unknown): number | null {
 
 /** Safe numeric/string id. Rejects anything weird before hitting the URL. */
 function sanitizeId(id: number | string): string | null {
-  if (typeof id === "number" && Number.isInteger(id) && id > 0) return String(id);
+  if (typeof id === "number" && Number.isInteger(id) && id > 0) {
+    return String(id);
+  }
   if (typeof id === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(id)) return id;
   return null;
 }
@@ -136,6 +140,52 @@ function parseStoredUser(raw: string | null): User | null {
     /* ignore */
   }
   return null;
+}
+
+/** UUID with a defensive fallback for non-secure contexts. */
+function newId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    try {
+      return crypto.randomUUID();
+    } catch {
+      /* fall through */
+    }
+  }
+  return `m_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+/* ================================================================== */
+/*  MESSAGE FACTORY (prevents TS string-literal widening)              */
+/* ================================================================== */
+
+/**
+ * The return-type annotation is what prevents TypeScript from widening
+ * `"user"` / `"assistant"` into `string`. Always construct ChatMessage
+ * objects through these factories — never inline into setMessages.
+ */
+function makeUserMessage(content: string): ChatMessage {
+  return { id: newId(), role: "user", content, createdAt: Date.now() };
+}
+
+function makeAssistantMessage(
+  content: string,
+  status?: ChatMessage["status"]
+): ChatMessage {
+  return {
+    id: newId(),
+    role: "assistant",
+    content,
+    createdAt: Date.now(),
+    ...(status ? { status } : {}),
+  };
+}
+
+function appendMessage(
+  current: ChatMessage[],
+  message: ChatMessage
+): ChatMessage[] {
+  const next = [...current, message];
+  return next.length > MAX_MESSAGES ? next.slice(-MAX_MESSAGES) : next;
 }
 
 /* ================================================================== */
@@ -176,10 +226,18 @@ function normalizeSchedule(input: unknown): ScheduleItem[] {
           : undefined,
       status: item.status ? String(item.status) : undefined,
       type: item.type ? String(item.type) : undefined,
-      task_id:
-        typeof item.task_id === "number" ? item.task_id : undefined,
+      task_id: typeof item.task_id === "number" ? item.task_id : undefined,
     } as ScheduleItem;
   });
+}
+
+/** Maps an arbitrary task priority into AIAssistant's narrower ContextTask union. */
+function toContextPriority(
+  p: unknown
+): "low" | "medium" | "high" | undefined {
+  if (p === "low" || p === "medium" || p === "high") return p;
+  if (p === "urgent") return "high";
+  return undefined;
 }
 
 /* ================================================================== */
@@ -204,11 +262,14 @@ export default function DashboardPage() {
   const [taskError, setTaskError] = useState("");
 
   /* ---------------- FOCUS ---------------- */
-  const [activeTaskId, setActiveTaskId] = useState<number | string | null>(null);
+  const [activeTaskId, setActiveTaskId] = useState<number | string | null>(
+    null
+  );
 
   /* ---------------- AI ---------------- */
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
   const [planning, setPlanning] = useState(false);
 
   /* ---------------- SCHEDULE ---------------- */
@@ -255,7 +316,11 @@ export default function DashboardPage() {
     return () => {
       aliveRef.current = false;
       inflightRef.current.forEach((c) => {
-        try { c.abort(); } catch { /* noop */ }
+        try {
+          c.abort();
+        } catch {
+          /* noop */
+        }
       });
       inflightRef.current.clear();
     };
@@ -265,19 +330,13 @@ export default function DashboardPage() {
   /*  AUTH HELPERS                                                    */
   /* ================================================================ */
 
-  /**
-   * Returns auth-related headers. Prefers cookies (HttpOnly set by backend)
-   * but falls back to a sessionStorage Bearer token for legacy servers.
-   * Adds CSRF double-submit token for state-changing requests.
-   */
   const getAuthContext = useCallback(() => {
     if (typeof window === "undefined") {
       return { headers: {} as Record<string, string>, hasSession: false };
     }
 
     const token = sessionStorage.getItem(TOKEN_KEY);
-    const csrf =
-      readCookie(CSRF_KEY) || sessionStorage.getItem(CSRF_KEY);
+    const csrf = readCookie(CSRF_KEY) || sessionStorage.getItem(CSRF_KEY);
     const hasSession = Boolean(token) || Boolean(readCookie("tp_session"));
 
     return {
@@ -294,7 +353,6 @@ export default function DashboardPage() {
     sessionStorage.removeItem(TOKEN_KEY);
     sessionStorage.removeItem(USER_KEY);
     sessionStorage.removeItem(CSRF_KEY);
-    // Legacy cleanup
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     localStorage.removeItem(CSRF_KEY);
@@ -306,10 +364,10 @@ export default function DashboardPage() {
       setUser(null);
       setTasks([]);
       setMessages([]);
+      setAiError(null);
       setDayPlan(null);
       setActiveTaskId(null);
 
-      // Best-effort server-side session invalidation — ignore failures.
       try {
         const { headers } = getAuthContext();
         await fetch(`${API_URL}/auth/logout`, {
@@ -331,18 +389,13 @@ export default function DashboardPage() {
   /*  SECURE FETCH                                                    */
   /* ================================================================ */
 
-  /**
-   * Hardened fetch:
-   *  - cookie credentials + CSRF header
-   *  - request timeout via AbortController
-   *  - auto logout on 401/403
-   *  - sanitized error messages (never surfaces raw backend detail)
-   */
   const secureFetch = useCallback(
     async <T,>(
       path: string,
       init: RequestInit & { timeoutMs?: number } = {}
-    ): Promise<{ ok: true; data: T } | { ok: false; error: string; status: number }> => {
+    ): Promise<
+      { ok: true; data: T } | { ok: false; error: string; status: number }
+    > => {
       const controller = new AbortController();
       inflightRef.current.add(controller);
 
@@ -370,11 +423,19 @@ export default function DashboardPage() {
 
         if (res.status === 401 || res.status === 403) {
           void logout(true);
-          return { ok: false, error: "Session expired. Please sign in again.", status: res.status };
+          return {
+            ok: false,
+            error: "Session expired. Please sign in again.",
+            status: res.status,
+          };
         }
 
         if (res.status === 429) {
-          return { ok: false, error: "Too many requests. Please slow down.", status: 429 };
+          return {
+            ok: false,
+            error: "Too many requests. Please slow down.",
+            status: 429,
+          };
         }
 
         if (res.status === 204) {
@@ -391,7 +452,6 @@ export default function DashboardPage() {
         if (!res.ok) {
           const detail = (data as ApiError | null)?.detail;
           const message = (data as ApiError | null)?.message;
-          // Never leak raw backend detail to the UI.
           const safe =
             typeof detail === "string" && detail.length < 200
               ? detail
@@ -406,7 +466,11 @@ export default function DashboardPage() {
         if ((err as { name?: string })?.name === "AbortError") {
           return { ok: false, error: "Request timed out.", status: 0 };
         }
-        return { ok: false, error: "Network error. Check your connection.", status: 0 };
+        return {
+          ok: false,
+          error: "Network error. Check your connection.",
+          status: 0,
+        };
       } finally {
         window.clearTimeout(timeout);
         inflightRef.current.delete(controller);
@@ -456,9 +520,7 @@ export default function DashboardPage() {
       "touchstart",
     ];
 
-    events.forEach((e) =>
-      window.addEventListener(e, bump, { passive: true })
-    );
+    events.forEach((e) => window.addEventListener(e, bump, { passive: true }));
 
     const interval = window.setInterval(() => {
       if (Date.now() - lastActivityRef.current > SESSION_TIMEOUT_MS) {
@@ -587,7 +649,6 @@ export default function DashboardPage() {
         body: JSON.stringify({ status }),
       });
 
-      // Legacy PUT fallback
       if (!result.ok && result.status === 405) {
         result = await secureFetch<unknown>(`/tasks/${safeId}`, {
           method: "PUT",
@@ -597,9 +658,7 @@ export default function DashboardPage() {
 
       if (!result.ok) {
         setTasks((current) =>
-          current.map((item) =>
-            item.id === task.id ? previous : item
-          )
+          current.map((item) => (item.id === task.id ? previous : item))
         );
         setTaskError(result.error);
         return;
@@ -677,7 +736,7 @@ export default function DashboardPage() {
     setActiveTaskId(null);
   }, [activeTask, updateTaskStatus]);
 
-   /* ================================================================ */
+  /* ================================================================ */
   /*  AI CHAT                                                         */
   /* ================================================================ */
 
@@ -685,16 +744,12 @@ export default function DashboardPage() {
     async (message: string) => {
       if (aiLoading) return;
 
+      setAiError(null);
+
       if (!withinRateLimit("aiChat", 15, 60_000)) {
-        setMessages((current) => [
-          ...current,
-          {
-            id: crypto.randomUUID(),
-            role: "assistant",
-            content:
-              "You're sending messages too quickly. Please wait a moment.",
-          },
-        ].slice(-MAX_MESSAGES));
+        setAiError(
+          "You're sending messages too quickly. Please wait a moment."
+        );
         return;
       }
 
@@ -703,16 +758,7 @@ export default function DashboardPage() {
 
       setAiLoading(true);
 
-      setMessages((current) =>
-        [
-          ...current,
-          {
-            id: crypto.randomUUID(),
-            role: "user" as const,
-            content: clean,
-          },
-        ].slice(-MAX_MESSAGES)
-      );
+      setMessages((current) => appendMessage(current, makeUserMessage(clean)));
 
       const result = await secureFetch<Record<string, unknown>>(
         "/agent/chat",
@@ -722,18 +768,19 @@ export default function DashboardPage() {
         }
       );
 
-      if (!result.ok) {
-        setMessages((current) =>
-          [
-            ...current,
-            {
-              id: crypto.randomUUID(),
-              role: "assistant" as const,
-              content: result.error,
-            },
-          ].slice(-MAX_MESSAGES)
-        );
+      if (!aliveRef.current) return;
 
+      if (!result.ok) {
+        setAiError(result.error);
+        setMessages((current) =>
+          appendMessage(
+            current,
+            makeAssistantMessage(
+              "Sorry — I couldn't process that. Please try again.",
+              "error"
+            )
+          )
+        );
         setAiLoading(false);
         return;
       }
@@ -746,14 +793,12 @@ export default function DashboardPage() {
       );
 
       setMessages((current) =>
-        [
-          ...current,
-          {
-            id: crypto.randomUUID(),
-            role: "assistant" as const,
-            content: answer || "I couldn't generate a response.",
-          },
-        ].slice(-MAX_MESSAGES)
+        appendMessage(
+          current,
+          makeAssistantMessage(
+            answer || "I couldn't generate a response."
+          )
+        )
       );
 
       if (
@@ -766,10 +811,7 @@ export default function DashboardPage() {
 
         setTaskNotice(
           created?.title
-            ? `Task created: ${sanitizeText(
-                created.title,
-                MAX_TITLE_LEN
-              )}`
+            ? `Task created: ${sanitizeText(created.title, MAX_TITLE_LEN)}`
             : "Task created by TimePilot AI."
         );
       }
@@ -778,6 +820,40 @@ export default function DashboardPage() {
     },
     [aiLoading, loadTasks, secureFetch]
   );
+
+  /* ---------- retry the last assistant message ---------- */
+
+  const retryAIMessage = useCallback(
+    async (assistantId: string) => {
+      const idx = messages.findIndex((m) => m.id === assistantId);
+      if (idx <= 0) return;
+
+      // Find the most recent user message before the failed one.
+      let userContent: string | null = null;
+      for (let i = idx - 1; i >= 0; i--) {
+        if (messages[i].role === "user") {
+          userContent = messages[i].content;
+          break;
+        }
+      }
+      if (!userContent) return;
+
+      // Remove the failed assistant message, then re-send.
+      setMessages((current) =>
+        current.filter((m) => m.id !== assistantId)
+      );
+      await sendAIMessage(userContent);
+    },
+    [messages, sendAIMessage]
+  );
+
+  /* ---------- new chat ---------- */
+
+  const newChat = useCallback(() => {
+    setMessages([]);
+    setAiError(null);
+  }, []);
+
   /* ================================================================ */
   /*  AI DAY PLAN                                                     */
   /* ================================================================ */
@@ -805,6 +881,8 @@ export default function DashboardPage() {
         timeoutMs: 30_000,
       }
     );
+
+    if (!aliveRef.current) return;
 
     if (!result.ok) {
       setTaskError(result.error);
@@ -863,6 +941,23 @@ export default function DashboardPage() {
       return Number.isFinite(t) && t >= now && t <= tomorrow;
     }).length;
   }, [tasks]);
+
+  /* ---------- derived props for AIAssistant ---------- */
+
+  const contextTasks: ContextTask[] = useMemo(
+    () =>
+      tasks.slice(0, 8).map((t) => ({
+        id: String(t.id),
+        title: t.title,
+        priority: toContextPriority(t.priority),
+      })),
+    [tasks]
+  );
+
+  const focusStats = useMemo(
+    () => ({ done: completed, total: tasks.length }),
+    [completed, tasks.length]
+  );
 
   /* ================================================================ */
   /*  NAVIGATION                                                      */
@@ -926,6 +1021,7 @@ export default function DashboardPage() {
         <div className="absolute bottom-[-180px] left-[40%] h-[420px] w-[420px] rounded-full bg-emerald-500/[0.035] blur-[120px]" />
       </div>
 
+      {/* Desktop sidebar — collapsible via ⌘B / Ctrl B */}
       <DashboardSidebar
         section={section}
         pending={pending}
@@ -933,10 +1029,13 @@ export default function DashboardPage() {
         email={user.email}
         initial={initial}
         mobile={false}
+        collapsible
+        mobileNavId="dashboard-mobile-nav"
         onNavigate={navigate}
         onLogout={() => void logout()}
       />
 
+      {/* Mobile drawer */}
       {mobileNavOpen && (
         <DashboardSidebar
           section={section}
@@ -945,13 +1044,15 @@ export default function DashboardPage() {
           email={user.email}
           initial={initial}
           mobile
+          mobileNavId="dashboard-mobile-nav"
           onNavigate={navigate}
           onLogout={() => void logout()}
           onClose={() => setMobileNavOpen(false)}
         />
       )}
 
-      <div className="lg:pl-[250px]">
+      {/* Content — responsive to the sidebar's published --sidebar-w */}
+      <div className="transition-[padding] duration-300 ease-out lg:pl-[var(--sidebar-w,250px)]">
         <DashboardHeader
           section={section}
           firstName={firstName}
@@ -959,6 +1060,16 @@ export default function DashboardPage() {
           digitalTime={digitalTime}
           initial={initial}
           onOpenMenu={() => setMobileNavOpen(true)}
+          // AIAssistant also uses ⌘K to focus the composer, so we disable
+          // the header's command-palette shortcut to avoid a conflict.
+          enableCommandShortcut={false}
+          onNewTask={() => setSection("tasks")}
+          user={{
+            name: user.name,
+            email: user.email,
+            plan: "Workspace",
+          }}
+          onSignOut={() => void logout()}
         />
 
         <div className="mx-auto w-full max-w-[1500px] px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
@@ -1109,9 +1220,15 @@ export default function DashboardPage() {
             <AIAssistant
               messages={messages}
               loading={aiLoading}
+              error={aiError}
               onSend={sendAIMessage}
+              onRetry={retryAIMessage}
               onPlanDay={generateDayPlan}
               planning={planning}
+              onNewChat={newChat}
+              contextTasks={contextTasks}
+              focusStats={focusStats}
+              modelLabel="TimePilot v2"
             />
           )}
         </div>
